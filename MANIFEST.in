@@ -1,0 +1,13 @@
+include LICENSE.md
+include README.md
+include iseq/_data/GALNBKIG_cut.fasta
+include iseq/_data/PF03373.hmm
+include iseq/_data/PF03373_GALNBKIG_cut.amino.fasta
+include iseq/_data/PF03373_GALNBKIG_cut.codon.fasta
+include iseq/_data/PF03373_GALNBKIG_cut.gff
+include iseq/_data/amino1.fasta
+include iseq/_data/database1.hmm
+include iseq/_data/output1.gff
+include iseq/_data/output1_evalue.gff
+include iseq/_data/tblout.txt
+include version.py

@@ -1,0 +1,2 @@
+# iseq
+Invisible sequence scanner.
