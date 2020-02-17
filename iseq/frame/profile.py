@@ -5,14 +5,15 @@ from hmmer_reader import HMMERProfile
 
 from nmm import (
     Alphabet,
-    Base,
+    AminoAlphabet,
+    BaseAlphabet,
     BaseTable,
     CodonTable,
     GeneticCode,
     LPROB_ZERO,
     FrameState,
     MuteState,
-    AlphabetTable,
+    AminoTable,
     lprob_normalize,
 )
 from .result import FrameSearchResult
@@ -23,24 +24,29 @@ from .model import (
     FrameSpecialNode,
     Transitions,
 )
+from .codon_prob import FrameCodonProb
+from .base_table import FrameBaseTable
 from ..profile import Profile
 
 
 class FrameStateFactory:
     def __init__(
-        self, base: Base, prot_abc: Alphabet, gcode: GeneticCode, epsilon: float,
+        self,
+        base: BaseAlphabet,
+        prot_abc: Alphabet,
+        gcode: GeneticCode,
+        epsilon: float,
     ):
         self._base = base
         self._prot_abc = prot_abc
         self._gcode = gcode
         self._epsilon = epsilon
 
-    def create(self, name: bytes, prot_abct: AlphabetTable) -> FrameState:
-        codon_lprobs = _infer_codon_lprobs(prot_abct, self._gcode)
-        base_lprobs = _infer_base_lprobs(codon_lprobs, self._alphabet)
-        base_table = BaseTable.create(self._alphabet, base_lprobs)
-        codon_table = CodonTable.create(self._alphabet, codon_lprobs)
-        return FrameState(name, base_table, codon_table, self._epsilon)
+    def create(self, name: bytes, aminot: AminoTable) -> FrameState:
+        codonp = FrameCodonProb(self._base, aminot, self._gcode)
+        baset = FrameBaseTable(codonp)
+        codont = CodonTable(codonp)
+        return FrameState(name, baset, codont, self._epsilon)
 
     @property
     def bases(self) -> Alphabet:
@@ -98,25 +104,24 @@ class FrameProfile(Profile):
 
 def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
 
-    base = Base(Alphabet(b"ACGU", b"X"))
-    breakpoint()
-    prot = Alphabet(reader.alphabet.encode(), b"X")
+    base_abc = BaseAlphabet(Alphabet(b"ACGU", b"X"))
+    amino_abc = AminoAlphabet(Alphabet(reader.alphabet.encode(), b"X"))
 
-    prob_list = _create_probability_list(prot.symbols)
-
-    null_lprobs = prob_list(reader.insert(0))
-    ffact = FrameStateFactory(base, prot, GeneticCode(base), epsilon)
+    # prob_list = _create_probability_list(amino_abc.symbols)
+    # null_lprobs = prob_list(reader.insert(0))
+    null_lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
+    ffact = FrameStateFactory(base_abc, amino_abc, GeneticCode(base_abc), epsilon)
 
     nodes_trans: List[Tuple[FrameNode, Transitions]] = []
 
     for m in range(1, reader.M + 1):
-        M = ffact.create(
-            f"M{m}".encode(), AlphabetTable(prot, prob_list(reader.match(m)))
-        )
-        I = ffact.create(
-            f"I{m}".encode(), AlphabetTable(prot, prob_list(reader.insert(m)))
-        )
-        D = MuteState(f"D{m}".encode(), base)
+        lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
+        M = ffact.create(f"M{m}".encode(), AminoTable(amino_abc, lprobs))
+
+        lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
+        I = ffact.create(f"I{m}".encode(), AminoTable(amino_abc, lprobs))
+
+        D = MuteState(f"D{m}".encode(), base_abc)
 
         node = FrameNode(M, I, D,)
 
@@ -125,49 +130,40 @@ def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
 
         nodes_trans.append((node, trans))
 
+    breakpoint()
     return FrameProfile(ffact, null_lprobs, nodes_trans)
 
 
-def _infer_codon_lprobs(aa_lprobs: Dict[bytes, float], gencode: GeneticCode):
-    from numpy import logaddexp
+# def _infer_codon_lprobs(aminot, gencode: GeneticCode):
+#     from numpy import logaddexp
 
-    codon_lprobs = []
-    lprob_norm = LPROB_ZERO
-    for aa, lprob in aa_lprobs.items():
+#     codon_lprobs = []
+#     lprob_norm = LPROB_ZERO
+#     for aa, lprob in aa_lprobs.items():
 
-        codons = gencode.codons(aa)
-        if len(codons) == 0:
-            continue
+#         codons = gencode.codons(aa)
+#         if len(codons) == 0:
+#             continue
 
-        norm = log(len(codons))
-        for codon in codons:
-            codon_lprobs.append((codon, lprob - norm))
-            lprob_norm = logaddexp(lprob_norm, codon_lprobs[-1][1])
+#         norm = log(len(codons))
+#         for codon in codons:
+#             codon_lprobs.append((codon, lprob - norm))
+#             lprob_norm = logaddexp(lprob_norm, codon_lprobs[-1][1])
 
-    codon_lprobs = [(i[0], i[1] - lprob_norm) for i in codon_lprobs]
-    return dict(codon_lprobs)
-
-
-def _infer_base_lprobs(codon_lprobs, alphabet: Alphabet):
-    from scipy.special import logsumexp
-
-    lprobs: Dict[Base, list] = {Base(sym): [] for sym in alphabet.symbols}
-    lprob_norm = log(3)
-    for codon, lprob in codon_lprobs.items():
-        lprobs[codon.base(0)] += [lprob - lprob_norm]
-        lprobs[codon.base(1)] += [lprob - lprob_norm]
-        lprobs[codon.base(2)] += [lprob - lprob_norm]
-
-    return {b: logsumexp(lp) for b, lp in lprobs.items()}
+#     codon_lprobs = [(i[0], i[1] - lprob_norm) for i in codon_lprobs]
+#     return dict(codon_lprobs)
 
 
-def _create_probability_list(symbols: bytes):
-    def probability_list(lprob_table: Dict[str, Any]):
-        probs = []
-        for i in range(len(symbols)):
-            key = symbols[i : i + 1].decode()
-            probs.append(lprob_table.get(key, LPROB_ZERO))
+# def _infer_base_lprobs(codon_lprobs, alphabet: Alphabet):
+#     from scipy.special import logsumexp
 
-        return lprob_normalize(probs).tolist()
+#     lprobs: Dict[BaseAlphabet, list] = {
+#         BaseAlphabet(sym): [] for sym in alphabet.symbols
+#     }
+#     lprob_norm = log(3)
+#     for codon, lprob in codon_lprobs.items():
+#         lprobs[codon.base(0)] += [lprob - lprob_norm]
+#         lprobs[codon.base(1)] += [lprob - lprob_norm]
+#         lprobs[codon.base(2)] += [lprob - lprob_norm]
 
-    return probability_list
+#     return {b: logsumexp(lp) for b, lp in lprobs.items()}
