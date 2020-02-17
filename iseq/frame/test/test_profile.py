@@ -1,6 +1,6 @@
 from numpy.testing import assert_allclose, assert_equal
 
-from nmm import GeneticCode
+from nmm import GeneticCode, Sequence, BaseAlphabet, Alphabet
 
 from hmmer_reader import open_hmmer
 from iseq.frame import create_profile
@@ -10,13 +10,15 @@ def test_frame_profile_frame1(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile())
 
-    # most_likely_seq = b"PGKEDNNK"
-    most_likely_rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA"
-    most_likely_rna_seq = most_likely_rna_seq.replace(b" ", b"")
+    rna_abc = BaseAlphabet(hmmer.alphabet)
+    most_likely_rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA".replace(b" ", b"")
+    most_likely_seq = Sequence(most_likely_rna_seq, rna_abc)
+
+    r = hmmer.search(most_likely_seq)
+
+    assert_allclose(r.loglikelihood, 125.83363182422178)
 
 
-#     r = hmmer.search(most_likely_rna_seq)
-#     assert_allclose(r.score, 125.83363182422178)
 #     frags = r.fragments
 #     assert_equal(len(frags), 1)
 #     frag = frags[0]

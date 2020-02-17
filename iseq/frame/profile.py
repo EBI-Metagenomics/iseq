@@ -1,5 +1,4 @@
-from math import log
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 from hmmer_reader import HMMERProfile
 
@@ -7,14 +6,13 @@ from nmm import (
     Alphabet,
     AminoAlphabet,
     BaseAlphabet,
-    BaseTable,
     CodonTable,
     GeneticCode,
-    LPROB_ZERO,
     FrameState,
     MuteState,
     AminoTable,
     lprob_normalize,
+    CSequence,
 )
 from .result import FrameSearchResult
 from .model import (
@@ -32,25 +30,25 @@ from ..profile import Profile
 class FrameStateFactory:
     def __init__(
         self,
-        base: BaseAlphabet,
-        prot_abc: Alphabet,
+        base_abc: BaseAlphabet,
+        amino_abc: Alphabet,
         gcode: GeneticCode,
         epsilon: float,
     ):
-        self._base = base
-        self._prot_abc = prot_abc
+        self._base_abc = base_abc
+        self._amino_abc = amino_abc
         self._gcode = gcode
         self._epsilon = epsilon
 
     def create(self, name: bytes, aminot: AminoTable) -> FrameState:
-        codonp = FrameCodonProb(self._base, aminot, self._gcode)
+        codonp = FrameCodonProb(self._base_abc, aminot, self._gcode)
         baset = FrameBaseTable(codonp)
         codont = CodonTable(codonp)
         return FrameState(name, baset, codont, self._epsilon)
 
     @property
-    def bases(self) -> Alphabet:
-        return self._alphabet
+    def base_alphabet(self) -> BaseAlphabet:
+        return self._base_abc
 
     @property
     def genetic_code(self) -> GeneticCode:
@@ -65,22 +63,23 @@ class FrameProfile(Profile):
     def __init__(
         self,
         fstate_factory: FrameStateFactory,
-        aa_lprobs: Dict[bytes, float],
+        base_abc: BaseAlphabet,
+        null_aminot: AminoTable,
         nodes_trans: Sequence[Tuple[FrameNode, Transitions]],
     ):
-        super().__init__()
+        super().__init__(base_abc)
 
-        R = fstate_factory.create(b"R", aa_lprobs)
+        R = fstate_factory.create(b"R", null_aminot)
         self._null_model = FrameNullModel(R)
 
         special_node = FrameSpecialNode(
-            S=MuteState(b"S", fstate_factory.bases),
-            N=fstate_factory.create(b"N", aa_lprobs),
-            B=MuteState(b"B", fstate_factory.bases),
-            E=MuteState(b"E", fstate_factory.bases),
-            J=fstate_factory.create(b"J", aa_lprobs),
-            C=fstate_factory.create(b"C", aa_lprobs),
-            T=MuteState(b"T", fstate_factory.bases),
+            S=MuteState(b"S", fstate_factory.base_alphabet),
+            N=fstate_factory.create(b"N", null_aminot),
+            B=MuteState(b"B", fstate_factory.base_alphabet),
+            E=MuteState(b"E", fstate_factory.base_alphabet),
+            J=fstate_factory.create(b"J", null_aminot),
+            C=fstate_factory.create(b"C", null_aminot),
+            T=MuteState(b"T", fstate_factory.base_alphabet),
         )
 
         self._alt_model = FrameAltModel(special_node, nodes_trans)
@@ -94,8 +93,8 @@ class FrameProfile(Profile):
     def alt_model(self) -> FrameAltModel:
         return self._alt_model
 
-    def search(self, seq: bytes) -> FrameSearchResult:
-        self._set_target_length(len(seq))
+    def search(self, seq: CSequence) -> FrameSearchResult:
+        self._set_target_length(seq.length)
         score0 = self.null_model.likelihood(seq)
         score1, path = self.alt_model.viterbi(seq)
         score = score1 - score0
@@ -107,9 +106,8 @@ def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
     base_abc = BaseAlphabet(Alphabet(b"ACGU", b"X"))
     amino_abc = AminoAlphabet(Alphabet(reader.alphabet.encode(), b"X"))
 
-    # prob_list = _create_probability_list(amino_abc.symbols)
-    # null_lprobs = prob_list(reader.insert(0))
-    null_lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
+    lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
+    null_aminot = AminoTable(amino_abc, lprobs)
     ffact = FrameStateFactory(base_abc, amino_abc, GeneticCode(base_abc), epsilon)
 
     nodes_trans: List[Tuple[FrameNode, Transitions]] = []
@@ -130,40 +128,4 @@ def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
 
         nodes_trans.append((node, trans))
 
-    breakpoint()
-    return FrameProfile(ffact, null_lprobs, nodes_trans)
-
-
-# def _infer_codon_lprobs(aminot, gencode: GeneticCode):
-#     from numpy import logaddexp
-
-#     codon_lprobs = []
-#     lprob_norm = LPROB_ZERO
-#     for aa, lprob in aa_lprobs.items():
-
-#         codons = gencode.codons(aa)
-#         if len(codons) == 0:
-#             continue
-
-#         norm = log(len(codons))
-#         for codon in codons:
-#             codon_lprobs.append((codon, lprob - norm))
-#             lprob_norm = logaddexp(lprob_norm, codon_lprobs[-1][1])
-
-#     codon_lprobs = [(i[0], i[1] - lprob_norm) for i in codon_lprobs]
-#     return dict(codon_lprobs)
-
-
-# def _infer_base_lprobs(codon_lprobs, alphabet: Alphabet):
-#     from scipy.special import logsumexp
-
-#     lprobs: Dict[BaseAlphabet, list] = {
-#         BaseAlphabet(sym): [] for sym in alphabet.symbols
-#     }
-#     lprob_norm = log(3)
-#     for codon, lprob in codon_lprobs.items():
-#         lprobs[codon.base(0)] += [lprob - lprob_norm]
-#         lprobs[codon.base(1)] += [lprob - lprob_norm]
-#         lprobs[codon.base(2)] += [lprob - lprob_norm]
-
-#     return {b: logsumexp(lp) for b, lp in lprobs.items()}
+    return FrameProfile(ffact, base_abc, null_aminot, nodes_trans)
