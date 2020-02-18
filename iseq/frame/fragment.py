@@ -1,16 +1,31 @@
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, List
+from math import log
 
-from nmm import SequenceABC
+from nmm import (
+    SequenceABC,
+    MuteState,
+    FrameState,
+    CodonState,
+    Codon,
+    Interval,
+    CBaseAlphabet,
+)
 from ..fragment import Fragment
+from ..codon import CodonFragment, CodonPath
 from .path import FramePath
 from .step import FrameStep
 
 
 class FrameFragment(Fragment):
     def __init__(
-        self, sequence: SequenceABC, path: FramePath, homologous: bool,
+        self,
+        alphabet: CBaseAlphabet,
+        sequence: SequenceABC,
+        path: FramePath,
+        homologous: bool,
     ):
         super().__init__(homologous)
+        self._alphabet = alphabet
         self._sequence = sequence
         self._path = path
 
@@ -25,28 +40,36 @@ class FrameFragment(Fragment):
             yield (self._sequence.symbols[start:end], step)
             start = end
 
-    # def decode(self) -> CodonFragment:
-    #     nseq: List[Codon] = []
-    #     npath = CodonPath()
+    def decode(self) -> CodonFragment:
+        codons: List[Codon] = []
+        steps = []
+        # npath = CodonPath()
 
-    #     start: int = 0
-    #     seq = self.sequence
-    #     for step in self._path.steps():
-    #         if isinstance(step.state, MuteState):
-    #             mstate = MuteState(step.state.name, step.state.alphabet)
-    #             npath.append_codon_step(mstate, 0)
-    #         else:
-    #             assert isinstance(step.state, FrameState)
+        start: int = 0
+        seq = self.sequence
+        for step in self._path:
+            if isinstance(step.state, MuteState):
+                mstate = MuteState(step.state.name, step.state.alphabet)
+                # npath.append_codon_step(mstate, 0)
+                steps.append((mstate, 0))
+            else:
+                assert isinstance(step.state, FrameState)
 
-    #             codon = step.state.decode(seq[start : start + step.seq_len])[0]
-    #             nseq.append(codon)
+                subseq = seq.slice(Interval(start, start + step.seq_len))
+                # codon = step.state.decode(seq[start : start + step.seq_len])[0]
+                codon = Codon(b"XXX", self._alphabet)
+                step.state.decode(subseq, codon)
+                codons.append(codon)
 
-    #             cstate = CodonState(step.state.name, step.state.alphabet, {codon: LOG1})
-    #             npath.append_codon_step(cstate, 3)
+                name = step.state.name
+                abc = step.state.alphabet
+                cstate = CodonState(name, abc, {codon: log(1.0)})
+                # npath.append_codon_step(cstate, 3)
+                steps.append((cstate, 3))
 
-    #         start += step.seq_len
+            start += step.seq_len
 
-    #     return CodonFragment(nseq, npath, self.homologous)
+        return CodonFragment(codons, CodonPath(steps), self.homologous)
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}:{str(self)}>"

@@ -98,7 +98,7 @@ class FrameProfile(Profile):
         score0 = self.null_model.likelihood(seq)
         score1, path = self.alt_model.viterbi(seq)
         score = score1 - score0
-        return FrameSearchResult(score, seq, path)
+        return FrameSearchResult(self._alphabet, score, seq, path)
 
 
 def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
@@ -108,7 +108,9 @@ def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
 
     lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
     null_aminot = AminoTable(amino_abc, lprobs)
-    ffact = FrameStateFactory(base_abc, amino_abc, GeneticCode(base_abc), epsilon)
+    ffact = FrameStateFactory(
+        base_abc, amino_abc, GeneticCode(base_abc, amino_abc), epsilon
+    )
 
     nodes_trans: List[Tuple[FrameNode, Transitions]] = []
 

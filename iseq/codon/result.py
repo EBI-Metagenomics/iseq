@@ -1,35 +1,29 @@
 from typing import List, Sequence
 
-from nmm import Interval, SequenceABC, CBaseAlphabet
+from nmm import Interval, SequenceABC
 
 from ..result import SearchResult
-from .fragment import FrameFragment
-from .path import FramePath
+from .fragment import CodonFragment
+from .path import CodonPath
 
 
-class FrameSearchResult(SearchResult):
-    def __init__(
-        self,
-        alphabet: CBaseAlphabet,
-        loglik: float,
-        sequence: SequenceABC,
-        path: FramePath,
-    ):
+class CodonSearchResult(SearchResult):
+    def __init__(self, loglik: float, sequence: SequenceABC, path: CodonPath):
         self._loglik = loglik
-        self._fragments: List[FrameFragment] = []
+        self._fragments: List[CodonFragment] = []
         self._intervals: List[Interval] = []
 
         steps = list(path)
         for fragi, stepi, homologous in self._create_fragments(path):
             substeps = steps[stepi.start : stepi.stop]
-            fragment_path = FramePath([(s.state, s.seq_len) for s in substeps])
+            fragment_path = CodonPath([(s.state, s.seq_len) for s in substeps])
             seq = sequence.slice(fragi)
-            frag = FrameFragment(alphabet, seq, fragment_path, homologous)
+            frag = CodonFragment(seq, fragment_path, homologous)
             self._fragments.append(frag)
             self._intervals.append(fragi)
 
     @property
-    def fragments(self) -> Sequence[FrameFragment]:
+    def fragments(self) -> Sequence[CodonFragment]:
         return self._fragments
 
     @property
