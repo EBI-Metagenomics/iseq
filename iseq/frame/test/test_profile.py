@@ -1,6 +1,8 @@
 from numpy.testing import assert_allclose, assert_equal
 
-from nmm import GeneticCode, Sequence, BaseAlphabet, Alphabet, StandardAminoAlphabet
+from nmm import GeneticCode
+from nmm.sequence import Sequence
+from nmm.alphabet import BaseAlphabet, StandardAminoAlphabet
 
 from hmmer_reader import open_hmmer
 from iseq.frame import create_profile
@@ -10,7 +12,7 @@ def test_frame_profile_frame1(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile())
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = hmmer.alphabet
     most_likely_rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA".replace(b" ", b"")
     most_likely_seq = Sequence(most_likely_rna_seq, rna_abc)
     r = hmmer.search(most_likely_seq)
@@ -28,7 +30,7 @@ def test_frame_profile_frame2(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile(), epsilon=0.1)
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = BaseAlphabet(hmmer.alphabet, b"X")
     rna_seq = b"AAA AAA AAA CCU GGU AAA GAA GAU AAU AAC AAA"
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence(rna_seq, rna_abc)
@@ -47,7 +49,7 @@ def test_frame_profile_frame3(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile(), epsilon=0.0)
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = BaseAlphabet(hmmer.alphabet, b"X")
     rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA"
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence(rna_seq, rna_abc)
@@ -63,7 +65,7 @@ def test_frame_profile_frame4(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile(), epsilon=0.0)
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = BaseAlphabet(hmmer.alphabet, b"X")
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA"
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence(rna_seq, rna_abc)
@@ -77,7 +79,7 @@ def test_frame_profile_frame5(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile(), epsilon=0.00001)
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = BaseAlphabet(hmmer.alphabet, b"X")
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA"
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence(rna_seq, rna_abc)
@@ -93,7 +95,7 @@ def test_frame_profile_frame6(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile(), epsilon=0.00001)
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = BaseAlphabet(hmmer.alphabet, b"X")
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA GAA GAA CCU GGU AAA GAA GAU AAU AAC AAA GAA GAA GA"
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence(rna_seq, rna_abc)
@@ -127,7 +129,7 @@ def test_frame_profile_codons(PF03373):
     with open_hmmer(PF03373) as reader:
         hmmer = create_profile(reader.read_profile(), epsilon=0.1)
 
-    rna_abc = BaseAlphabet(hmmer.alphabet)
+    rna_abc = BaseAlphabet(hmmer.alphabet, b"X")
     amino_abc = StandardAminoAlphabet()
     gcode = GeneticCode(rna_abc, amino_abc, "standard")
 

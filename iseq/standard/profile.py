@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Sequence, Tuple
 
-from nmm import LPROB_ZERO, Alphabet, CSequence, MuteState, NormalState, lprob_normalize
+from nmm.alphabet import Alphabet
+from nmm.prob import LPROB_ZERO, lprob_normalize
+from nmm.sequence import CSequence
+from nmm.state import MuteState, NormalState
 
 from hmmer_reader import HMMERProfile
 

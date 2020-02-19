@@ -1,8 +1,10 @@
-from typing import Dict
 from math import log
+from typing import Dict
 
-
-from nmm import GeneticCode, AminoTable, LPROB_ZERO, Codon, CodonProb, CBaseAlphabet
+from nmm import GeneticCode
+from nmm.alphabet import CBaseAlphabet
+from nmm.codon import Codon
+from nmm.prob import LPROB_ZERO, AminoTable, CodonProb
 
 
 class FrameCodonProb(CodonProb):

@@ -1,6 +1,8 @@
 from typing import List, Sequence
 
-from nmm import Interval, SequenceABC, CBaseAlphabet
+from nmm import Interval
+from nmm.alphabet import CBaseAlphabet
+from nmm.sequence import SequenceABC
 
 from ..result import SearchResult
 from .fragment import FrameFragment
@@ -23,7 +25,7 @@ class FrameSearchResult(SearchResult):
         for fragi, stepi, homologous in self._create_fragments(path):
             substeps = steps[stepi.start : stepi.stop]
             fragment_path = FramePath([(s.state, s.seq_len) for s in substeps])
-            seq = sequence.slice(fragi)
+            seq = sequence[fragi]
             frag = FrameFragment(alphabet, seq, fragment_path, homologous)
             self._fragments.append(frag)
             self._intervals.append(fragi)

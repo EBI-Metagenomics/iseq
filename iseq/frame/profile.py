@@ -1,20 +1,16 @@
 from typing import List, Sequence, Tuple
 
+from nmm import GeneticCode
+from nmm.alphabet import Alphabet, AminoAlphabet, BaseAlphabet
+from nmm.prob import CodonTable, lprob_normalize, AminoTable
+from nmm.sequence import CSequence
+from nmm.state import FrameState, MuteState
+
 from hmmer_reader import HMMERProfile
 
-from nmm import (
-    Alphabet,
-    AminoAlphabet,
-    BaseAlphabet,
-    CodonTable,
-    GeneticCode,
-    FrameState,
-    MuteState,
-    AminoTable,
-    lprob_normalize,
-    CSequence,
-)
-from .result import FrameSearchResult
+from ..profile import Profile
+from .base_table import FrameBaseTable
+from .codon_prob import FrameCodonProb
 from .model import (
     FrameAltModel,
     FrameNode,
@@ -22,9 +18,7 @@ from .model import (
     FrameSpecialNode,
     Transitions,
 )
-from .codon_prob import FrameCodonProb
-from .base_table import FrameBaseTable
-from ..profile import Profile
+from .result import FrameSearchResult
 
 
 class FrameStateFactory:
@@ -103,8 +97,8 @@ class FrameProfile(Profile):
 
 def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
 
-    base_abc = BaseAlphabet(Alphabet(b"ACGU", b"X"))
-    amino_abc = AminoAlphabet(Alphabet(reader.alphabet.encode(), b"X"))
+    base_abc = BaseAlphabet(b"ACGU", b"X")
+    amino_abc = AminoAlphabet(reader.alphabet.encode(), b"X")
 
     lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
     null_aminot = AminoTable(amino_abc, lprobs)

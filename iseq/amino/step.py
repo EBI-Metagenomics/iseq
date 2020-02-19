@@ -1,6 +1,8 @@
 from typing import Union
 
-from nmm import NormalState, CStep, MuteState, create_imm_step
+from nmm import create_imm_step
+from nmm.path import CStep
+from nmm.state import MuteState, NormalState
 
 
 class AminoStep(CStep):

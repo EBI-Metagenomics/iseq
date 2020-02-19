@@ -1,6 +1,7 @@
 from typing import List, Sequence
 
-from nmm import Interval, SequenceABC
+from nmm import Interval
+from nmm.sequence import SequenceABC
 
 from ..result import SearchResult
 from .fragment import StandardFragment
@@ -17,7 +18,7 @@ class StandardSearchResult(SearchResult):
         for fragi, stepi, homologous in self._create_fragments(path):
             substeps = steps[stepi.start : stepi.stop]
             fragment_path = StandardPath([(s.state, s.seq_len) for s in substeps])
-            seq = sequence.slice(fragi)
+            seq = sequence[fragi]
             frag = StandardFragment(seq, fragment_path, homologous)
             self._fragments.append(frag)
             self._intervals.append(fragi)

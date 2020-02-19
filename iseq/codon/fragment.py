@@ -1,12 +1,15 @@
 from math import log
-from typing import Iterator, Tuple, Sequence, List
+from typing import Iterator, List, Sequence, Tuple
 
-from nmm import SequenceABC, GeneticCode, Codon, MuteState, CodonState, NormalState
+from nmm import GeneticCode
+from nmm.codon import Codon
+from nmm.sequence import SequenceABC
+from nmm.state import CodonState, MuteState, NormalState
+
+from ..amino import AminoFragment, AminoPath
 from ..fragment import Fragment
-from ..amino import AminoPath
 from .path import CodonPath
 from .step import CodonStep
-from ..amino import AminoFragment
 
 
 class CodonFragment(Fragment):

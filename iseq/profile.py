@@ -1,6 +1,7 @@
 from math import log
 
-from nmm import LPROB_ZERO, CAlphabet
+from nmm.alphabet import CAlphabet
+from nmm.prob import LPROB_ZERO
 
 from .model import AltModel, NullModel
 from .result import SearchResult

@@ -1,6 +1,8 @@
 from typing import Union
 
-from nmm import CStep, MuteState, CodonState, create_imm_step
+from nmm import create_imm_step
+from nmm.path import CStep
+from nmm.state import CodonState, MuteState
 
 
 class CodonStep(CStep):

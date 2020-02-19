@@ -1,6 +1,7 @@
 from typing import List, Sequence
 
-from nmm import Interval, SequenceABC
+from nmm import Interval
+from nmm.sequence import SequenceABC
 
 from ..result import SearchResult
 from .fragment import CodonFragment

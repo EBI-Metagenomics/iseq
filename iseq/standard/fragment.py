@@ -1,6 +1,6 @@
 from typing import Iterator, Tuple
 
-from nmm import SequenceABC
+from nmm.sequence import SequenceABC
 
 from ..fragment import Fragment
 from .path import StandardPath
@@ -36,7 +36,7 @@ class StandardFragment(Fragment):
         start = end = 0
         for step in self._path:
             end += step.seq_len
-            yield (self._sequence.symbols[start:end], step)
+            yield (self._sequence[start:end], step)
             start = end
 
     def __repr__(self) -> str:

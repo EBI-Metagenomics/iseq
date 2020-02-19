@@ -1,17 +1,14 @@
-from typing import Iterator, Tuple, List
 from math import log
+from typing import Iterator, List, Tuple
 
-from nmm import (
-    SequenceABC,
-    MuteState,
-    FrameState,
-    CodonState,
-    Codon,
-    Interval,
-    CBaseAlphabet,
-)
-from ..fragment import Fragment
+from nmm import Interval
+from nmm.alphabet import CBaseAlphabet
+from nmm.codon import Codon
+from nmm.sequence import SequenceABC
+from nmm.state import CodonState, FrameState, MuteState
+
 from ..codon import CodonFragment, CodonPath
+from ..fragment import Fragment
 from .path import FramePath
 from .step import FrameStep
 
@@ -55,7 +52,7 @@ class FrameFragment(Fragment):
             else:
                 assert isinstance(step.state, FrameState)
 
-                subseq = seq.slice(Interval(start, start + step.seq_len))
+                subseq = seq[Interval(start, start + step.seq_len)]
                 # codon = step.state.decode(seq[start : start + step.seq_len])[0]
                 codon = Codon(b"XXX", self._alphabet)
                 step.state.decode(subseq, codon)

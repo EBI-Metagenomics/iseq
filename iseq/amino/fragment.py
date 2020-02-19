@@ -1,6 +1,9 @@
-from typing import Iterator, Tuple, Sequence
+from typing import Iterator, Sequence, Tuple
 
-from nmm import SequenceABC, GeneticCode, MuteState, NormalState
+from nmm.sequence import SequenceABC
+from nmm.state import MuteState, NormalState
+
+
 from ..fragment import Fragment
 from .path import AminoPath
 from .step import AminoStep

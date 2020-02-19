@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, Tuple
 
-from nmm import CStep, SequenceABC
+from nmm.path import CStep
+from nmm.sequence import SequenceABC
 
 
 class Fragment(ABC):
@@ -33,4 +34,4 @@ class Fragment(ABC):
         return self._homologous
 
     def __str__(self) -> str:
-        return f"[{self.sequence.symbols.decode()}]"
+        return f"[{self.sequence}]"

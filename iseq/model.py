@@ -2,7 +2,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Sequence, Tuple
 
-from nmm import HMM, LPROB_ZERO, CResults, CSequence, CState, MuteState, Path
+from nmm import HMM
+from nmm.path import Path, Step
+from nmm.prob import LPROB_ZERO
+from nmm.result import CResults
+from nmm.sequence import CSequence
+from nmm.state import CState, MuteState
 
 
 @dataclass
@@ -115,7 +120,7 @@ class NullModel(ABC):
         self._hmm.set_transition(self.state, self.state, lprob)
 
     def likelihood(self, sequence: CSequence):
-        path = Path([(self.state, 1) for i in range(sequence.length)])
+        path = Path([Step(self.state, 1) for i in range(sequence.length)])
         return self._hmm.likelihood(sequence, path)
 
 

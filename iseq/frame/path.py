@@ -1,6 +1,8 @@
 from typing import Sequence, Tuple, Union
 
-from nmm import CPath, FrameState, MuteState, create_imm_path
+from nmm import create_imm_path
+from nmm.path import CPath
+from nmm.state import FrameState, MuteState
 
 from .step import FrameStep
 

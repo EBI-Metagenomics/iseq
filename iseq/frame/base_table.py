@@ -1,11 +1,8 @@
 from math import log
 
+from nmm.codon import codon_iter
+from nmm.prob import LPROB_ZERO, BaseTable
 
-from nmm import (
-    BaseTable,
-    codon_iter,
-    LPROB_ZERO,
-)
 from .codon_prob import CodonProb
 
 

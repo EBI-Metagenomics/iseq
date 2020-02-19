@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from nmm import CPath, Interval
+from nmm import Interval
+from nmm.path import CPath
 
 from .fragment import Fragment
 

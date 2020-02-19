@@ -1,6 +1,8 @@
 from typing import Dict, List, Sequence, Tuple, Union
 
-from nmm import CData, CSequence, MuteState, NormalState
+from nmm import CData
+from nmm.sequence import CSequence
+from nmm.state import MuteState, NormalState
 
 from ..model import AltModel, Node, NullModel, SpecialNode, Transitions
 from .path import StandardPath
