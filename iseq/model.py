@@ -1,11 +1,9 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Sequence, Tuple, Generic, TypeVar, List, Union, Dict
 
 from nmm import HMM, CData
 from nmm.path import Path, Step
 from nmm.prob import LPROB_ZERO
-from nmm.result import CResults
 from nmm.sequence import CSequence
 from nmm.state import CState, MuteState
 
