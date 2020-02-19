@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, List, Sequence, Tuple
 
 from nmm import CData
 from nmm.sequence import CSequence
@@ -6,6 +6,8 @@ from nmm.state import MuteState, NormalState
 
 from ..model import AltModel, Node, NullModel, SpecialNode, Transitions
 from .path import StandardPath
+from .state import UState
+from .step import StandardStep
 
 
 class StandardNode(Node):
@@ -26,7 +28,7 @@ class StandardNode(Node):
     def D(self) -> MuteState:
         return self._D
 
-    def states(self) -> List[Union[MuteState, NormalState]]:
+    def states(self) -> List[UState]:
         return [self._M, self._I, self._D]
 
 
@@ -77,7 +79,7 @@ class StandardSpecialNode(SpecialNode):
     def T(self) -> MuteState:
         return self._T
 
-    def states(self) -> List[Union[MuteState, NormalState]]:
+    def states(self) -> List[UState]:
         return [self._S, self._N, self._B, self._E, self._J, self._C, self._T]
 
 
@@ -99,7 +101,7 @@ class StandardAltModel(AltModel):
     ):
         self._special_node = special_node
         self._core_nodes = [nt[0] for nt in nodes_trans]
-        self._states: Dict[CData, Union[MuteState, NormalState]] = {}
+        self._states: Dict[CData, UState] = {}
 
         for node in self._core_nodes:
             for state in node.states():
@@ -132,7 +134,10 @@ class StandardAltModel(AltModel):
         path = results[0].path
         score = results[0].loglikelihood
 
-        steps = [(self._states[step.state.imm_state], step.seq_len) for step in path]
+        steps = [
+            StandardStep(self._states[step.state.imm_state], step.seq_len)
+            for step in path
+        ]
         new_path = StandardPath(steps)
 
         return (score, new_path)
