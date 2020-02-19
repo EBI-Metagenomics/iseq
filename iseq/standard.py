@@ -1,21 +1,28 @@
-from typing import Any, Dict, List, Sequence, Tuple
-
-from nmm.alphabet import Alphabet
-from nmm.prob import LPROB_ZERO, lprob_normalize
-from nmm.sequence import CSequence
-from nmm.state import MuteState, NormalState
+from typing import TypeVar, Union, Tuple, Sequence, List
 
 from hmmer_reader import HMMERProfile
+from nmm.prob import lprob_normalize
+from nmm.alphabet import CAlphabet, Alphabet
+from nmm.path import Path, Step
+from nmm.state import MuteState, NormalState
+from nmm.sequence import CSequence
 
-from ..profile import Profile
-from .model import (
-    StandardAltModel,
-    StandardNode,
-    StandardNullModel,
-    StandardSpecialNode,
-    Transitions,
-)
-from .result import StandardSearchResult
+from .fragment import Fragment
+from .model import AltModel, Node, NullModel, SpecialNode, Transitions
+from .result import SearchResult
+from .profile import Profile
+
+TAlphabet = TypeVar("TAlphabet", bound=CAlphabet)
+
+StandardFragment = Fragment[TAlphabet, Union[NormalState, MuteState]]
+StandardStep = Step[Union[NormalState, MuteState]]
+StandardPath = Path[StandardStep]
+StandardSearchResult = SearchResult[TAlphabet, Union[NormalState, MuteState]]
+
+StandardNode = Node[NormalState]
+StandardSpecialNode = SpecialNode[NormalState]
+StandardNullModel = NullModel[NormalState]
+StandardAltModel = AltModel[NormalState]
 
 
 class StandardProfile(Profile):
@@ -62,14 +69,16 @@ def create_profile(reader: HMMERProfile) -> StandardProfile:
 
     alphabet = Alphabet(reader.alphabet.encode(), b"X")
 
-    prob_list = _create_probability_list(alphabet.symbols)
-    null_lprobs = prob_list(reader.insert(0))
+    null_lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
 
     nodes_trans: List[Tuple[StandardNode, Transitions]] = []
 
     for m in range(1, reader.M + 1):
-        M = NormalState(f"M{m}".encode(), alphabet, prob_list(reader.match(m)))
-        I = NormalState(f"I{m}".encode(), alphabet, prob_list(reader.insert(m)))
+        lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
+        M = NormalState(f"M{m}".encode(), alphabet, lprobs)
+
+        lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
+        I = NormalState(f"I{m}".encode(), alphabet, lprobs)
         D = MuteState(f"D{m}".encode(), alphabet)
 
         node = StandardNode(M, I, D)
@@ -80,15 +89,3 @@ def create_profile(reader: HMMERProfile) -> StandardProfile:
         nodes_trans.append((node, trans))
 
     return StandardProfile(alphabet, null_lprobs, nodes_trans)
-
-
-def _create_probability_list(symbols: bytes):
-    def probability_list(lprob_table: Dict[str, Any]):
-        probs = []
-        for i in range(len(symbols)):
-            key = symbols[i : i + 1].decode()
-            probs.append(lprob_table.get(key, LPROB_ZERO))
-
-        return lprob_normalize(probs)
-
-    return probability_list

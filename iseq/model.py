@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Generic, TypeVar, List, Union, Dict
 
-from nmm import HMM
+from nmm import HMM, CData
 from nmm.path import Path, Step
 from nmm.prob import LPROB_ZERO
 from nmm.result import CResults
 from nmm.sequence import CSequence
 from nmm.state import CState, MuteState
+
+TEmissionState = TypeVar("TEmissionState", bound=CState)
 
 
 @dataclass
@@ -52,69 +54,88 @@ class SpecialTransitions:
     ME: float = 0.0
 
 
-class Node(ABC):
-    @property
-    @abstractmethod
-    def M(self) -> CState:
-        raise NotImplementedError()
+class Node(Generic[TEmissionState]):
+    def __init__(self, M: TEmissionState, I: TEmissionState, D: MuteState):
+        self._M = M
+        self._I = I
+        self._D = D
 
     @property
-    @abstractmethod
-    def I(self) -> CState:
-        raise NotImplementedError()
+    def M(self) -> TEmissionState:
+        return self._M
 
     @property
-    @abstractmethod
-    def D(self) -> CState:
-        raise NotImplementedError()
+    def I(self) -> TEmissionState:
+        return self._I
 
-
-class SpecialNode(ABC):
     @property
-    @abstractmethod
+    def D(self) -> MuteState:
+        return self._D
+
+    def states(self) -> List[Union[TEmissionState, MuteState]]:
+        return [self._M, self._I, self._D]
+
+
+class SpecialNode(Generic[TEmissionState]):
+    def __init__(
+        self,
+        S: MuteState,
+        N: TEmissionState,
+        B: MuteState,
+        E: MuteState,
+        J: TEmissionState,
+        C: TEmissionState,
+        T: MuteState,
+    ):
+        self._S = S
+        self._N = N
+        self._B = B
+        self._E = E
+        self._J = J
+        self._C = C
+        self._T = T
+
+    @property
     def S(self) -> MuteState:
-        raise NotImplementedError()
+        return self._S
 
     @property
-    @abstractmethod
-    def N(self) -> CState:
-        raise NotImplementedError()
+    def N(self) -> TEmissionState:
+        return self._N
 
     @property
-    @abstractmethod
     def B(self) -> MuteState:
-        raise NotImplementedError()
+        return self._B
 
     @property
-    @abstractmethod
     def E(self) -> MuteState:
-        raise NotImplementedError()
+        return self._E
 
     @property
-    @abstractmethod
-    def J(self) -> CState:
-        raise NotImplementedError()
+    def J(self) -> TEmissionState:
+        return self._J
 
     @property
-    @abstractmethod
-    def C(self) -> CState:
-        raise NotImplementedError()
+    def C(self) -> TEmissionState:
+        return self._C
 
     @property
-    @abstractmethod
     def T(self) -> MuteState:
-        raise NotImplementedError()
+        return self._T
+
+    def states(self) -> List[Union[TEmissionState, MuteState]]:
+        return [self._S, self._N, self._B, self._E, self._J, self._C, self._T]
 
 
-class NullModel(ABC):
-    def __init__(self, state: CState):
+class NullModel(Generic[TEmissionState]):
+    def __init__(self, state: TEmissionState):
         self._hmm = HMM(state.alphabet)
         self._hmm.add_state(state, 0.0)
+        self._state = state
 
     @property
-    @abstractmethod
-    def state(self) -> CState:
-        raise NotImplementedError()
+    def state(self) -> TEmissionState:
+        return self._state
 
     def set_transition(self, lprob: float):
         self._hmm.set_transition(self.state, self.state, lprob)
@@ -124,12 +145,23 @@ class NullModel(ABC):
         return self._hmm.likelihood(sequence, path)
 
 
-class AltModel(ABC):
+class AltModel(Generic[TEmissionState]):
     def __init__(
         self,
         special_node: SpecialNode,
-        core_nodes_trans: Sequence[Tuple[Node, Transitions]],
+        nodes_trans: Sequence[Tuple[Node, Transitions]],
     ):
+        self._special_node = special_node
+        self._core_nodes = [nt[0] for nt in nodes_trans]
+        self._states: Dict[CData, Union[TEmissionState, MuteState]] = {}
+
+        for node in self._core_nodes:
+            for state in node.states():
+                self._states[state.imm_state] = state
+
+        for state in special_node.states():
+            self._states[state.imm_state] = state
+
         hmm = HMM(special_node.S.alphabet)
         hmm.add_state(special_node.S, 0.0)
         hmm.add_state(special_node.N)
@@ -141,14 +173,14 @@ class AltModel(ABC):
 
         self._special_transitions = SpecialTransitions()
 
-        if len(core_nodes_trans) > 0:
-            node, trans = core_nodes_trans[0]
+        if len(nodes_trans) > 0:
+            node, trans = nodes_trans[0]
             hmm.add_state(node.M)
             hmm.add_state(node.I)
             hmm.add_state(node.D)
             prev = node
 
-            for node, trans in core_nodes_trans[1:]:
+            for node, trans in nodes_trans[1:]:
                 hmm.add_state(node.M)
                 hmm.add_state(node.I)
                 hmm.add_state(node.D)
@@ -167,23 +199,35 @@ class AltModel(ABC):
     def set_transition(self, a: CState, b: CState, lprob: float):
         self._hmm.set_transition(a, b, lprob)
 
-    @abstractmethod
     def core_nodes(self) -> Sequence[Node]:
-        raise NotImplementedError()
+        return self._core_nodes
 
     @property
-    @abstractmethod
     def special_node(self) -> SpecialNode:
-        raise NotImplementedError()
+        return self._special_node
 
     @property
     def special_transitions(self) -> SpecialTransitions:
         return self._special_transitions
 
     @property
-    @abstractmethod
     def length(self) -> int:
-        raise NotImplementedError()
+        return len(self._core_nodes)
 
-    def viterbi(self, seq: CSequence, window_length: int = 0) -> CResults:
-        return self._hmm.viterbi(seq, self.special_node.T, window_length)
+    def viterbi(
+        self, seq: CSequence, window_length: int = 0
+    ) -> Tuple[float, Path[Step[Union[TEmissionState, MuteState]]]]:
+
+        results = self._hmm.viterbi(seq, self.special_node.T, window_length)
+        # TODO: implement multiple windows
+        assert len(results) == 1
+
+        path = results[0].path
+        score = results[0].loglikelihood
+
+        steps = [
+            Step(self._states[step.state.imm_state], step.seq_len) for step in path
+        ]
+        new_path = Path(steps)
+
+        return (score, new_path)

@@ -111,7 +111,6 @@ def test_standard_profile_multihit_homologous1(PF03373):
     assert_equal(frags[4].homologous, False)
     assert_equal(bytes(frags[4].sequence), b"EEEE")
 
-    breakpoint()
     items = list(iter(frags[0]))
 
     assert_equal(bytes(items[0].sequence), b"")
@@ -125,7 +124,7 @@ def test_standard_profile_multihit_homologous1(PF03373):
     assert_equal(bytes(items[4].sequence), b"")
     assert_equal(str(items[4].step), "<B,0>")
 
-    items = list(frags[1].items())
+    items = list(frags[1])
 
     assert_equal(bytes(items[0].sequence), b"P")
     assert_equal(str(items[0].step), "<M1,1>")
