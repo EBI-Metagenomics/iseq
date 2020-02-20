@@ -58,7 +58,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
     def alt_model(self) -> StandardAltModel:
         return self._alt_model
 
-    def search(self, sequence: Sequence) -> StandardSearchResult:
+    def search(self, sequence: Sequence[TAlphabet]) -> StandardSearchResult:
         score, path = self._search(sequence)
         return StandardSearchResult(score, sequence, path, _create_fragment)
 
