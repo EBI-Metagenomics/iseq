@@ -1,20 +1,27 @@
-from typing import Generic, Iterable, List, Sequence, Tuple, TypeVar
+from typing import Generic, Iterable, List, Tuple, TypeVar, Callable
 
 from nmm import Interval
-from nmm.alphabet import CAlphabet
-from nmm.path import CPath, Path, Step
+from nmm.alphabet import Alphabet
+from nmm.path import Path, Step
 from nmm.sequence import SequenceABC
-from nmm.state import CState
+from nmm.state import State
 
 from .fragment import Fragment
 
-TAlphabet = TypeVar("TAlphabet", bound=CAlphabet)
-TState = TypeVar("TState", bound=CState)
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+TState = TypeVar("TState", bound=State)
+create_fragment_type = Callable[
+    [SequenceABC[TAlphabet], Path[Step[TState]], bool], Fragment[TAlphabet, TState]
+]
 
 
 class SearchResult(Generic[TAlphabet, TState]):
     def __init__(
-        self, loglik: float, sequence: SequenceABC[TAlphabet], path: Path[Step[TState]]
+        self,
+        loglik: float,
+        sequence: SequenceABC[TAlphabet],
+        path: Path[Step[TState]],
+        create_fragment: create_fragment_type,
     ):
         self._loglik = loglik
         self._fragments: List[Fragment[TAlphabet, TState]] = []
@@ -23,18 +30,19 @@ class SearchResult(Generic[TAlphabet, TState]):
         steps = list(path)
         for fragi, stepi, homologous in _create_fragments(path):
             substeps = steps[stepi.start : stepi.stop]
-            fragment_path = Path([Step(s.state, s.seq_len) for s in substeps])
+            new_steps = [Step.create(s.state, s.seq_len) for s in substeps]
+            new_path = Path.create(new_steps)
             seq = sequence[fragi]
-            frag: Fragment[TAlphabet, TState] = Fragment(seq, fragment_path, homologous)
+            frag = create_fragment(seq, new_path, homologous)
             self._fragments.append(frag)
             self._intervals.append(fragi)
 
     @property
-    def fragments(self) -> Sequence[Fragment[TAlphabet, TState]]:
+    def fragments(self) -> List[Fragment[TAlphabet, TState]]:
         return self._fragments
 
     @property
-    def intervals(self) -> Sequence[Interval]:
+    def intervals(self) -> List[Interval]:
         return self._intervals
 
     @property
@@ -45,7 +53,7 @@ class SearchResult(Generic[TAlphabet, TState]):
         return f"<{self.__class__.__name__}:{str(self)}>"
 
 
-def _create_fragments(path: CPath) -> Iterable[Tuple[Interval, Interval, bool]]:
+def _create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
 
     frag_start = frag_stop = 0
     step_start = step_stop = 0

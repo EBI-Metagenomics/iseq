@@ -1,24 +1,24 @@
 from dataclasses import dataclass
-from typing import Sequence, Tuple, Generic, TypeVar, List, Union, Dict
+from typing import Dict, Generic, List, Tuple, TypeVar, Union
 
 from nmm import HMM, CData
 from nmm.path import Path, Step
-from nmm.prob import LPROB_ZERO
-from nmm.sequence import CSequence
-from nmm.state import CState, MuteState
+from nmm.prob import lprob_zero
+from nmm.sequence import Sequence
+from nmm.state import MuteState, State
 
-TEmissionState = TypeVar("TEmissionState", bound=CState)
+TState = TypeVar("TState", bound=State)
 
 
 @dataclass
 class Transitions:
-    MM: float = LPROB_ZERO
-    MI: float = LPROB_ZERO
-    MD: float = LPROB_ZERO
-    IM: float = LPROB_ZERO
-    II: float = LPROB_ZERO
-    DM: float = LPROB_ZERO
-    DD: float = LPROB_ZERO
+    MM: float = lprob_zero()
+    MI: float = lprob_zero()
+    MD: float = lprob_zero()
+    IM: float = lprob_zero()
+    II: float = lprob_zero()
+    DM: float = lprob_zero()
+    DD: float = lprob_zero()
 
     def normalize(self):
         from numpy import logaddexp
@@ -52,37 +52,37 @@ class SpecialTransitions:
     ME: float = 0.0
 
 
-class Node(Generic[TEmissionState]):
-    def __init__(self, M: TEmissionState, I: TEmissionState, D: MuteState):
+class Node(Generic[TState]):
+    def __init__(self, M: TState, I: TState, D: MuteState):
         self._M = M
         self._I = I
         self._D = D
 
     @property
-    def M(self) -> TEmissionState:
+    def M(self) -> TState:
         return self._M
 
     @property
-    def I(self) -> TEmissionState:
+    def I(self) -> TState:
         return self._I
 
     @property
     def D(self) -> MuteState:
         return self._D
 
-    def states(self) -> List[Union[TEmissionState, MuteState]]:
+    def states(self) -> List[Union[TState, MuteState]]:
         return [self._M, self._I, self._D]
 
 
-class SpecialNode(Generic[TEmissionState]):
+class SpecialNode(Generic[TState]):
     def __init__(
         self,
         S: MuteState,
-        N: TEmissionState,
+        N: TState,
         B: MuteState,
         E: MuteState,
-        J: TEmissionState,
-        C: TEmissionState,
+        J: TState,
+        C: TState,
         T: MuteState,
     ):
         self._S = S
@@ -98,7 +98,7 @@ class SpecialNode(Generic[TEmissionState]):
         return self._S
 
     @property
-    def N(self) -> TEmissionState:
+    def N(self) -> TState:
         return self._N
 
     @property
@@ -110,48 +110,47 @@ class SpecialNode(Generic[TEmissionState]):
         return self._E
 
     @property
-    def J(self) -> TEmissionState:
+    def J(self) -> TState:
         return self._J
 
     @property
-    def C(self) -> TEmissionState:
+    def C(self) -> TState:
         return self._C
 
     @property
     def T(self) -> MuteState:
         return self._T
 
-    def states(self) -> List[Union[TEmissionState, MuteState]]:
+    def states(self) -> List[Union[TState, MuteState]]:
         return [self._S, self._N, self._B, self._E, self._J, self._C, self._T]
 
 
-class NullModel(Generic[TEmissionState]):
-    def __init__(self, state: TEmissionState):
+class NullModel(Generic[TState]):
+    def __init__(self, state: TState):
         self._hmm = HMM(state.alphabet)
         self._hmm.add_state(state, 0.0)
         self._state = state
 
     @property
-    def state(self) -> TEmissionState:
+    def state(self) -> TState:
         return self._state
 
     def set_transition(self, lprob: float):
         self._hmm.set_transition(self.state, self.state, lprob)
 
-    def likelihood(self, sequence: CSequence):
-        path = Path([Step(self.state, 1) for i in range(sequence.length)])
+    def likelihood(self, sequence: Sequence):
+        steps = [Step.create(self.state, 1) for i in range(len(sequence))]
+        path = Path.create(steps)
         return self._hmm.likelihood(sequence, path)
 
 
-class AltModel(Generic[TEmissionState]):
+class AltModel(Generic[TState]):
     def __init__(
-        self,
-        special_node: SpecialNode,
-        nodes_trans: Sequence[Tuple[Node, Transitions]],
+        self, special_node: SpecialNode, nodes_trans: List[Tuple[Node, Transitions]],
     ):
         self._special_node = special_node
         self._core_nodes = [nt[0] for nt in nodes_trans]
-        self._states: Dict[CData, Union[TEmissionState, MuteState]] = {}
+        self._states: Dict[CData, Union[TState, MuteState]] = {}
 
         for node in self._core_nodes:
             for state in node.states():
@@ -194,10 +193,10 @@ class AltModel(Generic[TEmissionState]):
 
         self._hmm = hmm
 
-    def set_transition(self, a: CState, b: CState, lprob: float):
+    def set_transition(self, a: State, b: State, lprob: float):
         self._hmm.set_transition(a, b, lprob)
 
-    def core_nodes(self) -> Sequence[Node]:
+    def core_nodes(self) -> List[Node]:
         return self._core_nodes
 
     @property
@@ -213,8 +212,8 @@ class AltModel(Generic[TEmissionState]):
         return len(self._core_nodes)
 
     def viterbi(
-        self, seq: CSequence, window_length: int = 0
-    ) -> Tuple[float, Path[Step[Union[TEmissionState, MuteState]]]]:
+        self, seq: Sequence, window_length: int = 0
+    ) -> Tuple[float, Path[Step[Union[TState, MuteState]]]]:
 
         results = self._hmm.viterbi(seq, self.special_node.T, window_length)
         # TODO: implement multiple windows
@@ -223,9 +222,7 @@ class AltModel(Generic[TEmissionState]):
         path = results[0].path
         score = results[0].loglikelihood
 
-        steps = [
-            Step(self._states[step.state.imm_state], step.seq_len) for step in path
-        ]
-        new_path = Path(steps)
+        states = self._states
+        steps = [Step.create(states[s.state.imm_state], s.seq_len) for s in path]
 
-        return (score, new_path)
+        return (score, Path.create(steps))

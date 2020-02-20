@@ -1,6 +1,6 @@
 from typing import Union, TypeVar, Sequence
 
-from nmm.alphabet import CAlphabet
+from nmm.alphabet import Alphabet
 from nmm.state import CodonState, MuteState
 from nmm.sequence import SequenceABC
 from nmm.path import Step, Path
@@ -11,7 +11,7 @@ from .fragment import Fragment
 CodonStep = Step[Union[CodonState, MuteState]]
 CodonPath = Path[CodonStep]
 
-TAlphabet = TypeVar("TAlphabet", bound=CAlphabet)
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
 
 class CodonFragment(Fragment[TAlphabet, Union[CodonState, MuteState]]):

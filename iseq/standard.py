@@ -1,23 +1,24 @@
-from typing import TypeVar, Union, Tuple, Sequence, List
+from typing import List, Tuple, TypeVar
+
+from nmm.alphabet import Alphabet
+from nmm.path import Path, Step
+from nmm.prob import lprob_normalize
+from nmm.sequence import Sequence, SequenceABC
+from nmm.state import MuteState, NormalState
 
 from hmmer_reader import HMMERProfile
-from nmm.prob import lprob_normalize
-from nmm.alphabet import CAlphabet, Alphabet
-from nmm.path import Path, Step
-from nmm.state import MuteState, NormalState
-from nmm.sequence import CSequence
 
 from .fragment import Fragment
 from .model import AltModel, Node, NullModel, SpecialNode, Transitions
-from .result import SearchResult
 from .profile import Profile
+from .result import SearchResult
 
-TAlphabet = TypeVar("TAlphabet", bound=CAlphabet)
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
-StandardFragment = Fragment[TAlphabet, Union[NormalState, MuteState]]
-StandardStep = Step[Union[NormalState, MuteState]]
-StandardPath = Path[StandardStep]
-StandardSearchResult = SearchResult[TAlphabet, Union[NormalState, MuteState]]
+StandardFragment = Fragment[TAlphabet, NormalState]
+# StandardStep = Step[Union[NormalState, MuteState]]
+# StandardPath = Path[StandardStep]
+StandardSearchResult = SearchResult[TAlphabet, NormalState]
 
 StandardNode = Node[NormalState]
 StandardSpecialNode = SpecialNode[NormalState]
@@ -25,12 +26,12 @@ StandardNullModel = NullModel[NormalState]
 StandardAltModel = AltModel[NormalState]
 
 
-class StandardProfile(Profile):
+class StandardProfile(Profile[TAlphabet, NormalState]):
     def __init__(
         self,
         alphabet: Alphabet,
-        null_lprobs: Sequence[float],
-        nodes_trans: Sequence[Tuple[StandardNode, Transitions]],
+        null_lprobs: List[float],
+        nodes_trans: List[Tuple[StandardNode, Transitions]],
     ):
         super().__init__(alphabet)
         R = NormalState(b"R", alphabet, null_lprobs)
@@ -57,17 +58,20 @@ class StandardProfile(Profile):
     def alt_model(self) -> StandardAltModel:
         return self._alt_model
 
-    def search(self, seq: CSequence) -> StandardSearchResult:
-        self._set_target_length(seq.length)
-        score0 = self.null_model.likelihood(seq)
-        score1, path = self.alt_model.viterbi(seq)
-        score = score1 - score0
-        return StandardSearchResult(score, seq, path)
+    def search(self, sequence: Sequence) -> StandardSearchResult:
+        score, path = self._search(sequence)
+        return StandardSearchResult(score, sequence, path, _create_fragment)
+
+
+def _create_fragment(
+    sequence: SequenceABC[TAlphabet], path: Path[Step[NormalState]], homologous: bool
+):
+    return StandardFragment(sequence, path, homologous)
 
 
 def create_profile(reader: HMMERProfile) -> StandardProfile:
 
-    alphabet = Alphabet(reader.alphabet.encode(), b"X")
+    alphabet = Alphabet.create(reader.alphabet.encode(), b"X")
 
     null_lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
 

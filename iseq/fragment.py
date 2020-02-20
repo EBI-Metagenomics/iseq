@@ -1,20 +1,20 @@
 from typing import TypeVar
 
-from nmm.alphabet import CAlphabet
-from nmm.state import CState
-from nmm.path import CStep, CPath
-from nmm.sequence import SequenceABC
+from nmm.alphabet import Alphabet
 from nmm.fragment import Fragment as FragmentBase
+from nmm.path import Path, Step
+from nmm.sequence import SequenceABC
+from nmm.state import State
 
-TAlphabet = TypeVar("TAlphabet", bound=CAlphabet)
-TState = TypeVar("TState", bound=CState)
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+TState = TypeVar("TState", bound=State)
 
 
 class Fragment(FragmentBase[TAlphabet, TState]):
     """
     Fragment of a sequence.
 
-    Fragment is path with homology information.
+    Fragment is a sequence path with homology information.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ class Fragment(FragmentBase[TAlphabet, TState]):
     def __init__(
         self,
         sequence: SequenceABC[TAlphabet],
-        path: CPath[CStep[TState]],
+        path: Path[Step[TState]],
         homologous: bool,
     ):
         super().__init__(sequence, path)

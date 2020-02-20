@@ -1,14 +1,22 @@
+from abc import ABC, abstractmethod
 from math import log
+from typing import Generic, Tuple, TypeVar
 
-from nmm.alphabet import CAlphabet
-from nmm.prob import LPROB_ZERO
+from nmm.alphabet import Alphabet
+from nmm.path import Path, Step
+from nmm.prob import lprob_zero
+from nmm.sequence import Sequence
+from nmm.state import State
 
 from .model import AltModel, NullModel
 from .result import SearchResult
 
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+TState = TypeVar("TState", bound=State)
 
-class Profile:
-    def __init__(self, alphabet: CAlphabet):
+
+class Profile(Generic[TAlphabet, TState], ABC):
+    def __init__(self, alphabet: Alphabet):
         self._alphabet = alphabet
         self._multiple_hits: bool = True
 
@@ -32,9 +40,17 @@ class Profile:
     def multiple_hits(self, multiple_hits: bool):
         self._multiple_hits = multiple_hits
 
-    def search(self, seq: bytes) -> SearchResult:
-        del seq
+    @abstractmethod
+    def search(self, sequence: Sequence) -> SearchResult[TAlphabet, TState]:
+        del sequence
         raise NotImplementedError()
+
+    def _search(self, sequence: Sequence) -> Tuple[float, Path[Step[TState]]]:
+        self._set_target_length(len(sequence))
+        score0 = self.null_model.likelihood(sequence)
+        score1, path = self.alt_model.viterbi(sequence)
+        score = score1 - score0
+        return score, path
 
     def _set_fragment_length(self):
         if self.alt_model.length == 0:
@@ -64,7 +80,7 @@ class Profile:
         if self._multiple_hits:
             l1q = lq = -log(2)
         else:
-            lq = LPROB_ZERO
+            lq = lprob_zero()
             l1q = log(1.0)
 
         q = exp(lq)

@@ -1,8 +1,7 @@
+from nmm.sequence import Sequence
 from numpy.testing import assert_allclose, assert_equal
 
 from hmmer_reader import open_hmmer
-
-from nmm.sequence import Sequence
 from iseq.standard import create_profile
 
 
@@ -11,7 +10,7 @@ def test_standard_profile_unihit_homologous_1(PF03373):
         hmmer = create_profile(reader.read_profile())
 
     alphabet = hmmer.alphabet
-    most_likely_seq = Sequence(b"PGKEDNNK", alphabet)
+    most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
     r = hmmer.search(most_likely_seq)
 
     assert_allclose(r.loglikelihood, 11.867796719423442)
@@ -36,7 +35,7 @@ def test_standard_profile_unihit_homologous_2(PF03373):
         hmmer = create_profile(reader.read_profile())
 
     alphabet = hmmer.alphabet
-    seq = Sequence(b"PGKENNK", alphabet)
+    seq = Sequence.create(b"PGKENNK", alphabet)
     r = hmmer.search(seq)
     assert_allclose(r.loglikelihood, 3.299501501364073)
     frags = r.fragments
@@ -52,7 +51,7 @@ def test_standard_profile_unihit_homologous_3(PF03373):
         hmmer = create_profile(reader.read_profile())
 
     alphabet = hmmer.alphabet
-    seq = Sequence(b"PGKEPNNK", alphabet)
+    seq = Sequence.create(b"PGKEPNNK", alphabet)
     r = hmmer.search(seq)
     assert_allclose(r.loglikelihood, 6.883636719423446)
     frags = r.fragments
@@ -67,7 +66,7 @@ def test_standard_profile_nonhomo_and_homologous(PF03373):
         hmmer = create_profile(reader.read_profile())
 
     alphabet = hmmer.alphabet
-    seq = Sequence(b"KKKPGKEDNNK", alphabet)
+    seq = Sequence.create(b"KKKPGKEDNNK", alphabet)
     assert_equal(hmmer.multiple_hits, True)
     r = hmmer.search(seq)
     assert_allclose(r.loglikelihood, 10.707618955640605)
@@ -95,7 +94,7 @@ def test_standard_profile_multihit_homologous1(PF03373):
         hmmer = create_profile(reader.read_profile())
 
     alphabet = hmmer.alphabet
-    seq = Sequence(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)
+    seq = Sequence.create(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)
     r = hmmer.search(seq)
     assert_allclose(r.loglikelihood, 20.329227532144742)
     frags = r.fragments
