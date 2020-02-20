@@ -1,5 +1,5 @@
 from math import log
-from typing import TypeVar, Union, Tuple, Sequence, List
+from typing import TypeVar, Union, Tuple, List
 
 from hmmer_reader import HMMERProfile
 from nmm import GeneticCode
@@ -14,7 +14,7 @@ from nmm.prob import (
 from nmm.alphabet import Alphabet, BaseAlphabet, AminoAlphabet
 from nmm.path import Path, Step
 from nmm.state import MuteState, FrameState, CodonState
-from nmm.sequence import SequenceABC
+from nmm.sequence import SequenceABC, Sequence
 from nmm.codon import Codon, codon_iter
 
 from .fragment import Fragment
@@ -46,21 +46,23 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
         codons: List[Codon] = []
         steps: List[CodonStep] = []
 
-        start: int = 0
+        start = 0
         seq = self.sequence
+        abc = seq.alphabet
         for step in self._path:
             if isinstance(step.state, MuteState):
+
                 mstate = MuteState(step.state.name, step.state.alphabet)
                 steps.append(CodonStep.create(mstate, 0))
+
             elif isinstance(step.state, FrameState):
 
                 subseq = seq[start : start + step.seq_len]
-                codon = Codon(b"XXX", self._alphabet)
+                codon = Codon.create(b"XXX", abc)
                 step.state.decode(subseq, codon)
                 codons.append(codon)
 
                 name = step.state.name
-                abc = step.state.alphabet
                 cstate = CodonState(name, abc, {codon: log(1.0)})
                 steps.append(CodonStep.create(cstate, 3))
 
@@ -69,7 +71,8 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
 
             start += step.seq_len
 
-        return CodonFragment(codons, CodonPath.create(steps), self.homologous)
+        sequence = Sequence.create(b"".join(c.symbols for c in codons), abc)
+        return CodonFragment(sequence, CodonPath.create(steps), self.homologous)
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}:{str(self)}>"
