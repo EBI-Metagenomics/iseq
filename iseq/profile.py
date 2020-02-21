@@ -14,6 +14,8 @@ from .result import SearchResult
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 TState = TypeVar("TState", bound=State)
 
+__all__ = ["Profile"]
+
 
 class Profile(Generic[TAlphabet, TState], ABC):
     def __init__(self, alphabet: Alphabet):

@@ -1,27 +1,27 @@
 from math import log
-from typing import TypeVar, Union, Tuple, List
+from typing import List, Tuple, Union
 
 from hmmer_reader import HMMERProfile
 from nmm import GeneticCode
-from nmm.prob import (
-    lprob_normalize,
-    AminoTable,
-    CodonProb,
-    lprob_zero,
-    BaseTable,
-    CodonTable,
-)
-from nmm.alphabet import Alphabet, BaseAlphabet, AminoAlphabet
-from nmm.path import Path, Step
-from nmm.state import MuteState, FrameState, CodonState
-from nmm.sequence import SequenceABC, Sequence
+from nmm.alphabet import AminoAlphabet, BaseAlphabet
 from nmm.codon import Codon, codon_iter
+from nmm.path import Path, Step
+from nmm.prob import (
+    AminoTable,
+    BaseTable,
+    CodonProb,
+    CodonTable,
+    lprob_normalize,
+    lprob_zero,
+)
+from nmm.sequence import Sequence, SequenceABC
+from nmm.state import CodonState, FrameState, MuteState
 
+from .codon import CodonFragment, CodonPath, CodonStep
 from .fragment import Fragment
 from .model import AltModel, Node, NullModel, SpecialNode, Transitions
-from .result import SearchResult
 from .profile import Profile
-from .codon import CodonFragment, CodonPath, CodonStep
+from .result import SearchResult
 
 FrameStep = Step[Union[FrameState, MuteState]]
 FramePath = Path[FrameStep]
@@ -32,12 +32,20 @@ FrameSpecialNode = SpecialNode[FrameState]
 FrameNullModel = NullModel[FrameState]
 FrameAltModel = AltModel[FrameState]
 
+__all__ = [
+    "create_profile",
+    "FrameProfile",
+    "FrameSearchResult",
+    "FrameNullModel",
+    "FrameAltModel",
+]
+
 
 class FrameFragment(Fragment[BaseAlphabet, FrameState]):
     def __init__(
         self,
         sequence: SequenceABC[BaseAlphabet],
-        path: Path[Step[FrameState]],
+        path: Path[FrameStep],
         homologous: bool,
     ):
         super().__init__(sequence, path, homologous)
@@ -47,9 +55,7 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
         steps: List[CodonStep] = []
 
         start = 0
-        seq = self.sequence
-        abc = seq.alphabet
-        for step in self._path:
+        for step in self.path:
             if isinstance(step.state, MuteState):
 
                 mstate = MuteState(step.state.name, step.state.alphabet)
@@ -57,13 +63,12 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
 
             elif isinstance(step.state, FrameState):
 
-                subseq = seq[start : start + step.seq_len]
-                codon = Codon.create(b"XXX", abc)
-                step.state.decode(subseq, codon)
+                subseq = self.sequence[start : start + step.seq_len]
+                codon = step.state.decode(subseq)[1]
                 codons.append(codon)
 
                 name = step.state.name
-                cstate = CodonState(name, abc, {codon: log(1.0)})
+                cstate = CodonState(name, self.sequence.alphabet, {codon: log(1.0)})
                 steps.append(CodonStep.create(cstate, 3))
 
             else:
@@ -71,61 +76,13 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
 
             start += step.seq_len
 
-        sequence = Sequence.create(b"".join(c.symbols for c in codons), abc)
+        FrameSequence = Sequence[BaseAlphabet]
+        abc = self.sequence.alphabet
+        sequence = FrameSequence.create(b"".join(c.symbols for c in codons), abc)
         return CodonFragment(sequence, CodonPath.create(steps), self.homologous)
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}:{str(self)}>"
-
-
-# #     def __init__(
-# #         self,
-# #         alphabet: CBaseAlphabet,
-# #         loglik: float,
-# #         sequence: SequenceABC,
-# #         path: FramePath,
-# #     ):
-# #         self._loglik = loglik
-# #         self._fragments: List[FrameFragment] = []
-# #         self._intervals: List[Interval] = []
-
-# #         steps = list(path)
-# #         for fragi, stepi, homologous in self._create_fragments(path):
-# #             substeps = steps[stepi.start : stepi.stop]
-# #             fragment_path = FramePath([(s.state, s.seq_len) for s in substeps])
-# #             seq = sequence[fragi]
-# #             frag = FrameFragment(alphabet, seq, fragment_path, homologous)
-# #             self._fragments.append(frag)
-# #             self._intervals.append(fragi)
-
-# #     @property
-# #     def fragments(self) -> Sequence[FrameFragment]:
-# #         return self._fragments
-
-# #     @property
-# #     def intervals(self) -> Sequence[Interval]:
-# #         return self._intervals
-
-# #     @property
-# #     def loglikelihood(self) -> float:
-# #         return self._loglik
-
-# #     # def decode(self) -> CodonSearchResult:
-# #     #     fragments: List[CodonFragment] = []
-# #     #     intervals: List[Interval] = []
-
-# #     #     start = end = 0
-# #     #     for i, frag in enumerate(self._fragments):
-
-# #     #         codon_frag = frag.decode()
-# #     #         end += len(codon_frag.sequence)
-
-# #     #         fragments.append(codon_frag)
-# #     #         intervals.append(Interval(start, end))
-
-# #     #         start = end
-
-# #     #     return CodonSearchResult(self.score, fragments, intervals)
 
 
 def _create_base_table(codonp: CodonProb):
@@ -198,7 +155,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         self,
         factory: FrameStateFactory,
         null_aminot: AminoTable,
-        nodes_trans: Sequence[Tuple[FrameNode, Transitions]],
+        nodes_trans: List[Tuple[FrameNode, Transitions]],
     ):
         base_alphabet = factory.genetic_code.base_alphabet
         super().__init__(base_alphabet)
@@ -227,13 +184,13 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
     def alt_model(self) -> FrameAltModel:
         return self._alt_model
 
-    def search(self, sequence: Sequence[BaseAlphabet]) -> FrameSearchResult:
+    def search(self, sequence: SequenceABC[BaseAlphabet]) -> FrameSearchResult:
         score, path = self._search(sequence)
         return FrameSearchResult(score, sequence, path, _create_fragment)
 
 
 def _create_fragment(
-    sequence: SequenceABC[BaseAlphabet], path: Path[Step[FrameState]], homologous: bool
+    sequence: SequenceABC[BaseAlphabet], path: Path[FrameStep], homologous: bool
 ):
     return FrameFragment(sequence, path, homologous)
 

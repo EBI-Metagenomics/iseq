@@ -1,12 +1,11 @@
-from typing import List, Tuple, TypeVar
+from typing import List, Tuple, TypeVar, Union
 
+from hmmer_reader import HMMERProfile
 from nmm.alphabet import Alphabet
 from nmm.path import Path, Step
 from nmm.prob import lprob_normalize
 from nmm.sequence import Sequence, SequenceABC
 from nmm.state import MuteState, NormalState
-
-from hmmer_reader import HMMERProfile
 
 from .fragment import Fragment
 from .model import AltModel, Node, NullModel, SpecialNode, Transitions
@@ -16,14 +15,23 @@ from .result import SearchResult
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
 StandardFragment = Fragment[TAlphabet, NormalState]
-# StandardStep = Step[Union[NormalState, MuteState]]
-# StandardPath = Path[StandardStep]
+StandardStep = Step[Union[NormalState, MuteState]]
+StandardPath = Path[StandardStep]
 StandardSearchResult = SearchResult[TAlphabet, NormalState]
 
 StandardNode = Node[NormalState]
 StandardSpecialNode = SpecialNode[NormalState]
 StandardNullModel = NullModel[NormalState]
 StandardAltModel = AltModel[NormalState]
+
+__all__ = [
+    "create_profile",
+    "StandardProfile",
+    "StandardFragment",
+    "StandardStep",
+    "StandardPath",
+    "StandardSearchResult",
+]
 
 
 class StandardProfile(Profile[TAlphabet, NormalState]):
@@ -64,7 +72,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
 
 
 def _create_fragment(
-    sequence: SequenceABC[TAlphabet], path: Path[Step[NormalState]], homologous: bool
+    sequence: SequenceABC[TAlphabet], path: Path[StandardStep], homologous: bool
 ):
     return StandardFragment(sequence, path, homologous)
 

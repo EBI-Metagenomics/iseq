@@ -1,8 +1,8 @@
-from nmm.sequence import Sequence
 from numpy.testing import assert_allclose, assert_equal
 
 from hmmer_reader import open_hmmer
 from iseq.standard import create_profile
+from nmm.sequence import Sequence
 
 
 def test_standard_profile_unihit_homologous_1(PF03373):

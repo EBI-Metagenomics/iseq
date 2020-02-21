@@ -1,11 +1,10 @@
 from numpy.testing import assert_allclose, assert_equal
 
-from nmm import GeneticCode
-from nmm.sequence import Sequence
-from nmm.alphabet import BaseAlphabet, CanonicalAminoAlphabet
-
 from hmmer_reader import open_hmmer
 from iseq.frame import create_profile
+from nmm import GeneticCode
+from nmm.alphabet import CanonicalAminoAlphabet
+from nmm.sequence import Sequence
 
 
 def test_frame_profile_frame1(PF03373):

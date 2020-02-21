@@ -10,6 +10,9 @@ TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 TState = TypeVar("TState", bound=State)
 
 
+__all__ = ["Fragment"]
+
+
 class Fragment(FragmentBase[TAlphabet, TState]):
     """
     Fragment of a sequence.
@@ -38,6 +41,14 @@ class Fragment(FragmentBase[TAlphabet, TState]):
     @property
     def homologous(self) -> bool:
         return self._homologous
+
+    @property
+    def sequence(self) -> SequenceABC[TAlphabet]:
+        return super().sequence
+
+    @property
+    def path(self) -> Path[Step[TState]]:
+        return super().path
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}:{str(self)}>"

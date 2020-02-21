@@ -14,6 +14,8 @@ create_fragment_type = Callable[
     [SequenceABC[TAlphabet], Path[Step[TState]], bool], Fragment[TAlphabet, TState]
 ]
 
+__all__ = ["SearchResult"]
+
 
 class SearchResult(Generic[TAlphabet, TState]):
     def __init__(
