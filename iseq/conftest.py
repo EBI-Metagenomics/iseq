@@ -48,9 +48,9 @@ def output1_evalue(tmp_path):
 
 def _write_file(path, filename):
     import importlib_resources as pkg_resources
-    import iseq._data
+    from . import _data
 
-    text = pkg_resources.read_text(iseq._data, filename)
+    text = pkg_resources.read_text(_data, filename)
 
     with open(path / filename, "w") as f:
         f.write(text)
