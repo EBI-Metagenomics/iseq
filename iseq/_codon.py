@@ -9,8 +9,8 @@ from nmm.prob import lprob_zero
 from nmm.sequence import Sequence, SequenceABC
 from nmm.state import CodonState, MuteState, NormalState
 
-from .amino import AminoFragment, AminoPath, AminoStep
-from .fragment import Fragment
+from ._amino import AminoFragment, AminoPath, AminoStep
+from ._fragment import Fragment
 
 CodonStep = Step[Union[CodonState, MuteState]]
 CodonPath = Path[CodonStep]

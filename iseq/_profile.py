@@ -8,8 +8,8 @@ from nmm.prob import lprob_zero
 from nmm.sequence import Sequence
 from nmm.state import State
 
-from .model import AltModel, NullModel
-from .result import SearchResult
+from ._model import AltModel, NullModel
+from ._result import SearchResult
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 TState = TypeVar("TState", bound=State)

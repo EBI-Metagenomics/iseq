@@ -7,10 +7,10 @@ from nmm.prob import lprob_normalize
 from nmm.sequence import Sequence, SequenceABC
 from nmm.state import MuteState, NormalState
 
-from .fragment import Fragment
-from .model import AltModel, Node, NullModel, SpecialNode, Transitions
-from .profile import Profile
-from .result import SearchResult
+from ._fragment import Fragment
+from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
+from ._profile import Profile
+from ._result import SearchResult
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 

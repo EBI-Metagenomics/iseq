@@ -4,7 +4,7 @@ from nmm.alphabet import Alphabet, AminoAlphabet
 from nmm.path import Path, Step
 from nmm.state import MuteState, NormalState
 
-from .fragment import Fragment
+from ._fragment import Fragment
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 

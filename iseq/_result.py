@@ -6,7 +6,7 @@ from nmm.path import Path, Step
 from nmm.sequence import SequenceABC
 from nmm.state import State
 
-from .fragment import Fragment
+from ._fragment import Fragment
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 TState = TypeVar("TState", bound=State)

@@ -17,11 +17,11 @@ from nmm.prob import (
 from nmm.sequence import Sequence, SequenceABC
 from nmm.state import CodonState, FrameState, MuteState
 
-from .codon import CodonFragment, CodonPath, CodonStep
-from .fragment import Fragment
-from .model import AltModel, Node, NullModel, SpecialNode, Transitions
-from .profile import Profile
-from .result import SearchResult
+from ._codon import CodonFragment, CodonPath, CodonStep
+from ._fragment import Fragment
+from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
+from ._profile import Profile
+from ._result import SearchResult
 
 FrameStep = Step[Union[FrameState, MuteState]]
 FramePath = Path[FrameStep]
