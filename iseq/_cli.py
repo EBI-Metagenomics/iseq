@@ -189,13 +189,11 @@ def process_sequence(
             codon_result = frag.decode()
 
             if codon_writer is not None:
-                seq = codon_result.sequence.decode()
-                codon_writer.write_item(item_id, seq)
+                codon_writer.write_item(item_id, str(codon_result.sequence))
 
             if amino_writer is not None:
                 amino_result = codon_result.decode(gcode)
-                seq = amino_result.sequence.decode()
-                amino_writer.write_item(item_id, seq)
+                amino_writer.write_item(item_id, str(amino_result.sequence))
 
 
 def finalize_stream(stream: LazyFile):
