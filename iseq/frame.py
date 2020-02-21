@@ -195,9 +195,10 @@ def _create_fragment(
     return FrameFragment(sequence, path, homologous)
 
 
-def create_profile(reader: HMMERProfile, epsilon: float = 0.1) -> FrameProfile:
+def create_profile(
+    reader: HMMERProfile, base_abc: BaseAlphabet, epsilon: float = 0.1
+) -> FrameProfile:
 
-    base_abc = BaseAlphabet.create(b"ACGU", b"X")
     amino_abc = AminoAlphabet.create(reader.alphabet.encode(), b"X")
 
     lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
