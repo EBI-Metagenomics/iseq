@@ -4,16 +4,11 @@ import click
 from click.utils import LazyFile
 
 from fasta_reader import FASTAWriter, FASTAParser, open_fasta
-from hmmer_reader import open_hmmer
+from hmmer_reader import open_hmmer, HMMERParser
 from nmm import GeneticCode
-from ._gff import GFFItem, GFFWriter
-from ._result import SearchResult
-from .frame import FrameProfile
-
-
-@click.group(name="nmm", context_settings=dict(help_option_names=["-h", "--help"]))
-def cli():
-    pass
+from .._gff import GFFItem, GFFWriter
+from .._result import SearchResult
+from ..frame import FrameProfile
 
 
 @click.command()
@@ -27,7 +22,7 @@ def search(profile, target, epsilon: float, output, ocodon, oamino):
     """
     Search nucleotide sequences against a HMMER3 Protein profile.
     """
-    from .frame import create_profile
+    from ..frame import create_profile
     from nmm.alphabet import DNAAlphabet, CanonicalAminoAlphabet
 
     record_writer = RecordWriter(epsilon)
@@ -50,7 +45,7 @@ def search(profile, target, epsilon: float, output, ocodon, oamino):
 
         show_header1("Profile")
         print()
-        print(hmmprof)
+        show_profile(hmmprof)
         print()
 
         show_header1("Targets")
@@ -72,9 +67,6 @@ def search(profile, target, epsilon: float, output, ocodon, oamino):
         finalize_stream(oamino)
 
 
-cli.add_command(search)
-
-
 class RecordWriter:
     def __init__(self, epsilon: float):
         self._gff = GFFWriter()
@@ -89,20 +81,6 @@ class RecordWriter:
     @profile.setter
     def profile(self, profile: str):
         self._profile = profile
-
-    # def add_items(self, result: SearchResult, seqid: str):
-    #     for i, frag in enumerate(result.fragments):
-    #         if not frag.homologous:
-    #             continue
-
-    #         start = result.intervals[i].start
-    #         end = result.intervals[i].end
-
-    #         ID = f"item{self._item_idx}"
-    #         att = f"ID={ID};Profile={self._profile};Epsilon={self._epsilon}"
-    #         item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", att)
-    #         self._gff.append(item)
-    #         self._item_idx += 1
 
     def add_item(self, seqid: str, start: int, end: int):
         item_id = f"item{self._item_idx}"
@@ -165,9 +143,6 @@ def process_sequence(
 
     for ti, tgt in enumerate(fasta):
         print()
-        show_header2(f"Target {ti}")
-        print()
-
         print(">" + tgt.defline)
         print(sequence_summary(tgt.sequence))
 
@@ -206,6 +181,17 @@ def finalize_stream(stream: LazyFile):
 def write_target(file, defline: str, sequence: str):
     file.write(">" + defline + "\n")
     file.write(sequence + "\n")
+
+
+def show_profile(hmmprof: HMMERParser):
+    name = dict(hmmprof.metadata)["NAME"]
+    acc = dict(hmmprof.metadata)["ACC"]
+
+    print(f"Header       {hmmprof.header}")
+    print(f"Alphabet     {hmmprof.alphabet}")
+    print(f"Model length {hmmprof.M}")
+    print(f"Name         {name}")
+    print(f"Accession    {acc}")
 
 
 def show_search_result(result: SearchResult):

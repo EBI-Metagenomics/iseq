@@ -1,4 +1,5 @@
 import filecmp
+import shutil
 
 from click.testing import CliRunner
 from numpy.testing import assert_equal
@@ -39,3 +40,12 @@ def test_cli_search_gff_output(tmpdir, PF03373, GALNBKIG_cut):
     assert_equal(filecmp.cmp(gff, "output.gff", shallow=False), True)
     assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
     assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
+
+
+def test_cli_score(tmpdir, database1, amino1, output1, output1_evalue):
+    tmpdir.chdir()
+    shutil.copyfile(output1, tmpdir / "output.gff")
+    invoke = CliRunner().invoke
+    r = invoke(cli, ["score", str(database1), str(amino1), "output.gff"])
+    assert_equal(r.exit_code, 0)
+    assert_equal(filecmp.cmp(output1_evalue, "output.gff", shallow=False), True)
