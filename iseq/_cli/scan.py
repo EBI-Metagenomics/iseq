@@ -1,20 +1,20 @@
 import os
 import pathlib
-from typing import Any, IO, Union
+from typing import IO, List, Union
 
 import click
 from click.utils import LazyFile
 
-from fasta_reader import FASTAParser, FASTAWriter, open_fasta
+from fasta_reader import FASTAItem, FASTAWriter, open_fasta
 from hmmer_reader import HMMERParser, open_hmmer
 from nmm import GeneticCode
-from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet
+from nmm.alphabet import CanonicalAminoAlphabet
 from nmm.sequence import Sequence
 
+from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
 from .._result import SearchResult
 from ..frame import FrameProfile, create_profile
-from .._fasta import infer_fasta_alphabet
 
 
 @click.command()
@@ -56,40 +56,23 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino):
     amino_writer = FASTAWriter(oamino)
 
     fasta = open_fasta(target)
-    alphabet = infer_fasta_alphabet(fasta)
-    if alphabet is None:
+    target_alphabet = infer_fasta_alphabet(fasta)
+    if target_alphabet is None:
         raise click.UsageError("Could not infer alphabet from TARGET.")
     target.seek(0)
 
-    gcode = GeneticCode(alphabet, CanonicalAminoAlphabet())
+    gcode = GeneticCode(target_alphabet, CanonicalAminoAlphabet())
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
+    s = Scan(output_writer, codon_writer, amino_writer, gcode, epsilon)
+
     for hmmprof in open_hmmer(profile):
-        output_writer.profile = dict(hmmprof.metadata)["ACC"]
-        prof = create_profile(hmmprof, gcode.base_alphabet, epsilon=epsilon)
+        s.scan_profile(hmmprof, targets)
 
-        show_header1("Profile")
-        print()
-        show_profile(hmmprof)
-        print()
-
-        show_header1("Targets")
-
-        process_sequence(
-            prof, targets, output_writer, codon_writer, amino_writer, gcode
-        )
-
-        print()
-
-    if output is not None:
-        finalize_stream(output)
-
-    if codon_writer is not None:
-        finalize_stream(ocodon)
-
-    if amino_writer is not None:
-        finalize_stream(oamino)
+    finalize_stream(output)
+    finalize_stream(ocodon)
+    finalize_stream(oamino)
 
 
 class OutputWriter:
@@ -122,43 +105,60 @@ class OutputWriter:
         self._gff.close()
 
 
-def process_sequence(
-    prof: FrameProfile,
-    fasta: FASTAParser,
-    record: OutputWriter,
-    codon_writer: Union[FASTAWriter, None],
-    amino_writer: Union[FASTAWriter, None],
-    gcode,
-):
+class Scan:
+    def __init__(
+        self,
+        output_writer: OutputWriter,
+        codon_writer: FASTAWriter,
+        amino_writer: FASTAWriter,
+        genetic_code: GeneticCode,
+        epsilon: float,
+    ):
+        self._output_writer = output_writer
+        self._codon_writer = codon_writer
+        self._amino_writer = amino_writer
+        self._genetic_code = genetic_code
+        self._epsilon = epsilon
 
-    for tgt in fasta:
-        print()
-        print(">" + tgt.defline)
-        print(sequence_summary(tgt.sequence))
+    def scan_profile(self, profile: HMMERParser, targets: List[FASTAItem]):
 
-        # seq = tgt.sequence.encode().replace(b"T", b"U")
-        seq = Sequence[DNAAlphabet].create(tgt.sequence.encode(), prof.alphabet)
-        frame_result = prof.search(seq)
-        # codon_result = frame_result.decode()
-        seqid = f"{tgt.defline.split()[0]}"
+        self._output_writer.profile = dict(profile.metadata)["ACC"]
+        prof = create_profile(
+            profile, self._genetic_code.base_alphabet, epsilon=self._epsilon
+        )
 
-        show_search_result(frame_result)
+        show_header("Profile")
+        show_profile(profile)
 
-        for i, frag in enumerate(frame_result.fragments):
+        show_header("Targets")
+        for target in targets:
+            self._scan_target(prof, target)
+            print()
+
+    def _scan_target(self, profile: FrameProfile, target: FASTAItem):
+
+        print(">" + target.defline)
+        print(sequence_summary(target.sequence))
+
+        seq = Sequence.create(target.sequence.encode(), profile.alphabet)
+        result = profile.search(seq)
+        seqid = f"{target.defline.split()[0]}"
+
+        show_search_result(result)
+
+        for i, frag in zip(result.intervals, result.fragments):
             if not frag.homologous:
                 continue
 
-            start = frame_result.intervals[i].start
-            stop = frame_result.intervals[i].stop
-            item_id = record.write_item(seqid, start, stop)
+            start = i.start
+            stop = i.stop
+            item_id = self._output_writer.write_item(seqid, start, stop)
+
             codon_result = frag.decode()
+            self._codon_writer.write_item(item_id, str(codon_result.sequence))
 
-            if codon_writer is not None:
-                codon_writer.write_item(item_id, str(codon_result.sequence))
-
-            if amino_writer is not None:
-                amino_result = codon_result.decode(gcode)
-                amino_writer.write_item(item_id, str(amino_result.sequence))
+            amino_result = codon_result.decode(self._genetic_code)
+            self._amino_writer.write_item(item_id, str(amino_result.sequence))
 
 
 def finalize_stream(stream: LazyFile):
@@ -177,6 +177,7 @@ def show_profile(hmmprof: HMMERParser):
     print(f"Model length {hmmprof.M}")
     print(f"Name         {name}")
     print(f"Accession    {acc}")
+    print()
 
 
 def show_search_result(result: SearchResult):
@@ -202,14 +203,10 @@ def show_search_result(result: SearchResult):
         print("\t".join(matches))
 
 
-def show_header1(title: str):
+def show_header(title: str):
     print(title)
     print("=" * len(title))
-
-
-def show_header2(title: str):
-    print(title)
-    print("-" * len(title))
+    print()
 
 
 def sequence_summary(sequence: str):
