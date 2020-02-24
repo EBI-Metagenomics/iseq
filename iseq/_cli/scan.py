@@ -14,6 +14,7 @@ from nmm.sequence import Sequence
 from .._gff import GFFItem, GFFWriter
 from .._result import SearchResult
 from ..frame import FrameProfile, create_profile
+from .._fasta import infer_fasta_alphabet
 
 
 @click.command()
@@ -54,7 +55,13 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino):
     codon_writer = FASTAWriter(ocodon)
     amino_writer = FASTAWriter(oamino)
 
-    gcode = GeneticCode(DNAAlphabet(), CanonicalAminoAlphabet())
+    fasta = open_fasta(target)
+    alphabet = infer_fasta_alphabet(fasta)
+    if alphabet is None:
+        raise click.UsageError("Could not infer alphabet from TARGET.")
+    target.seek(0)
+
+    gcode = GeneticCode(alphabet, CanonicalAminoAlphabet())
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
@@ -115,42 +122,6 @@ class OutputWriter:
         self._gff.close()
 
 
-class TargetWriter:
-    def __init__(self, ocodon=Union[LazyFile, Any], oamino=Union[LazyFile, Any]):
-        self._ocodon = ocodon
-        self._oamino = oamino
-
-    @property
-    def ocodon(self):
-        return self._ocodon
-
-    @property
-    def oamino(self):
-        return self._oamino
-
-    @property
-    def has_ocodon(self):
-        return self._ocodon is not None
-
-    @property
-    def has_oamino(self):
-        return self._oamino is not None
-
-    def add_ocodon_target(self, seqid: str, sequence: str):
-        if self._ocodon is None:
-            return
-
-        self._ocodon.write(">" + seqid + "_codon\n")
-        self._ocodon.write(sequence + "\n")
-
-    def add_oamino_target(self, seqid: str, sequence: str):
-        if self._oamino is None:
-            return
-
-        self._oamino.write(">" + seqid + "_amino\n")
-        self._oamino.write(sequence + "\n")
-
-
 def process_sequence(
     prof: FrameProfile,
     fasta: FASTAParser,
@@ -195,11 +166,6 @@ def finalize_stream(stream: LazyFile):
         print(f"Writing to <{stream.name}> file.")
 
     stream.close_intelligently()
-
-
-def write_target(file, defline: str, sequence: str):
-    file.write(">" + defline + "\n")
-    file.write(sequence + "\n")
 
 
 def show_profile(hmmprof: HMMERParser):

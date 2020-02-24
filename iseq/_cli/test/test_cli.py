@@ -11,7 +11,7 @@ def test_cli_search_nofile_output(tmpdir, PF03373, GALNBKIG_cut):
     tmpdir.chdir()
     invoke = CliRunner().invoke
     fasta = GALNBKIG_cut["fasta"]
-    r = invoke(cli, ["search", str(PF03373), str(fasta)])
+    r = invoke(cli, ["scan", str(PF03373), str(fasta)])
     assert_equal(r.exit_code, 0)
 
 
@@ -25,7 +25,7 @@ def test_cli_search_gff_output(tmpdir, PF03373, GALNBKIG_cut):
     r = invoke(
         cli,
         [
-            "search",
+            "scan",
             str(PF03373),
             str(fasta),
             "--output",
