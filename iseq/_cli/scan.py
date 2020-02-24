@@ -1,4 +1,5 @@
 import os
+import sys
 import pathlib
 from typing import IO, List, Union
 
@@ -10,6 +11,7 @@ from hmmer_reader import HMMERParser, open_hmmer
 from nmm import GeneticCode
 from nmm.alphabet import CanonicalAminoAlphabet
 from nmm.sequence import Sequence
+from time import time
 
 from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
@@ -41,7 +43,10 @@ from ..frame import FrameProfile, create_profile
     help="Save amino acid sequences to OAMINO (FASTA format).",
     default=os.devnull,
 )
-def scan(profile, target, epsilon: float, output, ocodon, oamino):
+@click.option(
+    "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
+)
+def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet):
     """
     Search nucleotide sequence(s) against a protein profile database.
 
@@ -65,14 +70,21 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino):
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    s = Scan(output_writer, codon_writer, amino_writer, gcode, epsilon)
+    if quiet:
+        stdout = click.open_file(os.devnull, "a")
+    else:
+        stdout = click.get_text_stream("stdout")
+
+    s = Scan(output_writer, codon_writer, amino_writer, gcode, epsilon, stdout)
 
     for hmmprof in open_hmmer(profile):
-        s.scan_profile(hmmprof, targets)
+        start = time()
+        s.process_profile(hmmprof, targets)
+        print("Profile elapsed: {:.12f} seconds".format(time() - start))
 
-    finalize_stream(output)
-    finalize_stream(ocodon)
-    finalize_stream(oamino)
+    s.finalize_stream(output)
+    s.finalize_stream(ocodon)
+    s.finalize_stream(oamino)
 
 
 class OutputWriter:
@@ -113,38 +125,39 @@ class Scan:
         amino_writer: FASTAWriter,
         genetic_code: GeneticCode,
         epsilon: float,
+        stdout,
     ):
         self._output_writer = output_writer
         self._codon_writer = codon_writer
         self._amino_writer = amino_writer
         self._genetic_code = genetic_code
         self._epsilon = epsilon
+        self._stdout = stdout
 
-    def scan_profile(self, profile: HMMERParser, targets: List[FASTAItem]):
+    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
-        self._output_writer.profile = dict(profile.metadata)["ACC"]
-        prof = create_profile(
-            profile, self._genetic_code.base_alphabet, epsilon=self._epsilon
-        )
+        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
+        base_alphabet = self._genetic_code.base_alphabet
+        prof = create_profile(profile_parser, base_alphabet, self._epsilon)
 
-        show_header("Profile")
-        show_profile(profile)
+        self._show_header("Profile")
+        self._show_profile(profile_parser)
 
-        show_header("Targets")
+        self._show_header("Targets")
         for target in targets:
             self._scan_target(prof, target)
-            print()
+            self._stdout.write("\n")
 
     def _scan_target(self, profile: FrameProfile, target: FASTAItem):
 
-        print(">" + target.defline)
-        print(sequence_summary(target.sequence))
+        self._stdout.write(">" + target.defline + "\n")
+        self._stdout.write(sequence_summary(target.sequence) + "\n")
 
         seq = Sequence.create(target.sequence.encode(), profile.alphabet)
         result = profile.search(seq)
         seqid = f"{target.defline.split()[0]}"
 
-        show_search_result(result)
+        self._show_search_result(result)
 
         for i, frag in zip(result.intervals, result.fragments):
             if not frag.homologous:
@@ -160,53 +173,52 @@ class Scan:
             amino_result = codon_result.decode(self._genetic_code)
             self._amino_writer.write_item(item_id, str(amino_result.sequence))
 
+    def _show_profile(self, hmmprof: HMMERParser):
+        name = dict(hmmprof.metadata)["NAME"]
+        acc = dict(hmmprof.metadata)["ACC"]
 
-def finalize_stream(stream: LazyFile):
-    if stream.name != "-":
-        print(f"Writing to <{stream.name}> file.")
+        self._stdout.write(f"Header       {hmmprof.header}\n")
+        self._stdout.write(f"Alphabet     {hmmprof.alphabet}\n")
+        self._stdout.write(f"Model length {hmmprof.M}\n")
+        self._stdout.write(f"Name         {name}\n")
+        self._stdout.write(f"Accession    {acc}\n")
+        self._stdout.write("\n")
 
-    stream.close_intelligently()
+    def _show_search_result(self, result: SearchResult):
+        frags = result.fragments
+        nhomo = sum(frag.homologous for frag in result.fragments)
 
+        self._stdout.write("\n")
+        self._stdout.write(
+            f"Found {nhomo} homologous fragments ({len(frags)} in total).\n"
+        )
 
-def show_profile(hmmprof: HMMERParser):
-    name = dict(hmmprof.metadata)["NAME"]
-    acc = dict(hmmprof.metadata)["ACC"]
+        for i, frag in enumerate(frags):
+            if not frag.homologous:
+                continue
+            start = result.intervals[i].start
+            stop = result.intervals[i].stop
+            msg = f"Homologous fragment={i}; Position=[{start + 1}, {stop}]\n"
+            self._stdout.write(msg)
+            states = []
+            matches = []
+            for frag_step in iter(frag):
+                states.append(frag_step.step.state.name.decode())
+                matches.append(str(frag_step.sequence))
 
-    print(f"Header       {hmmprof.header}")
-    print(f"Alphabet     {hmmprof.alphabet}")
-    print(f"Model length {hmmprof.M}")
-    print(f"Name         {name}")
-    print(f"Accession    {acc}")
-    print()
+            self._stdout.write("\t".join(states) + "\n")
+            self._stdout.write("\t".join(matches) + "\n")
 
+    def _show_header(self, title: str):
+        self._stdout.write(title + "\n")
+        self._stdout.write("=" * len(title) + "\n")
+        self._stdout.write("\n")
 
-def show_search_result(result: SearchResult):
-    frags = result.fragments
-    nhomo = sum(frag.homologous for frag in result.fragments)
+    def finalize_stream(self, stream: LazyFile):
+        if stream.name != "-":
+            self._stdout.write(f"Writing to <{stream.name}> file.\n")
 
-    print()
-    print(f"Found {nhomo} homologous fragments ({len(frags)} in total).")
-
-    for i, frag in enumerate(frags):
-        if not frag.homologous:
-            continue
-        start = result.intervals[i].start
-        stop = result.intervals[i].stop
-        print(f"Homologous fragment={i}; Position=[{start + 1}, {stop}]")
-        states = []
-        matches = []
-        for frag_step in iter(frag):
-            states.append(frag_step.step.state.name.decode())
-            matches.append(str(frag_step.sequence))
-
-        print("\t".join(states))
-        print("\t".join(matches))
-
-
-def show_header(title: str):
-    print(title)
-    print("=" * len(title))
-    print()
+        stream.close_intelligently()
 
 
 def sequence_summary(sequence: str):
