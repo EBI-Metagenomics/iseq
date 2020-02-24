@@ -37,7 +37,8 @@ ctg123 . exon            5000  5500  .  +  .  ID=exon00004;Parent=mrna0001
 ctg123 . exon            7000  9000  .  +  .  ID=exon00005;Parent=mrna0001
 ```
 """
-from typing import NamedTuple, List, Union
+import pathlib
+from typing import IO, NamedTuple, Union
 
 GFFItem = NamedTuple(
     "GFFItem",
@@ -56,25 +57,33 @@ GFFItem = NamedTuple(
 
 
 class GFFWriter:
-    def __init__(self):
-        self._items: List[GFFItem] = []
+    def __init__(self, file: Union[str, pathlib.Path, IO[str]]):
+        if isinstance(file, str):
+            file = pathlib.Path(file)
 
-    def append(self, item: GFFItem):
-        self._items.append(item)
+        if isinstance(file, pathlib.Path):
+            file = open(file, "r")
 
-    def dump(self, fp):
-        fp.write("##gff-version 3\n")
-        for item in self._items:
-            cols = [
-                item.seqid,
-                item.source,
-                item.type,
-                str(item.start),
-                str(item.end),
-                str(item.score),
-                item.strand,
-                str(item.phase),
-                item.attributes,
-            ]
-            fp.write("\t".join(cols))
-            fp.write("\n")
+        self._file = file
+        self._file.write("##gff-version 3\n")
+
+    def write_item(self, item: GFFItem):
+        cols = [
+            item.seqid,
+            item.source,
+            item.type,
+            str(item.start),
+            str(item.end),
+            str(item.score),
+            item.strand,
+            str(item.phase),
+            item.attributes,
+        ]
+        self._file.write("\t".join(cols))
+        self._file.write("\n")
+
+    def close(self):
+        """
+        Close the associated stream.
+        """
+        self._file.close()

@@ -1,46 +1,65 @@
-from typing import Any, Union
+import os
+import pathlib
+from typing import Any, IO, Union
 
 import click
 from click.utils import LazyFile
 
-from fasta_reader import FASTAWriter, FASTAParser, open_fasta
-from hmmer_reader import open_hmmer, HMMERParser
+from fasta_reader import FASTAParser, FASTAWriter, open_fasta
+from hmmer_reader import HMMERParser, open_hmmer
 from nmm import GeneticCode
+from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet
+from nmm.sequence import Sequence
+
 from .._gff import GFFItem, GFFWriter
 from .._result import SearchResult
-from ..frame import FrameProfile
+from ..frame import FrameProfile, create_profile
 
 
 @click.command()
 @click.argument("profile", type=click.File("r"))
 @click.argument("target", type=click.File("r"))
-@click.option("--epsilon", type=float, default=1e-2)
-@click.option("--output", type=click.File("w"))
-@click.option("--ocodon", type=click.File("w"))
-@click.option("--oamino", type=click.File("w"))
-def search(profile, target, epsilon: float, output, ocodon, oamino):
+@click.option(
+    "--epsilon", type=float, default=1e-2, help="Indel probability. Defaults to 1e-2."
+)
+@click.option(
+    "--output",
+    type=click.File("w"),
+    help="Save results to OUTPUT (GFF format).",
+    default=os.devnull,
+)
+@click.option(
+    "--ocodon",
+    type=click.File("w"),
+    help="Save codon sequences to OCODON (FASTA format).",
+    default=os.devnull,
+)
+@click.option(
+    "--oamino",
+    type=click.File("w"),
+    help="Save amino acid sequences to OAMINO (FASTA format).",
+    default=os.devnull,
+)
+def scan(profile, target, epsilon: float, output, ocodon, oamino):
     """
-    Search nucleotide sequences against a HMMER3 Protein profile.
+    Search nucleotide sequence(s) against a protein profile database.
+
+    An OUTPUT line determines an association between a TARGET subsequence and
+    a PROFILE protein profile. An association maps a target subsequence to a
+    profile and represents a potential homology. Expect many false positive
+    associations as we are not filtering out by statistical significance.
     """
-    from ..frame import create_profile
-    from nmm.alphabet import DNAAlphabet, CanonicalAminoAlphabet
 
-    record_writer = RecordWriter(epsilon)
-
-    codon_writer: Union[FASTAWriter, None] = None
-    if ocodon is not None:
-        codon_writer = FASTAWriter(ocodon)
-
-    amino_writer: Union[FASTAWriter, None] = None
-    if oamino is not None:
-        amino_writer = FASTAWriter(oamino)
+    output_writer = OutputWriter(output, epsilon)
+    codon_writer = FASTAWriter(ocodon)
+    amino_writer = FASTAWriter(oamino)
 
     gcode = GeneticCode(DNAAlphabet(), CanonicalAminoAlphabet())
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
     for hmmprof in open_hmmer(profile):
-        record_writer.profile = dict(hmmprof.metadata)["ACC"]
+        output_writer.profile = dict(hmmprof.metadata)["ACC"]
         prof = create_profile(hmmprof, gcode.base_alphabet, epsilon=epsilon)
 
         show_header1("Profile")
@@ -51,13 +70,12 @@ def search(profile, target, epsilon: float, output, ocodon, oamino):
         show_header1("Targets")
 
         process_sequence(
-            prof, targets, record_writer, codon_writer, amino_writer, gcode
+            prof, targets, output_writer, codon_writer, amino_writer, gcode
         )
 
         print()
 
     if output is not None:
-        record_writer.dump(output)
         finalize_stream(output)
 
     if codon_writer is not None:
@@ -67,31 +85,34 @@ def search(profile, target, epsilon: float, output, ocodon, oamino):
         finalize_stream(oamino)
 
 
-class RecordWriter:
-    def __init__(self, epsilon: float):
-        self._gff = GFFWriter()
+class OutputWriter:
+    def __init__(self, file: Union[str, pathlib.Path, IO[str]], epsilon: float):
+        self._gff = GFFWriter(file)
         self._profile = "NOTSET"
         self._epsilon = epsilon
         self._item_idx = 1
 
     @property
-    def profile(self):
+    def profile(self) -> str:
         return self._profile
 
     @profile.setter
     def profile(self, profile: str):
         self._profile = profile
 
-    def add_item(self, seqid: str, start: int, end: int):
+    def write_item(self, seqid: str, start: int, end: int):
         item_id = f"item{self._item_idx}"
         att = f"ID={item_id};Profile={self._profile};Epsilon={self._epsilon}"
         item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", att)
-        self._gff.append(item)
+        self._gff.write_item(item)
         self._item_idx += 1
         return item_id
 
-    def dump(self, fp):
-        self._gff.dump(fp)
+    def close(self):
+        """
+        Close the associated stream.
+        """
+        self._gff.close()
 
 
 class TargetWriter:
@@ -133,15 +154,13 @@ class TargetWriter:
 def process_sequence(
     prof: FrameProfile,
     fasta: FASTAParser,
-    record: RecordWriter,
+    record: OutputWriter,
     codon_writer: Union[FASTAWriter, None],
     amino_writer: Union[FASTAWriter, None],
     gcode,
 ):
-    from nmm.sequence import Sequence
-    from nmm.alphabet import DNAAlphabet
 
-    for ti, tgt in enumerate(fasta):
+    for tgt in fasta:
         print()
         print(">" + tgt.defline)
         print(sequence_summary(tgt.sequence))
@@ -160,7 +179,7 @@ def process_sequence(
 
             start = frame_result.intervals[i].start
             stop = frame_result.intervals[i].stop
-            item_id = record.add_item(seqid, start, stop)
+            item_id = record.write_item(seqid, start, stop)
             codon_result = frag.decode()
 
             if codon_writer is not None:

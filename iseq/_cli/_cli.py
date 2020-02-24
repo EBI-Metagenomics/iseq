@@ -1,7 +1,7 @@
 import click
 
 from ._misc import get_version
-from .search import search
+from .scan import scan
 from .score import score
 
 
@@ -13,5 +13,5 @@ def cli():
     """
 
 
-cli.add_command(search)
+cli.add_command(scan)
 cli.add_command(score)
