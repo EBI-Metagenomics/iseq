@@ -1,22 +1,18 @@
 from __future__ import annotations
-from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
+from typing import Callable, Generic, Iterable, List, Tuple
 
 from nmm import Interval
-from nmm.alphabet import Alphabet
 from nmm.path import Path, Step
 from nmm.sequence import SequenceABC
-from nmm.state import State
 
 from ._fragment import Fragment
-from ._type import MutablePath
+from ._typing import MutablePath, TAlphabet, TState
 
-TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
-TState = TypeVar("TState", bound=State)
 create_fragment_type = Callable[
     [SequenceABC[TAlphabet], MutablePath[TState], bool], Fragment[TAlphabet, TState]
 ]
 
-__all__ = ["SearchResult"]
+__all__ = ["SearchResults", "SearchResult"]
 
 
 class SearchResults(Generic[TAlphabet, TState]):
@@ -47,6 +43,12 @@ class SearchResults(Generic[TAlphabet, TState]):
     @property
     def length(self) -> int:
         return len(self._results)
+
+    def __str__(self) -> str:
+        return f"{str(self._results)}"
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}:{str(self)}>"
 
 
 class SearchResult(Generic[TAlphabet, TState]):
@@ -84,7 +86,7 @@ class SearchResult(Generic[TAlphabet, TState]):
         return self._loglik
 
     def __str__(self) -> str:
-        return f"{str(self._fragments)}"
+        return f"{str(self.loglikelihood)},{str(self._fragments)}"
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}:{str(self)}>"

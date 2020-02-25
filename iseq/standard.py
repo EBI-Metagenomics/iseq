@@ -1,10 +1,10 @@
-from typing import List, Tuple, TypeVar, Union
+from typing import List, Tuple
 
 from hmmer_reader import HMMERProfile
 from nmm.alphabet import Alphabet
 from nmm.path import Path, Step
 from nmm.prob import lprob_normalize
-from nmm.sequence import Sequence, SequenceABC
+from nmm.sequence import SequenceABC
 from nmm.state import MuteState, NormalState
 from nmm import Interval
 
@@ -12,13 +12,10 @@ from ._fragment import Fragment
 from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
 from ._profile import Profile
 from ._result import SearchResult, SearchResults
-
-TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+from ._typing import TAlphabet, MutableStep
 
 StandardFragment = Fragment[TAlphabet, NormalState]
-StandardStep = Step[Union[NormalState, MuteState]]
-StandardPath = Path[StandardStep]
-StandardSearchResult = SearchResult[TAlphabet, NormalState]
+StandardStep = Step[MutableStep[NormalState]]
 StandardSearchResults = SearchResults[TAlphabet, NormalState]
 
 StandardNode = Node[NormalState]
@@ -27,19 +24,19 @@ StandardNullModel = NullModel[NormalState]
 StandardAltModel = AltModel[NormalState]
 
 __all__ = [
-    "create_profile",
-    "StandardProfile",
+    "StandardAltModel",
     "StandardFragment",
+    "StandardNullModel",
+    "StandardProfile",
     "StandardStep",
-    "StandardPath",
-    "StandardSearchResult",
+    "create_profile",
 ]
 
 
 class StandardProfile(Profile[TAlphabet, NormalState]):
     def __init__(
         self,
-        alphabet: Alphabet,
+        alphabet: TAlphabet,
         null_lprobs: List[float],
         nodes_trans: List[Tuple[StandardNode, Transitions]],
     ):
@@ -69,13 +66,18 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         return self._alt_model
 
     def search(
-        self, sequence: Sequence[TAlphabet], window_length: int = 0
+        self, sequence: SequenceABC[TAlphabet], window_length: int = 0
     ) -> StandardSearchResults:
 
         self._set_target_length(len(sequence))
         alt_results = self.alt_model.viterbi(sequence, window_length)
 
-        search_results = StandardSearchResults(sequence, _create_fragment)
+        def create_fragment(
+            seq: SequenceABC[TAlphabet], path: Path[StandardStep], homologous: bool
+        ):
+            return StandardFragment(seq, path, homologous)
+
+        search_results = StandardSearchResults(sequence, create_fragment)
 
         for alt_result in alt_results:
             subseq = alt_result.sequence
@@ -86,12 +88,6 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             search_results.append(score, window, alt_result.path)
 
         return search_results
-
-
-def _create_fragment(
-    sequence: SequenceABC[TAlphabet], path: Path[StandardStep], homologous: bool
-):
-    return StandardFragment(sequence, path, homologous)
 
 
 def create_profile(reader: HMMERProfile) -> StandardProfile:

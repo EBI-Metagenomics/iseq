@@ -25,8 +25,6 @@ from ._profile import Profile
 from ._result import SearchResult, SearchResults
 
 FrameStep = Step[Union[FrameState, MuteState]]
-FramePath = Path[FrameStep]
-FrameSearchResult = SearchResult[BaseAlphabet, FrameState]
 FrameSearchResults = SearchResults[BaseAlphabet, FrameState]
 
 FrameNode = Node[FrameState]
@@ -35,11 +33,11 @@ FrameNullModel = NullModel[FrameState]
 FrameAltModel = AltModel[FrameState]
 
 __all__ = [
-    "create_profile",
-    "FrameProfile",
-    "FrameSearchResult",
-    "FrameNullModel",
     "FrameAltModel",
+    "FrameFragment",
+    "FrameNullModel",
+    "FrameProfile",
+    "create_profile",
 ]
 
 
@@ -193,7 +191,12 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         self._set_target_length(len(sequence))
         alt_results = self.alt_model.viterbi(sequence, window_length)
 
-        search_results = FrameSearchResults(sequence, _create_fragment)
+        def create_fragment(
+            seq: SequenceABC[BaseAlphabet], path: Path[FrameStep], homologous: bool
+        ):
+            return FrameFragment(seq, path, homologous)
+
+        search_results = FrameSearchResults(sequence, create_fragment)
 
         for alt_result in alt_results:
             subseq = alt_result.sequence
@@ -204,12 +207,6 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
             search_results.append(score, window, alt_result.path)
 
         return search_results
-
-
-def _create_fragment(
-    sequence: SequenceABC[BaseAlphabet], path: Path[FrameStep], homologous: bool
-):
-    return FrameFragment(sequence, path, homologous)
 
 
 def create_profile(

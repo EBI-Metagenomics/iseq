@@ -1,14 +1,8 @@
-from typing import TypeVar
-
-from nmm.alphabet import Alphabet
 from nmm.fragment import Fragment as FragmentBase
 from nmm.path import Path, Step
 from nmm.sequence import SequenceABC
-from nmm.state import State
 
-TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
-TState = TypeVar("TState", bound=State)
-
+from ._typing import TAlphabet, TState
 
 __all__ = ["Fragment"]
 

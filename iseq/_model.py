@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Tuple, TypeVar, Union, List
+from typing import Dict, Generic, List, Tuple, Union
 
 from nmm import HMM, CData
 from nmm.path import Path, Step
 from nmm.prob import lprob_zero
 from nmm.sequence import Sequence
 from nmm.state import MuteState, State
-from nmm.result import Results
-from ._type import MutablePath, TState, MutableState
+
+from ._typing import MutableState, TState, MutableResults
 
 __all__ = ["AltModel", "Node", "NullModel", "SpecialNode", "Transitions"]
 
@@ -213,5 +213,5 @@ class AltModel(Generic[TState]):
     def length(self) -> int:
         return len(self._core_nodes)
 
-    def viterbi(self, seq: Sequence, window: int = 0) -> Results[MutablePath[TState]]:
-        return self._hmm.viterbi(seq, self.special_node.T, window)
+    def viterbi(self, seq: Sequence, window_length: int = 0) -> MutableResults[TState]:
+        return self._hmm.viterbi(seq, self.special_node.T, window_length)

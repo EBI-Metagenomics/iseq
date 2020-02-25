@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from math import log
-from typing import Generic, TypeVar
+from typing import Generic
 
 from nmm.alphabet import Alphabet
 from nmm.prob import lprob_zero
@@ -8,9 +8,7 @@ from nmm.sequence import Sequence
 
 from ._model import AltModel, NullModel
 from ._result import SearchResults
-from ._type import TState
-
-TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+from ._typing import TAlphabet, TState
 
 __all__ = ["Profile"]
 
