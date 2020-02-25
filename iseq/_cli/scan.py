@@ -194,8 +194,8 @@ class Scanner:
                 if not frag.homologous:
                     continue
 
-                start = i.start
-                stop = i.stop
+                start = window.start + i.start
+                stop = window.start + i.stop
                 item_id = self._output_writer.write_item(seqid, start, stop)
 
                 codon_result = frag.decode()
