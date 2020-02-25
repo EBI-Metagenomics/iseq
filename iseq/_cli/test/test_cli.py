@@ -7,7 +7,7 @@ from numpy.testing import assert_equal
 from iseq import cli
 
 
-def test_cli_search_nofile_output(tmpdir, PF03373, GALNBKIG_cut):
+def test_cli_scan_nofile_output(tmpdir, PF03373, GALNBKIG_cut):
     tmpdir.chdir()
     invoke = CliRunner().invoke
     fasta = GALNBKIG_cut["fasta"]
@@ -15,7 +15,7 @@ def test_cli_search_nofile_output(tmpdir, PF03373, GALNBKIG_cut):
     assert_equal(r.exit_code, 0)
 
 
-def test_cli_search_gff_output(tmpdir, PF03373, GALNBKIG_cut):
+def test_cli_scan_gff_output(tmpdir, PF03373, GALNBKIG_cut):
     tmpdir.chdir()
     invoke = CliRunner().invoke
     fasta = GALNBKIG_cut["fasta"]

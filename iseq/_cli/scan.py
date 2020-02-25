@@ -170,7 +170,7 @@ class Scanner:
         self._stdout.write(sequence_summary(target.sequence) + "\n")
 
         seq = Sequence.create(target.sequence.encode(), profile.alphabet)
-        result = profile.search(seq)[0]
+        result = profile.search(seq).results[0]
         seqid = f"{target.defline.split()[0]}"
 
         self._show_search_result(result)

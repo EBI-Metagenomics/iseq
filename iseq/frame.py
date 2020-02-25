@@ -16,16 +16,18 @@ from nmm.prob import (
 )
 from nmm.sequence import Sequence, SequenceABC
 from nmm.state import CodonState, FrameState, MuteState
+from nmm import Interval
 
 from ._codon import CodonFragment, CodonPath, CodonStep
 from ._fragment import Fragment
 from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
 from ._profile import Profile
-from ._result import SearchResult
+from ._result import SearchResult, SearchResults
 
 FrameStep = Step[Union[FrameState, MuteState]]
 FramePath = Path[FrameStep]
 FrameSearchResult = SearchResult[BaseAlphabet, FrameState]
+FrameSearchResults = SearchResults[BaseAlphabet, FrameState]
 
 FrameNode = Node[FrameState]
 FrameSpecialNode = SpecialNode[FrameState]
@@ -185,12 +187,23 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         return self._alt_model
 
     def search(
-        self, sequence: SequenceABC[BaseAlphabet], window: int = 0
-    ) -> List[FrameSearchResult]:
-        return [
-            FrameSearchResult(score, sequence, path, _create_fragment)
-            for score, path in self._search(sequence, window)
-        ]
+        self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0
+    ) -> FrameSearchResults:
+
+        self._set_target_length(len(sequence))
+        alt_results = self.alt_model.viterbi(sequence, window_length)
+
+        search_results = FrameSearchResults(sequence, _create_fragment)
+
+        for alt_result in alt_results:
+            subseq = alt_result.sequence
+            score0 = self.null_model.likelihood(subseq)
+            score1 = alt_result.loglikelihood
+            score = score1 - score0
+            window = Interval(subseq.start, subseq.start + len(subseq))
+            search_results.append(score, window, alt_result.path)
+
+        return search_results
 
 
 def _create_fragment(
