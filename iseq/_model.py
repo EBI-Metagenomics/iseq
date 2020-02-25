@@ -215,15 +215,3 @@ class AltModel(Generic[TState]):
 
     def viterbi(self, seq: Sequence, window: int = 0) -> Results[MutablePath[TState]]:
         return self._hmm.viterbi(seq, self.special_node.T, window)
-        # results = self._hmm.viterbi(seq, self.special_node.T, window)
-        # score_path = []
-
-        # for result in results:
-        #     path = result.path
-        #     score = result.loglikelihood
-
-        #     states = self._states
-        #     steps = [Step.create(states[s.state.imm_state], s.seq_len) for s in path]
-        #     score_path.append((score, Path.create(steps)))
-
-        # return score_path

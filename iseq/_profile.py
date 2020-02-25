@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 from math import log
-from typing import Generic, Tuple, TypeVar, List
+from typing import Generic, TypeVar
 
 from nmm.alphabet import Alphabet
 from nmm.prob import lprob_zero
 from nmm.sequence import Sequence
 
 from ._model import AltModel, NullModel
-from ._result import SearchResult
-from ._type import MutablePath, TState
+from ._result import SearchResults
+from ._type import TState
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
@@ -42,26 +42,11 @@ class Profile(Generic[TAlphabet, TState], ABC):
 
     @abstractmethod
     def search(
-        self, sequence: Sequence, window: int = 0
-    ) -> List[SearchResult[TAlphabet, TState]]:
+        self, sequence: Sequence, window_length: int = 0
+    ) -> SearchResults[TAlphabet, TState]:
         del sequence
-        del window
+        del window_length
         raise NotImplementedError()
-
-    def _search(
-        self, sequence: Sequence, window: int = 0
-    ) -> List[Tuple[float, MutablePath[TState]]]:
-
-        self._set_target_length(len(sequence))
-        results = self.alt_model.viterbi(sequence, window)
-        score_path_list: List[Tuple[float, MutablePath[TState]]] = []
-
-        for result in results:
-            score0 = self.null_model.likelihood(result.sequence)
-            score1 = result.loglikelihood
-            score_path_list.append((score1 - score0, result.path))
-
-        return score_path_list
 
     def _set_fragment_length(self):
         if self.alt_model.length == 0:

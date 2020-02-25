@@ -1,4 +1,5 @@
-from typing import Generic, Iterable, List, Tuple, TypeVar, Callable
+from __future__ import annotations
+from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
 
 from nmm import Interval
 from nmm.alphabet import Alphabet
@@ -7,14 +8,45 @@ from nmm.sequence import SequenceABC
 from nmm.state import State
 
 from ._fragment import Fragment
+from ._type import MutablePath
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 TState = TypeVar("TState", bound=State)
 create_fragment_type = Callable[
-    [SequenceABC[TAlphabet], Path[Step[TState]], bool], Fragment[TAlphabet, TState]
+    [SequenceABC[TAlphabet], MutablePath[TState], bool], Fragment[TAlphabet, TState]
 ]
 
 __all__ = ["SearchResult"]
+
+
+class SearchResults(Generic[TAlphabet, TState]):
+    def __init__(
+        self, sequence: SequenceABC[TAlphabet], create_fragment: create_fragment_type,
+    ):
+        self._sequence = sequence
+        self._create_fragment = create_fragment
+        self._results: List[SearchResult[TAlphabet, TState]] = []
+        self._windows: List[Interval] = []
+
+    def append(
+        self, loglik: float, window: Interval, path: MutablePath[TState],
+    ):
+        subseq = self._sequence[window.start : window.stop]
+        r = SearchResult[TAlphabet, TState](loglik, subseq, path, self._create_fragment)
+        self._results.append(r)
+        self._windows.append(window)
+
+    @property
+    def results(self):
+        return self._results
+
+    @property
+    def windows(self):
+        return self._windows
+
+    @property
+    def length(self) -> int:
+        return len(self._results)
 
 
 class SearchResult(Generic[TAlphabet, TState]):
@@ -22,7 +54,7 @@ class SearchResult(Generic[TAlphabet, TState]):
         self,
         loglik: float,
         sequence: SequenceABC[TAlphabet],
-        path: Path[Step[TState]],
+        path: MutablePath[TState],
         create_fragment: create_fragment_type,
     ):
         self._loglik = loglik
