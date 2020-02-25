@@ -22,7 +22,7 @@ from ._codon import CodonFragment, CodonPath, CodonStep
 from ._fragment import Fragment
 from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
 from ._profile import Profile
-from ._result import SearchResult, SearchResults
+from ._result import SearchResults
 
 FrameStep = Step[Union[FrameState, MuteState]]
 FrameSearchResults = SearchResults[BaseAlphabet, FrameState]

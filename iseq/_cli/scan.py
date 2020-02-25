@@ -1,5 +1,4 @@
 import os
-import sys
 import pathlib
 from typing import IO, List, Union
 
@@ -11,11 +10,12 @@ from hmmer_reader import HMMERParser, open_hmmer
 from nmm import GeneticCode
 from nmm.alphabet import CanonicalAminoAlphabet
 from nmm.sequence import Sequence
+from nmm import Interval
 from time import time
 
 from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
-from .._result import SearchResult
+from .._result import SearchResult, SearchResults
 from ..frame import FrameProfile, create_profile
 
 
@@ -62,7 +62,7 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window:
     associations as we are not filtering out by statistical significance.
     """
 
-    output_writer = OutputWriter(output, epsilon)
+    output_writer = OutputWriter(output, epsilon, window)
     codon_writer = FASTAWriter(ocodon)
     amino_writer = FASTAWriter(oamino)
 
@@ -81,7 +81,9 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window:
     else:
         stdout = click.get_text_stream("stdout")
 
-    scanner = Scanner(output_writer, codon_writer, amino_writer, gcode, epsilon, stdout)
+    scanner = Scanner(
+        output_writer, codon_writer, amino_writer, gcode, epsilon, window, stdout
+    )
 
     for i, hmmprof in enumerate(open_hmmer(profile)):
         # start = time()
@@ -98,10 +100,13 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window:
 
 
 class OutputWriter:
-    def __init__(self, file: Union[str, pathlib.Path, IO[str]], epsilon: float):
+    def __init__(
+        self, file: Union[str, pathlib.Path, IO[str]], epsilon: float, window: int
+    ):
         self._gff = GFFWriter(file)
         self._profile = "NOTSET"
         self._epsilon = epsilon
+        self._window = window
         self._item_idx = 1
 
     @property
@@ -114,7 +119,7 @@ class OutputWriter:
 
     def write_item(self, seqid: str, start: int, end: int):
         item_id = f"item{self._item_idx}"
-        att = f"ID={item_id};Profile={self._profile};Epsilon={self._epsilon}"
+        att = f"ID={item_id};Profile={self._profile};Epsilon={self._epsilon};Window={self._window}"
         item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", att)
         self._gff.write_item(item)
         self._item_idx += 1
@@ -135,6 +140,7 @@ class Scanner:
         amino_writer: FASTAWriter,
         genetic_code: GeneticCode,
         epsilon: float,
+        window_length: int,
         stdout,
     ):
         self._output_writer = output_writer
@@ -142,6 +148,7 @@ class Scanner:
         self._amino_writer = amino_writer
         self._genetic_code = genetic_code
         self._epsilon = epsilon
+        self._window_length = window_length
         self._stdout = stdout
 
     def process_profile(self, M, profile_parser: HMMERParser, targets: List[FASTAItem]):
@@ -164,30 +171,38 @@ class Scanner:
 
         print(f"{M},{elapsed_create:.8f},{elapsed_scan:.8f}")
 
+    def finalize_stream(self, stream: LazyFile):
+        if stream.name != "-":
+            self._stdout.write(f"Writing to <{stream.name}> file.\n")
+
+        stream.close_intelligently()
+
     def _scan_target(self, profile: FrameProfile, target: FASTAItem):
 
         self._stdout.write(">" + target.defline + "\n")
         self._stdout.write(sequence_summary(target.sequence) + "\n")
 
         seq = Sequence.create(target.sequence.encode(), profile.alphabet)
-        result = profile.search(seq).results[0]
+        search_results = profile.search(seq, self._window_length)
         seqid = f"{target.defline.split()[0]}"
 
-        self._show_search_result(result)
+        for window, result in zip(search_results.windows, search_results.results):
 
-        for i, frag in zip(result.intervals, result.fragments):
-            if not frag.homologous:
-                continue
+            self._show_search_result(result, window)
 
-            start = i.start
-            stop = i.stop
-            item_id = self._output_writer.write_item(seqid, start, stop)
+            for i, frag in zip(result.intervals, result.fragments):
+                if not frag.homologous:
+                    continue
 
-            codon_result = frag.decode()
-            self._codon_writer.write_item(item_id, str(codon_result.sequence))
+                start = i.start
+                stop = i.stop
+                item_id = self._output_writer.write_item(seqid, start, stop)
 
-            amino_result = codon_result.decode(self._genetic_code)
-            self._amino_writer.write_item(item_id, str(amino_result.sequence))
+                codon_result = frag.decode()
+                self._codon_writer.write_item(item_id, str(codon_result.sequence))
+
+                amino_result = codon_result.decode(self._genetic_code)
+                self._amino_writer.write_item(item_id, str(amino_result.sequence))
 
     def _show_profile(self, hmmprof: HMMERParser):
         name = dict(hmmprof.metadata)["NAME"]
@@ -200,21 +215,24 @@ class Scanner:
         self._stdout.write(f"Accession    {acc}\n")
         self._stdout.write("\n")
 
-    def _show_search_result(self, result: SearchResult):
-        frags = result.fragments
-        nhomo = sum(frag.homologous for frag in result.fragments)
+    def _show_search_result(self, result: SearchResult, window: Interval):
 
         self._stdout.write("\n")
-        self._stdout.write(
-            f"Found {nhomo} homologous fragments ({len(frags)} in total).\n"
-        )
 
-        for i, frag in enumerate(frags):
+        start = window.start
+        stop = window.stop
+        n = sum(frag.homologous for frag in result.fragments)
+        msg = f"Found {n} homologous fragment(s) within the range [{start+1}, {stop}]."
+        self._stdout.write(msg + "\n")
+
+        j = 0
+        for interval, frag in zip(result.intervals, result.fragments):
             if not frag.homologous:
                 continue
-            start = result.intervals[i].start
-            stop = result.intervals[i].stop
-            msg = f"Homologous fragment={i}; Position=[{start + 1}, {stop}]\n"
+
+            start = window.start + interval.start
+            stop = window.start + interval.stop
+            msg = f"Fragment={j + 1}; Position=[{start + 1}, {stop}]\n"
             self._stdout.write(msg)
             states = []
             matches = []
@@ -224,17 +242,12 @@ class Scanner:
 
             self._stdout.write("\t".join(states) + "\n")
             self._stdout.write("\t".join(matches) + "\n")
+            j += 1
 
     def _show_header(self, title: str):
         self._stdout.write(title + "\n")
         self._stdout.write("=" * len(title) + "\n")
         self._stdout.write("\n")
-
-    def finalize_stream(self, stream: LazyFile):
-        if stream.name != "-":
-            self._stdout.write(f"Writing to <{stream.name}> file.\n")
-
-        stream.close_intelligently()
 
 
 def sequence_summary(sequence: str):

@@ -11,7 +11,7 @@ from nmm import Interval
 from ._fragment import Fragment
 from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
 from ._profile import Profile
-from ._result import SearchResult, SearchResults
+from ._result import SearchResults
 from ._typing import TAlphabet, MutableStep
 
 StandardFragment = Fragment[TAlphabet, NormalState]
