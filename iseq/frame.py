@@ -184,9 +184,13 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
     def alt_model(self) -> FrameAltModel:
         return self._alt_model
 
-    def search(self, sequence: SequenceABC[BaseAlphabet]) -> FrameSearchResult:
-        score, path = self._search(sequence)
-        return FrameSearchResult(score, sequence, path, _create_fragment)
+    def search(
+        self, sequence: SequenceABC[BaseAlphabet], window: int = 0
+    ) -> List[FrameSearchResult]:
+        return [
+            FrameSearchResult(score, sequence, path, _create_fragment)
+            for score, path in self._search(sequence, window)
+        ]
 
 
 def _create_fragment(

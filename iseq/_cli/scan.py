@@ -46,7 +46,13 @@ from ..frame import FrameProfile, create_profile
 @click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
 )
-def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet):
+@click.option(
+    "--window",
+    type=int,
+    help="Window length. Defaults to zero, which means no window.",
+    default=0,
+)
+def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window: int):
     """
     Search nucleotide sequence(s) against a protein profile database.
 
@@ -75,16 +81,20 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet):
     else:
         stdout = click.get_text_stream("stdout")
 
-    s = Scan(output_writer, codon_writer, amino_writer, gcode, epsilon, stdout)
+    scanner = Scanner(output_writer, codon_writer, amino_writer, gcode, epsilon, stdout)
 
-    for hmmprof in open_hmmer(profile):
-        start = time()
-        s.process_profile(hmmprof, targets)
-        print("Profile elapsed: {:.12f} seconds".format(time() - start))
+    for i, hmmprof in enumerate(open_hmmer(profile)):
+        # start = time()
+        M = hmmprof.M
+        scanner.process_profile(M, hmmprof, targets)
+        assert len(targets) == 1
+        # print("{},{},{:.12f}".format(M, len(targets[0].sequence), time() - start))
+        if i == 176:
+            break
 
-    s.finalize_stream(output)
-    s.finalize_stream(ocodon)
-    s.finalize_stream(oamino)
+    scanner.finalize_stream(output)
+    scanner.finalize_stream(ocodon)
+    scanner.finalize_stream(oamino)
 
 
 class OutputWriter:
@@ -117,7 +127,7 @@ class OutputWriter:
         self._gff.close()
 
 
-class Scan:
+class Scanner:
     def __init__(
         self,
         output_writer: OutputWriter,
@@ -134,19 +144,25 @@ class Scan:
         self._epsilon = epsilon
         self._stdout = stdout
 
-    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
+    def process_profile(self, M, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
         self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
         base_alphabet = self._genetic_code.base_alphabet
+        start = time()
         prof = create_profile(profile_parser, base_alphabet, self._epsilon)
+        elapsed_create = time() - start
 
         self._show_header("Profile")
         self._show_profile(profile_parser)
 
         self._show_header("Targets")
+        start = time()
         for target in targets:
             self._scan_target(prof, target)
             self._stdout.write("\n")
+        elapsed_scan = time() - start
+
+        print(f"{M},{elapsed_create:.8f},{elapsed_scan:.8f}")
 
     def _scan_target(self, profile: FrameProfile, target: FASTAItem):
 
@@ -154,7 +170,7 @@ class Scan:
         self._stdout.write(sequence_summary(target.sequence) + "\n")
 
         seq = Sequence.create(target.sequence.encode(), profile.alphabet)
-        result = profile.search(seq)
+        result = profile.search(seq)[0]
         seqid = f"{target.defline.split()[0]}"
 
         self._show_search_result(result)

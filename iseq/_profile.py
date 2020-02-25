@@ -1,18 +1,16 @@
 from abc import ABC, abstractmethod
 from math import log
-from typing import Generic, Tuple, TypeVar
+from typing import Generic, Tuple, TypeVar, List
 
 from nmm.alphabet import Alphabet
-from nmm.path import Path, Step
 from nmm.prob import lprob_zero
 from nmm.sequence import Sequence
-from nmm.state import State
 
 from ._model import AltModel, NullModel
 from ._result import SearchResult
+from ._type import MutablePath, TState
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
-TState = TypeVar("TState", bound=State)
 
 __all__ = ["Profile"]
 
@@ -43,16 +41,27 @@ class Profile(Generic[TAlphabet, TState], ABC):
         self._multiple_hits = multiple_hits
 
     @abstractmethod
-    def search(self, sequence: Sequence) -> SearchResult[TAlphabet, TState]:
+    def search(
+        self, sequence: Sequence, window: int = 0
+    ) -> List[SearchResult[TAlphabet, TState]]:
         del sequence
+        del window
         raise NotImplementedError()
 
-    def _search(self, sequence: Sequence) -> Tuple[float, Path[Step[TState]]]:
+    def _search(
+        self, sequence: Sequence, window: int = 0
+    ) -> List[Tuple[float, MutablePath[TState]]]:
+
         self._set_target_length(len(sequence))
-        score0 = self.null_model.likelihood(sequence)
-        score1, path = self.alt_model.viterbi(sequence)
-        score = score1 - score0
-        return score, path
+        results = self.alt_model.viterbi(sequence, window)
+        score_path_list: List[Tuple[float, MutablePath[TState]]] = []
+
+        for result in results:
+            score0 = self.null_model.likelihood(result.sequence)
+            score1 = result.loglikelihood
+            score_path_list.append((score1 - score0, result.path))
+
+        return score_path_list
 
     def _set_fragment_length(self):
         if self.alt_model.length == 0:

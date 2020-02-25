@@ -14,7 +14,7 @@ def test_frame_profile_frame1(PF03373):
     rna_abc = hmmer.alphabet
     most_likely_rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA".replace(b" ", b"")
     most_likely_seq = Sequence.create(most_likely_rna_seq, rna_abc)
-    r = hmmer.search(most_likely_seq)
+    r = hmmer.search(most_likely_seq)[0]
 
     assert_allclose(r.loglikelihood, 125.83363182422178)
     frags = r.fragments
@@ -35,7 +35,7 @@ def test_frame_profile_frame2(PF03373):
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence.create(rna_seq, rna_abc)
 
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     assert_allclose(r.loglikelihood, 168.23071232889802)
     frags = r.fragments
     assert_equal(len(frags), 2)
@@ -54,7 +54,7 @@ def test_frame_profile_frame3(PF03373):
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence.create(rna_seq, rna_abc)
 
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     frags = r.fragments
     assert_equal(len(frags), 1)
     assert_equal(frags[0].homologous, True)
@@ -70,7 +70,7 @@ def test_frame_profile_frame4(PF03373):
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence.create(rna_seq, rna_abc)
 
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     frags = r.fragments
     assert_equal(len(frags), 0)
 
@@ -84,7 +84,7 @@ def test_frame_profile_frame5(PF03373):
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence.create(rna_seq, rna_abc)
 
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     frags = r.fragments
     assert_equal(len(frags), 1)
     assert_equal(frags[0].homologous, True)
@@ -100,7 +100,7 @@ def test_frame_profile_frame6(PF03373):
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence.create(rna_seq, rna_abc)
 
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     frags = r.fragments
     assert_equal(len(frags), 4)
     assert_equal(frags[0].homologous, True)
@@ -113,7 +113,7 @@ def test_frame_profile_frame6(PF03373):
     assert_equal(bytes(frags[3].sequence), b"GAAGAAGA")
 
     hmmer.multiple_hits = False
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     frags = r.fragments
     assert_allclose(r.loglikelihood, 1445.0314253859958)
     assert_equal(len(frags), 3)
@@ -137,7 +137,7 @@ def test_frame_profile_codons(PF03373):
     rna_seq = rna_seq.replace(b" ", b"")
     seq = Sequence.create(rna_seq, rna_abc)
 
-    r = hmmer.search(seq)
+    r = hmmer.search(seq)[0]
     assert_allclose(r.loglikelihood, 175.35113397356454)
     frags = r.fragments
     cfrags = [f.decode() for f in frags]

@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Tuple, TypeVar, Union
+from typing import Dict, Generic, List, Tuple, TypeVar, Union, List
 
 from nmm import HMM, CData
 from nmm.path import Path, Step
 from nmm.prob import lprob_zero
 from nmm.sequence import Sequence
 from nmm.state import MuteState, State
-
-TState = TypeVar("TState", bound=State)
+from nmm.result import Results
+from ._type import MutablePath, TState, MutableState
 
 __all__ = ["AltModel", "Node", "NullModel", "SpecialNode", "Transitions"]
 
@@ -72,7 +72,7 @@ class Node(Generic[TState]):
     def D(self) -> MuteState:
         return self._D
 
-    def states(self) -> List[Union[TState, MuteState]]:
+    def states(self) -> List[MutableState[TState]]:
         return [self._M, self._I, self._D]
 
 
@@ -213,18 +213,17 @@ class AltModel(Generic[TState]):
     def length(self) -> int:
         return len(self._core_nodes)
 
-    def viterbi(
-        self, seq: Sequence, window_length: int = 0
-    ) -> Tuple[float, Path[Step[Union[TState, MuteState]]]]:
+    def viterbi(self, seq: Sequence, window: int = 0) -> Results[MutablePath[TState]]:
+        return self._hmm.viterbi(seq, self.special_node.T, window)
+        # results = self._hmm.viterbi(seq, self.special_node.T, window)
+        # score_path = []
 
-        results = self._hmm.viterbi(seq, self.special_node.T, window_length)
-        # TODO: implement multiple windows
-        assert len(results) == 1
+        # for result in results:
+        #     path = result.path
+        #     score = result.loglikelihood
 
-        path = results[0].path
-        score = results[0].loglikelihood
+        #     states = self._states
+        #     steps = [Step.create(states[s.state.imm_state], s.seq_len) for s in path]
+        #     score_path.append((score, Path.create(steps)))
 
-        states = self._states
-        steps = [Step.create(states[s.state.imm_state], s.seq_len) for s in path]
-
-        return (score, Path.create(steps))
+        # return score_path
