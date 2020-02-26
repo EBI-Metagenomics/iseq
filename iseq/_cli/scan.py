@@ -1,22 +1,21 @@
 import os
 import pathlib
-from typing import IO, List, Union
+from time import time
+from typing import IO, List, NamedTuple, Union, Tuple, Iterator
 
 import click
 from click.utils import LazyFile
 
 from fasta_reader import FASTAItem, FASTAWriter, open_fasta
 from hmmer_reader import HMMERParser, open_hmmer
-from nmm import GeneticCode
+from nmm import GeneticCode, Interval
 from nmm.alphabet import CanonicalAminoAlphabet
 from nmm.sequence import Sequence
-from nmm import Interval
-from time import time
 
 from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
 from .._result import SearchResult, SearchResults
-from ..frame import FrameProfile, create_profile
+from ..frame import FrameProfile, create_profile, FrameFragment
 
 
 @click.command()
@@ -132,6 +131,9 @@ class OutputWriter:
         self._gff.close()
 
 
+IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragment)])
+
+
 class Scanner:
     def __init__(
         self,
@@ -186,23 +188,37 @@ class Scanner:
         search_results = profile.search(seq, self._window_length)
         seqid = f"{target.defline.split()[0]}"
 
+        waiting: List[IntFrag] = []
+
         for window, result in zip(search_results.windows, search_results.results):
 
             self._show_search_result(result, window)
+            candidates: List[IntFrag] = []
 
             for i, frag in zip(result.intervals, result.fragments):
                 if not frag.homologous:
                     continue
 
-                start = window.start + i.start
-                stop = window.start + i.stop
-                item_id = self._output_writer.write_item(seqid, start, stop)
+                interval = Interval(window.start + i.start, window.start + i.stop)
+                candidates.append(IntFrag(interval, frag))
 
-                codon_result = frag.decode()
-                self._codon_writer.write_item(item_id, str(codon_result.sequence))
+            ready, waiting = intersect_fragments(waiting, candidates)
 
-                amino_result = codon_result.decode(self._genetic_code)
-                self._amino_writer.write_item(item_id, str(amino_result.sequence))
+            self._write_fragments(seqid, ready)
+
+        self._write_fragments(seqid, waiting)
+
+    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
+        for ifrag in ifragments:
+            start = ifrag.interval.start
+            stop = ifrag.interval.stop
+            item_id = self._output_writer.write_item(seqid, start, stop)
+
+            codon_result = ifrag.fragment.decode()
+            self._codon_writer.write_item(item_id, str(codon_result.sequence))
+
+            amino_result = codon_result.decode(self._genetic_code)
+            self._amino_writer.write_item(item_id, str(amino_result.sequence))
 
     def _show_profile(self, hmmprof: HMMERParser):
         name = dict(hmmprof.metadata)["NAME"]
@@ -261,3 +277,51 @@ def sequence_summary(sequence: str):
     end_nchars = begin_nchars + (max_nchars - len(middle)) % 2
 
     return sequence[:begin_nchars] + middle + sequence[-end_nchars:]
+
+
+def intersect_fragments(
+    waiting: List[IntFrag], candidates: List[IntFrag]
+) -> Tuple[List[IntFrag], List[IntFrag]]:
+
+    ready: List[IntFrag] = []
+    new_waiting: List[IntFrag] = []
+
+    i = 0
+    j = 0
+
+    curr_stop = 0
+    while i < len(waiting) and j < len(candidates):
+
+        if waiting[i].interval.start < candidates[j].interval.start:
+            ready.append(waiting[i])
+            curr_stop = waiting[i].interval.stop
+            i += 1
+        elif waiting[i].interval.start == candidates[j].interval.start:
+            if waiting[i].interval.stop >= candidates[j].interval.stop:
+                ready.append(waiting[i])
+                curr_stop = waiting[i].interval.stop
+            else:
+                new_waiting.append(candidates[j])
+                curr_stop = candidates[j].interval.stop
+            i += 1
+            j += 1
+        else:
+            new_waiting.append(candidates[j])
+            curr_stop = candidates[j].interval.stop
+            j += 1
+
+        while i < len(waiting) and waiting[i].interval.stop <= curr_stop:
+            i += 1
+
+        while j < len(candidates) and candidates[j].interval.stop <= curr_stop:
+            j += 1
+
+    while i < len(waiting):
+        ready.append(waiting[i])
+        i += 1
+
+    while j < len(candidates):
+        new_waiting.append(candidates[j])
+        j += 1
+
+    return ready, new_waiting
