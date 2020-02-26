@@ -42,6 +42,64 @@ def test_cli_scan_gff_output(tmpdir, PF03373, GALNBKIG_cut):
     assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
 
 
+def test_cli_scan_window0(tmpdir, PF03373, large_rna):
+    tmpdir.chdir()
+    invoke = CliRunner().invoke
+    fasta = large_rna["fasta"]
+    output = large_rna["output0"]
+    codon = large_rna["codon0"]
+    amino = large_rna["amino0"]
+    r = invoke(
+        cli,
+        [
+            "scan",
+            str(PF03373),
+            str(fasta),
+            "--output",
+            "output.gff",
+            "--ocodon",
+            "codon.fasta",
+            "--oamino",
+            "amino.fasta",
+            "--window",
+            "0",
+        ],
+    )
+    assert_equal(r.exit_code, 0)
+    assert_equal(filecmp.cmp(output, "output.gff", shallow=False), True)
+    assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
+    assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
+
+
+def test_cli_scan_window48(tmpdir, PF03373, large_rna):
+    tmpdir.chdir()
+    invoke = CliRunner().invoke
+    fasta = large_rna["fasta"]
+    output = large_rna["output48"]
+    codon = large_rna["codon48"]
+    amino = large_rna["amino48"]
+    r = invoke(
+        cli,
+        [
+            "scan",
+            str(PF03373),
+            str(fasta),
+            "--output",
+            "output.gff",
+            "--ocodon",
+            "codon.fasta",
+            "--oamino",
+            "amino.fasta",
+            "--window",
+            "48",
+        ],
+    )
+    assert_equal(r.exit_code, 0)
+    assert_equal(filecmp.cmp(output, "output.gff", shallow=False), True)
+    assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
+    assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
+
+
 def test_cli_score(tmpdir, database1, amino1, output1, output1_evalue):
     tmpdir.chdir()
     shutil.copyfile(output1, tmpdir / "output.gff")

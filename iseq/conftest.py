@@ -46,6 +46,19 @@ def output1_evalue(tmp_path):
     return _write_file(tmp_path, "output1_evalue.gff")
 
 
+@pytest.fixture
+def large_rna(tmp_path):
+    return {
+        "fasta": _write_file(tmp_path, "large_rna_seq.fasta"),
+        "amino0": _write_file(tmp_path, "large_rna_seq_amino0.fasta"),
+        "codon0": _write_file(tmp_path, "large_rna_seq_codon0.fasta"),
+        "output0": _write_file(tmp_path, "large_rna_seq_output0.gff"),
+        "amino48": _write_file(tmp_path, "large_rna_seq_amino48.fasta"),
+        "codon48": _write_file(tmp_path, "large_rna_seq_codon48.fasta"),
+        "output48": _write_file(tmp_path, "large_rna_seq_output48.gff"),
+    }
+
+
 def _write_file(path, filename):
     import importlib_resources as pkg_resources
     from . import _data
