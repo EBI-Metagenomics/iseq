@@ -1,0 +1,7 @@
+##gff-version 3
+GALNBKIG_44444_ont_01_plus_strand	nmm	.	31	48	0.0	+	.	ID=item2;Profile=PF03373.14;Epsilon=0.01;Window=48
+GALNBKIG_44444_ont_01_plus_strand	nmm	.	607	714	0.0	+	.	ID=item42;Profile=PF03373.14;Epsilon=0.01;Window=48
+GALNBKIG_00914_ont_01_plus_strand	nmm	.	31	54	0.0	+	.	ID=item3;Profile=PF99999.99;Epsilon=0.01;Window=48
+GALNBKIG_00914_ont_01_plus_strand	nmm	.	2	474	0.0	+	.	ID=item28;Profile=PF03373.14;Epsilon=0.01;Window=48
+GALNBKIG_00914_ont_01_plus_strand	nmm	.	1	24	0.0	+	.	ID=item1;Profile=PF03373.14;Epsilon=0.01;Window=48
+GALNBKIG_00914_ont_01_plus_strand	nmm	.	631	714	0.0	+	.	ID=item43;Profile=PF03373.14;Epsilon=0.01;Window=48

@@ -10,4 +10,6 @@ include iseq/_data/database1.hmm
 include iseq/_data/output1.gff
 include iseq/_data/output1_evalue.gff
 include iseq/_data/tblout.txt
+include iseq/_gff/test/deduplicate.gff
+include iseq/_gff/test/duplicate.gff
 include version.py
