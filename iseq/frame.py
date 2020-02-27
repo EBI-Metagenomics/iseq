@@ -163,7 +163,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         R = factory.create(b"R", null_aminot)
         self._null_model = FrameNullModel(R, self._special_transitions)
 
-        special_node = FrameSpecialNode(
+        self._special_node = FrameSpecialNode(
             S=MuteState(b"S", base_alphabet),
             N=factory.create(b"N", null_aminot),
             B=MuteState(b"B", base_alphabet),
@@ -174,7 +174,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         )
 
         self._alt_model = FrameAltModel(
-            special_node, nodes_trans, self._special_transitions
+            self._special_node, nodes_trans, self._special_transitions
         )
         self._alt_model.set_fragment_length()
 

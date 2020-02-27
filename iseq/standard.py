@@ -9,7 +9,7 @@ from nmm.state import MuteState, NormalState
 from nmm import Interval
 
 from ._fragment import Fragment
-from ._model import AltModel, Node, NullModel, SpecialNode, Transitions
+from ._model import AltModel, Node, NullModel, SpecialNode, Transitions, MSVModel
 from ._profile import Profile
 from ._result import SearchResults
 from ._typing import TAlphabet, MutableStep
@@ -22,8 +22,10 @@ StandardNode = Node[NormalState]
 StandardSpecialNode = SpecialNode[NormalState]
 StandardNullModel = NullModel[NormalState]
 StandardAltModel = AltModel[NormalState]
+StandardMSVModel = MSVModel[NormalState]
 
 __all__ = [
+    "StandardMSVModel",
     "StandardAltModel",
     "StandardFragment",
     "StandardNullModel",
@@ -44,7 +46,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         R = NormalState(b"R", alphabet, null_lprobs)
         self._null_model = StandardNullModel(R, self._special_transitions)
 
-        special_node = StandardSpecialNode(
+        self._special_node = StandardSpecialNode(
             S=MuteState(b"S", alphabet),
             N=NormalState(b"N", alphabet, null_lprobs),
             B=MuteState(b"B", alphabet),
@@ -55,9 +57,14 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         )
 
         self._alt_model = StandardAltModel(
-            special_node, nodes_trans, self._special_transitions
+            self._special_node, nodes_trans, self._special_transitions
         )
         self._alt_model.set_fragment_length()
+
+        self._msv_model = StandardMSVModel(
+            self._special_node, nodes_trans, self._special_transitions
+        )
+        self._msv_model.set_fragment_length()
 
     @property
     def null_model(self) -> StandardNullModel:
@@ -71,11 +78,20 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         self, sequence: SequenceABC[TAlphabet], window_length: int = 0
     ) -> StandardSearchResults:
 
+        from time import time
+
         self._set_special_transitions(len(sequence))
         self._alt_model.update_special_transitions()
+        self._msv_model.update_special_transitions()
         self._null_model.update_special_transitions()
 
+        start = time()
+        self._msv_model.viterbi(sequence, window_length)
+        print(f"MSV elapsed: {time()-start} seconds")
+
+        start = time()
         alt_results = self.alt_model.viterbi(sequence, window_length)
+        print(f"ALT elapsed: {time()-start} seconds")
 
         def create_fragment(
             seq: SequenceABC[TAlphabet], path: Path[StandardStep], homologous: bool

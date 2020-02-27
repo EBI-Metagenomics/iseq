@@ -261,11 +261,15 @@ class AltModel(Generic[TState]):
 
 class MSVModel(Generic[TState]):
     def __init__(
-        self, special_node: SpecialNode, nodes_trans: List[Tuple[Node, Transitions]],
+        self,
+        special_node: SpecialNode,
+        nodes_trans: List[Tuple[Node, Transitions]],
+        special_trans: SpecialTransitions,
     ):
         self._special_node = special_node
         self._core_nodes = [nt[0] for nt in nodes_trans]
         self._states: Dict[CData, Union[TState, MuteState]] = {}
+        self._special_transitions = special_trans
 
         for node in self._core_nodes:
             for state in node.states():
@@ -282,8 +286,6 @@ class MSVModel(Generic[TState]):
         hmm.add_state(special_node.J)
         hmm.add_state(special_node.C)
         hmm.add_state(special_node.T)
-
-        self._special_transitions = SpecialTransitions()
 
         if len(nodes_trans) > 0:
             node = nodes_trans[0][0]
@@ -309,12 +311,42 @@ class MSVModel(Generic[TState]):
         return self._special_node
 
     @property
-    def special_transitions(self) -> SpecialTransitions:
-        return self._special_transitions
-
-    @property
     def length(self) -> int:
         return len(self._core_nodes)
 
     def viterbi(self, seq: Sequence, window_length: int = 0) -> MutableResults[TState]:
         return self._hmm.viterbi(seq, self.special_node.T, window_length)
+
+    def set_fragment_length(self):
+        if self.length == 0:
+            return
+
+        B = self.special_node.B
+        E = self.special_node.E
+
+        # Uniform local alignment fragment length distribution
+        t = self._special_transitions
+        t.BM = log(2) - log(self.length) - log(self.length + 1)
+        t.ME = 0.0
+        for node in self.core_nodes():
+            self.set_transition(B, node.M, t.BM)
+            self.set_transition(node.M, E, t.ME)
+
+    def update_special_transitions(self):
+        t = self._special_transitions
+        node = self.special_node
+
+        self.set_transition(node.S, node.B, t.NB)
+        self.set_transition(node.S, node.N, t.NN)
+        self.set_transition(node.N, node.N, t.NN)
+        self.set_transition(node.N, node.B, t.NB)
+
+        self.set_transition(node.E, node.T, t.EC + t.CT)
+        self.set_transition(node.E, node.C, t.EC + t.CC)
+        self.set_transition(node.C, node.C, t.CC)
+        self.set_transition(node.C, node.T, t.CT)
+
+        self.set_transition(node.E, node.B, t.EJ + t.JB)
+        self.set_transition(node.E, node.J, t.EJ + t.JJ)
+        self.set_transition(node.J, node.J, t.JJ)
+        self.set_transition(node.J, node.B, t.JB)
