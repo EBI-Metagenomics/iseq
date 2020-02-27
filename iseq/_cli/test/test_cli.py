@@ -36,7 +36,7 @@ def test_cli_scan_gff_output(tmpdir, PF03373, GALNBKIG_cut):
             "amino.fasta",
         ],
     )
-    assert_equal(r.exit_code, 0)
+    assert r.exit_code == 0, r.output
     assert_equal(filecmp.cmp(gff, "output.gff", shallow=False), True)
     assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
     assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
@@ -65,7 +65,7 @@ def test_cli_scan_window0(tmpdir, PF03373, large_rna):
             "0",
         ],
     )
-    assert_equal(r.exit_code, 0)
+    assert r.exit_code == 0, r.output
     assert_equal(filecmp.cmp(output, "output.gff", shallow=False), True)
     assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
     assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
@@ -94,7 +94,7 @@ def test_cli_scan_window48(tmpdir, PF03373, large_rna):
             "48",
         ],
     )
-    assert_equal(r.exit_code, 0)
+    assert r.exit_code == 0, r.output
     assert_equal(filecmp.cmp(output, "output.gff", shallow=False), True)
     assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
     assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
@@ -105,5 +105,5 @@ def test_cli_score(tmpdir, database1, amino1, output1, output1_evalue):
     shutil.copyfile(output1, tmpdir / "output.gff")
     invoke = CliRunner().invoke
     r = invoke(cli, ["score", str(database1), str(amino1), "output.gff"])
-    assert_equal(r.exit_code, 0)
+    assert r.exit_code == 0, r.output
     assert_equal(filecmp.cmp(output1_evalue, "output.gff", shallow=False), True)
