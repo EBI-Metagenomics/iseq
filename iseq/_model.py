@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import log
 from typing import Dict, Generic, List, Tuple, Union
 
 from nmm import HMM, CData
@@ -128,10 +129,13 @@ class SpecialNode(Generic[TState]):
 
 
 class NullModel(Generic[TState]):
-    def __init__(self, state: TState):
+    def __init__(
+        self, state: TState, special_trans: SpecialTransitions,
+    ):
         self._hmm = HMM(state.alphabet)
         self._hmm.add_state(state, 0.0)
         self._state = state
+        self._special_transitions = special_trans
 
     @property
     def state(self) -> TState:
@@ -145,8 +149,117 @@ class NullModel(Generic[TState]):
         path = Path.create(steps)
         return self._hmm.likelihood(sequence, path)
 
+    def update_special_transitions(self):
+        self.set_transition(self._special_transitions.RR)
+
 
 class AltModel(Generic[TState]):
+    def __init__(
+        self,
+        special_node: SpecialNode,
+        nodes_trans: List[Tuple[Node, Transitions]],
+        special_trans: SpecialTransitions,
+    ):
+        self._special_node = special_node
+        self._core_nodes = [nt[0] for nt in nodes_trans]
+        self._states: Dict[CData, Union[TState, MuteState]] = {}
+        self._special_transitions = special_trans
+
+        for node in self._core_nodes:
+            for state in node.states():
+                self._states[state.imm_state] = state
+
+        for state in special_node.states():
+            self._states[state.imm_state] = state
+
+        hmm = HMM(special_node.S.alphabet)
+        hmm.add_state(special_node.S, 0.0)
+        hmm.add_state(special_node.N)
+        hmm.add_state(special_node.B)
+        hmm.add_state(special_node.E)
+        hmm.add_state(special_node.J)
+        hmm.add_state(special_node.C)
+        hmm.add_state(special_node.T)
+
+        if len(nodes_trans) > 0:
+            node, trans = nodes_trans[0]
+            hmm.add_state(node.M)
+            hmm.add_state(node.I)
+            hmm.add_state(node.D)
+            prev = node
+
+            for node, trans in nodes_trans[1:]:
+                hmm.add_state(node.M)
+                hmm.add_state(node.I)
+                hmm.add_state(node.D)
+
+                hmm.set_transition(prev.M, node.M, trans.MM)
+                hmm.set_transition(prev.M, prev.I, trans.MI)
+                hmm.set_transition(prev.M, node.D, trans.MD)
+                hmm.set_transition(prev.I, node.M, trans.IM)
+                hmm.set_transition(prev.I, prev.I, trans.II)
+                hmm.set_transition(prev.D, node.M, trans.DM)
+                hmm.set_transition(prev.D, node.D, trans.DD)
+                prev = node
+
+        self._hmm = hmm
+
+    def set_transition(self, a: State, b: State, lprob: float):
+        self._hmm.set_transition(a, b, lprob)
+
+    def core_nodes(self) -> List[Node]:
+        return self._core_nodes
+
+    @property
+    def special_node(self) -> SpecialNode:
+        return self._special_node
+
+    @property
+    def length(self) -> int:
+        return len(self._core_nodes)
+
+    def viterbi(self, seq: Sequence, window_length: int = 0) -> MutableResults[TState]:
+        return self._hmm.viterbi(seq, self.special_node.T, window_length)
+
+    def set_fragment_length(self):
+        if self.length == 0:
+            return
+
+        B = self.special_node.B
+        E = self.special_node.E
+
+        # Uniform local alignment fragment length distribution
+        t = self._special_transitions
+        t.BM = log(2) - log(self.length) - log(self.length + 1)
+        t.ME = 0.0
+        for node in self.core_nodes():
+            self.set_transition(B, node.M, t.BM)
+            self.set_transition(node.M, E, t.ME)
+
+        for node in self.core_nodes()[1:]:
+            self.set_transition(node.D, E, 0.0)
+
+    def update_special_transitions(self):
+        t = self._special_transitions
+        node = self.special_node
+
+        self.set_transition(node.S, node.B, t.NB)
+        self.set_transition(node.S, node.N, t.NN)
+        self.set_transition(node.N, node.N, t.NN)
+        self.set_transition(node.N, node.B, t.NB)
+
+        self.set_transition(node.E, node.T, t.EC + t.CT)
+        self.set_transition(node.E, node.C, t.EC + t.CC)
+        self.set_transition(node.C, node.C, t.CC)
+        self.set_transition(node.C, node.T, t.CT)
+
+        self.set_transition(node.E, node.B, t.EJ + t.JB)
+        self.set_transition(node.E, node.J, t.EJ + t.JJ)
+        self.set_transition(node.J, node.J, t.JJ)
+        self.set_transition(node.J, node.B, t.JB)
+
+
+class MSVModel(Generic[TState]):
     def __init__(
         self, special_node: SpecialNode, nodes_trans: List[Tuple[Node, Transitions]],
     ):
@@ -173,24 +286,14 @@ class AltModel(Generic[TState]):
         self._special_transitions = SpecialTransitions()
 
         if len(nodes_trans) > 0:
-            node, trans = nodes_trans[0]
+            node = nodes_trans[0][0]
             hmm.add_state(node.M)
-            hmm.add_state(node.I)
-            hmm.add_state(node.D)
             prev = node
 
-            for node, trans in nodes_trans[1:]:
+            for node, _ in nodes_trans[1:]:
                 hmm.add_state(node.M)
-                hmm.add_state(node.I)
-                hmm.add_state(node.D)
 
-                hmm.set_transition(prev.M, node.M, trans.MM)
-                hmm.set_transition(prev.M, prev.I, trans.MI)
-                hmm.set_transition(prev.M, node.D, trans.MD)
-                hmm.set_transition(prev.I, node.M, trans.IM)
-                hmm.set_transition(prev.I, prev.I, trans.II)
-                hmm.set_transition(prev.D, node.M, trans.DM)
-                hmm.set_transition(prev.D, node.D, trans.DD)
+                hmm.set_transition(prev.M, node.M, 0.0)
                 prev = node
 
         self._hmm = hmm

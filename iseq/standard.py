@@ -42,7 +42,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
     ):
         super().__init__(alphabet)
         R = NormalState(b"R", alphabet, null_lprobs)
-        self._null_model = StandardNullModel(R)
+        self._null_model = StandardNullModel(R, self._special_transitions)
 
         special_node = StandardSpecialNode(
             S=MuteState(b"S", alphabet),
@@ -54,8 +54,10 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             T=MuteState(b"T", alphabet),
         )
 
-        self._alt_model = StandardAltModel(special_node, nodes_trans)
-        self._set_fragment_length()
+        self._alt_model = StandardAltModel(
+            special_node, nodes_trans, self._special_transitions
+        )
+        self._alt_model.set_fragment_length()
 
     @property
     def null_model(self) -> StandardNullModel:
@@ -69,7 +71,10 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         self, sequence: SequenceABC[TAlphabet], window_length: int = 0
     ) -> StandardSearchResults:
 
-        self._set_target_length(len(sequence))
+        self._set_special_transitions(len(sequence))
+        self._alt_model.update_special_transitions()
+        self._null_model.update_special_transitions()
+
         alt_results = self.alt_model.viterbi(sequence, window_length)
 
         def create_fragment(

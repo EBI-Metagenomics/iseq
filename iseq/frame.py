@@ -161,7 +161,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         super().__init__(base_alphabet)
 
         R = factory.create(b"R", null_aminot)
-        self._null_model = FrameNullModel(R)
+        self._null_model = FrameNullModel(R, self._special_transitions)
 
         special_node = FrameSpecialNode(
             S=MuteState(b"S", base_alphabet),
@@ -173,8 +173,10 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
             T=MuteState(b"T", base_alphabet),
         )
 
-        self._alt_model = FrameAltModel(special_node, nodes_trans)
-        self._set_fragment_length()
+        self._alt_model = FrameAltModel(
+            special_node, nodes_trans, self._special_transitions
+        )
+        self._alt_model.set_fragment_length()
 
     @property
     def null_model(self) -> FrameNullModel:
@@ -188,7 +190,10 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0
     ) -> FrameSearchResults:
 
-        self._set_target_length(len(sequence))
+        self._set_special_transitions(len(sequence))
+        self._alt_model.update_special_transitions()
+        self._null_model.update_special_transitions()
+
         alt_results = self.alt_model.viterbi(sequence, window_length)
 
         def create_fragment(

@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from math import log
-from typing import Generic
+from math import log, exp
+from typing import Generic, Dict
 
 from nmm.alphabet import Alphabet
 from nmm.prob import lprob_zero
 from nmm.sequence import Sequence
 
-from ._model import AltModel, NullModel
+from ._model import AltModel, NullModel, SpecialTransitions
 from ._result import SearchResults
 from ._typing import TAlphabet, TState
 
@@ -17,6 +17,7 @@ class Profile(Generic[TAlphabet, TState], ABC):
     def __init__(self, alphabet: Alphabet):
         self._alphabet = alphabet
         self._multiple_hits: bool = True
+        self._special_transitions = SpecialTransitions()
 
     @property
     def alphabet(self):
@@ -46,27 +47,7 @@ class Profile(Generic[TAlphabet, TState], ABC):
         del window_length
         raise NotImplementedError()
 
-    def _set_fragment_length(self):
-        if self.alt_model.length == 0:
-            return
-
-        B = self.alt_model.special_node.B
-        E = self.alt_model.special_node.E
-
-        # Uniform local alignment fragment length distribution
-        t = self.alt_model.special_transitions
-        t.BM = log(2) - log(self.alt_model.length) - log(self.alt_model.length + 1)
-        t.ME = 0.0
-        for node in self.alt_model.core_nodes():
-            self.alt_model.set_transition(B, node.M, t.BM)
-            self.alt_model.set_transition(node.M, E, t.ME)
-
-        for node in self.alt_model.core_nodes()[1:]:
-            self.alt_model.set_transition(node.D, E, 0.0)
-
-    def _set_target_length(self, length: int):
-        from math import exp
-
+    def _set_special_transitions(self, length: int):
         L = length
         if L == 0:
             return
@@ -82,29 +63,10 @@ class Profile(Generic[TAlphabet, TState], ABC):
         l1p = log(2 + q / (1 - q)) - log(L + 2 + q / (1 - q))
         lr = log(L) - log(L + 1)
 
-        t = self.alt_model.special_transitions
+        t = self._special_transitions
 
         t.NN = t.CC = t.JJ = lp
         t.NB = t.CT = t.JB = l1p
         t.RR = lr
         t.EJ = lq
         t.EC = l1q
-
-        node = self.alt_model.special_node
-
-        self.alt_model.set_transition(node.S, node.B, t.NB)
-        self.alt_model.set_transition(node.S, node.N, t.NN)
-        self.alt_model.set_transition(node.N, node.N, t.NN)
-        self.alt_model.set_transition(node.N, node.B, t.NB)
-
-        self.alt_model.set_transition(node.E, node.T, t.EC + t.CT)
-        self.alt_model.set_transition(node.E, node.C, t.EC + t.CC)
-        self.alt_model.set_transition(node.C, node.C, t.CC)
-        self.alt_model.set_transition(node.C, node.T, t.CT)
-
-        self.alt_model.set_transition(node.E, node.B, t.EJ + t.JB)
-        self.alt_model.set_transition(node.E, node.J, t.EJ + t.JJ)
-        self.alt_model.set_transition(node.J, node.J, t.JJ)
-        self.alt_model.set_transition(node.J, node.B, t.JB)
-
-        self.null_model.set_transition(t.RR)
