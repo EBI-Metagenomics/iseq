@@ -1,7 +1,7 @@
 import os
 import pathlib
 from time import time
-from typing import IO, List, NamedTuple, Union, Tuple, Iterator
+from typing import IO, List, NamedTuple, Tuple, Union
 
 import click
 from click.utils import LazyFile
@@ -14,7 +14,7 @@ from nmm.sequence import Sequence
 
 from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
-from .._result import SearchResult, SearchResults
+from .._result import SearchResult
 from ..frame import FrameProfile, create_profile, FrameFragment
 
 
@@ -53,7 +53,7 @@ from ..frame import FrameProfile, create_profile, FrameFragment
 )
 def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window: int):
     """
-    Search nucleotide sequence(s) against a protein profile database.
+    Search nucleotide sequence(s) against a protein profiles database.
 
     An OUTPUT line determines an association between a TARGET subsequence and
     a PROFILE protein profile. An association maps a target subsequence to a

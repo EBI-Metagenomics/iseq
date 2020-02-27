@@ -4,12 +4,12 @@ import pytest
 from click.testing import CliRunner
 
 from iseq import cli
-from iseq._misc import brotli_decompress, diff, download, tempdir
+from iseq._misc import brotli_decompress, diff, download, tmp_cwd
 
 
 @pytest.mark.slow
 def test_cli_large_dataset_window():
-    with tempdir():
+    with tmp_cwd():
         base = "https://rest.s3for.me/iseq"
         profile_zip = download(f"{base}/PF00113.hmm.br")
         target_zip = download(f"{base}/A0ALD9_dna_huge.fasta.br")

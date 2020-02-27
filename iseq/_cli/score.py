@@ -1,4 +1,7 @@
-from contextlib import contextmanager
+import fileinput
+import re
+from collections import OrderedDict
+from typing import Dict, Mapping
 
 import click
 
@@ -9,12 +12,16 @@ import click
 @click.argument("gff", type=click.Path(exists=True))
 def score(profile, target, gff):
     """
-    Score sequences against a database of HMMER3 profiles.
+    Score sequence(s) against a protein profiles database.
+
+    GFF is a file defining potential homologous sequences found in TARGET
+    while matching it against PROFILE. The GFF file will be in-place edited
+    to contain the additional field `E-value` estimated by HMMER3.
     """
 
     hmmsearch = HMMSearch()
     scores = hmmsearch.compute_scores(profile, target)
-    hmmsearch.update_gff_file(gff, scores)
+    update_gff_file(gff, scores)
 
 
 class HMMSearch:
@@ -32,6 +39,7 @@ class HMMSearch:
         import os
         import subprocess
         from ..io import tblout_reader
+        from iseq._misc import tmp_cwd
 
         profile = os.path.abspath(profile)
         target = os.path.abspath(target)
@@ -39,60 +47,48 @@ class HMMSearch:
         with tmp_cwd():
             cmd = [self._prog_path, "--tblout", "tblout", profile, target]
             subprocess.check_output(cmd)
-            scores = {}
+            scores: Dict[str, float] = {}
             with open("tblout", "r") as file:
                 for row in tblout_reader(file):
                     scores[row.target_name] = row.full_sequence.e_value
 
         return scores
 
-    def update_gff_file(self, filepath, scores):
-        import fileinput
-        import re
-        from collections import OrderedDict
 
-        for row in fileinput.input(filepath, inplace=True, backup=".bak"):
-            row = row.rstrip()
-            if row.startswith("#"):
-                print(row)
-                continue
+def update_gff_file(filepath, scores: Mapping[str, float]):
 
-            match = re.match(r"^(.+\t)([^\t]+)$", row)
-            if match is None:
-                print(row)
-                continue
+    for row in fileinput.input(filepath, inplace=True, backup=".bak"):
+        row = row.rstrip()
+        if row.startswith("#"):
+            print(row)
+            continue
 
-            left = match.group(1)
-            right = match.group(2)
+        match = re.match(r"^(.+\t)([^\t]+)$", row)
+        if match is None:
+            print(row)
+            continue
 
-            if right == ".":
-                print(row)
-                continue
+        left = match.group(1)
+        right = match.group(2)
 
-            attr = OrderedDict(v.split("=") for v in right.split(";"))
-            if "ID" not in attr:
-                print(row)
-                continue
+        if right == ".":
+            print(row)
+            continue
 
-            if attr["ID"] not in scores:
-                if "E-value" in attr:
-                    del attr["E-value"]
-            else:
-                attr["E-value"] = scores[attr["ID"]]
+        fields_list = []
+        for v in right.split(";"):
+            name, value = v.split("=", 1)
+            fields_list.append((name, value))
 
-            print(left + ";".join(k + "=" + v for k, v in attr.items()))
+        attr = OrderedDict(fields_list)
+        if "ID" not in attr:
+            print(row)
+            continue
 
+        if attr["ID"] not in scores:
+            if "E-value" in attr:
+                del attr["E-value"]
+        else:
+            attr["E-value"] = str(scores[attr["ID"]])
 
-@contextmanager
-def tmp_cwd():
-    import os
-    from tempfile import TemporaryDirectory
-
-    oldpwd = os.getcwd()
-    with TemporaryDirectory() as tmpdir:
-
-        os.chdir(tmpdir)
-        try:
-            yield
-        finally:
-            os.chdir(oldpwd)
+        print(left + ";".join(k + "=" + v for k, v in attr.items()))

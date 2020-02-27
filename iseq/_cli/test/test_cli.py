@@ -1,10 +1,10 @@
-import filecmp
 import shutil
+from filecmp import cmp
 
 from click.testing import CliRunner
-from numpy.testing import assert_equal
 
 from iseq import cli
+from iseq._misc import diff
 
 
 def test_cli_scan_nofile_output(tmpdir, PF03373, GALNBKIG_cut):
@@ -12,14 +12,14 @@ def test_cli_scan_nofile_output(tmpdir, PF03373, GALNBKIG_cut):
     invoke = CliRunner().invoke
     fasta = GALNBKIG_cut["fasta"]
     r = invoke(cli, ["scan", str(PF03373), str(fasta)])
-    assert_equal(r.exit_code, 0)
+    assert r.exit_code == 0, r.output
 
 
 def test_cli_scan_gff_output(tmpdir, PF03373, GALNBKIG_cut):
     tmpdir.chdir()
     invoke = CliRunner().invoke
     fasta = GALNBKIG_cut["fasta"]
-    gff = GALNBKIG_cut["gff"]
+    output = GALNBKIG_cut["gff"]
     codon = GALNBKIG_cut["codon.fasta"]
     amino = GALNBKIG_cut["amino.fasta"]
     r = invoke(
@@ -37,9 +37,9 @@ def test_cli_scan_gff_output(tmpdir, PF03373, GALNBKIG_cut):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_equal(filecmp.cmp(gff, "output.gff", shallow=False), True)
-    assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
-    assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
+    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
+    assert cmp(codon, "codon.fasta", shallow=False), diff(codon, "codon.fasta")
+    assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
 
 
 def test_cli_scan_window0(tmpdir, PF03373, large_rna):
@@ -66,9 +66,9 @@ def test_cli_scan_window0(tmpdir, PF03373, large_rna):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_equal(filecmp.cmp(output, "output.gff", shallow=False), True)
-    assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
-    assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
+    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
+    assert cmp(codon, "codon.fasta", shallow=False), diff(codon, "codon.fasta")
+    assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
 
 
 def test_cli_scan_window48(tmpdir, PF03373, large_rna):
@@ -95,9 +95,9 @@ def test_cli_scan_window48(tmpdir, PF03373, large_rna):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_equal(filecmp.cmp(output, "output.gff", shallow=False), True)
-    assert_equal(filecmp.cmp(codon, "codon.fasta", shallow=False), True)
-    assert_equal(filecmp.cmp(amino, "amino.fasta", shallow=False), True)
+    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
+    assert cmp(codon, "codon.fasta", shallow=False), diff(codon, "codon.fasta")
+    assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
 
 
 def test_cli_score(tmpdir, database1, amino1, output1, output1_evalue):
@@ -106,4 +106,6 @@ def test_cli_score(tmpdir, database1, amino1, output1, output1_evalue):
     invoke = CliRunner().invoke
     r = invoke(cli, ["score", str(database1), str(amino1), "output.gff"])
     assert r.exit_code == 0, r.output
-    assert_equal(filecmp.cmp(output1_evalue, "output.gff", shallow=False), True)
+    assert cmp(output1_evalue, "output.gff", shallow=False), diff(
+        output1_evalue, "output.gff"
+    )

@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import warnings
+from contextlib import contextmanager
 from pathlib import Path
 from subprocess import check_call
 from urllib.parse import urlparse
@@ -30,14 +31,6 @@ def download(url: str) -> Path:
 
 
 class tempdir:
-    """
-    Create and enter a temporary directory.
-
-    The previous working directory is saved and switched back when
-    leaving the context. The temporary directory is also recursively
-    removed at the context ending.
-    """
-
     def __init__(self):
         self._oldpath = os.getcwd()
         self._dirpath = tempfile.mkdtemp()
@@ -51,6 +44,25 @@ class tempdir:
             shutil.rmtree(self._dirpath)
         except PermissionError as e:
             warnings.warn(str(e) + "\n. I will ignore it and proceed.")
+
+
+@contextmanager
+def tmp_cwd():
+    """
+    Create and enter a temporary directory.
+
+    The previous working directory is saved and switched back when
+    leaving the context. The temporary directory is also recursively
+    removed at the context ending.
+    """
+    oldpwd = os.getcwd()
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        os.chdir(tmpdir)
+        try:
+            yield
+        finally:
+            os.chdir(oldpwd)
 
 
 def brotli_decompress(filepath: Path):
