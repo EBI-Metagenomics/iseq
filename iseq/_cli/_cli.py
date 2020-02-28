@@ -6,7 +6,7 @@ from .score import score
 from .gff import gff_dedup
 
 
-@click.group(name="nmm", context_settings=dict(help_option_names=["-h", "--help"]))
+@click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
 @click.version_option(get_version())
 def cli():
     """
