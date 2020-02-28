@@ -37,7 +37,7 @@ __all__ = [
     "FrameFragment",
     "FrameNullModel",
     "FrameProfile",
-    "create_profile",
+    "create_frame_profile",
 ]
 
 
@@ -214,7 +214,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         return search_results
 
 
-def create_profile(
+def create_frame_profile(
     reader: HMMERProfile, base_abc: BaseAlphabet, epsilon: float = 0.1
 ) -> FrameProfile:
 

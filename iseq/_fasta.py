@@ -8,7 +8,7 @@ from ._alphabet import infer_alphabet
 Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 
 
-def infer_fasta_alphabet(parser: FASTAParser,) -> Optional[Alphabets]:
+def infer_fasta_alphabet(parser: FASTAParser) -> Optional[Alphabets]:
 
     for item in parser:
         alphabet = infer_alphabet(item.sequence.encode())

@@ -1,7 +1,7 @@
 import os
 import pathlib
-from time import time
-from typing import IO, List, NamedTuple, Tuple, Union
+from abc import ABC, abstractmethod
+from typing import IO, List, NamedTuple, Optional, Tuple, Union
 
 import click
 from click.utils import LazyFile
@@ -9,13 +9,15 @@ from click.utils import LazyFile
 from fasta_reader import FASTAItem, FASTAWriter, open_fasta
 from hmmer_reader import HMMERParser, open_hmmer
 from nmm import GeneticCode, Interval
-from nmm.alphabet import CanonicalAminoAlphabet
+from nmm.alphabet import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet
 from nmm.sequence import Sequence
 
 from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
+from .._hmmer import infer_hmmer_alphabet
 from .._result import SearchResult
-from ..frame import FrameProfile, create_profile, FrameFragment
+from ..frame import FrameFragment, FrameProfile, create_frame_profile
+from ..standard import create_standard_profile
 
 
 @click.command()
@@ -65,37 +67,37 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window:
     codon_writer = FASTAWriter(ocodon)
     amino_writer = FASTAWriter(oamino)
 
-    fasta = open_fasta(target)
-    target_alphabet = infer_fasta_alphabet(fasta)
-    if target_alphabet is None:
-        raise click.UsageError("Could not infer alphabet from TARGET.")
-    target.seek(0)
-
-    gcode = GeneticCode(target_alphabet, CanonicalAminoAlphabet())
-    with open_fasta(target) as fasta:
-        targets = list(fasta)
-
     if quiet:
         stdout = click.open_file(os.devnull, "a")
     else:
         stdout = click.get_text_stream("stdout")
 
-    scanner = Scanner(
-        output_writer, codon_writer, amino_writer, gcode, epsilon, window, stdout
-    )
+    profile_abc = _infer_profile_alphabet(profile)
+    target_abc = _infer_target_alphabet(target)
 
-    for i, hmmprof in enumerate(open_hmmer(profile)):
-        # start = time()
-        M = hmmprof.M
-        scanner.process_profile(M, hmmprof, targets)
-        assert len(targets) == 1
-        # print("{},{},{:.12f}".format(M, len(targets[0].sequence), time() - start))
-        if i == 176:
-            break
+    scanner: Optional[Scanner] = None
 
-    scanner.finalize_stream(output)
-    scanner.finalize_stream(ocodon)
-    scanner.finalize_stream(oamino)
+    if isinstance(target_abc, BaseAlphabet) and isinstance(profile_abc, AminoAlphabet):
+        gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
+
+        scanner = FrameScanner(
+            output_writer, codon_writer, amino_writer, gcode, epsilon, window, stdout
+        )
+    elif profile_abc.symbols != target_abc.symbols:
+        raise click.UsageError("Alphabets mismatch.")
+    else:
+        scanner = StandardScanner(output_writer, window, stdout)
+
+    with open_fasta(target) as fasta:
+        targets = list(fasta)
+
+    for hmmprof in open_hmmer(profile):
+        scanner.show_profile_parser(hmmprof)
+        scanner.process_profile(hmmprof, targets)
+
+    scanner.finalize_stream("output", output)
+    scanner.finalize_stream("ocodon", ocodon)
+    scanner.finalize_stream("oamino", oamino)
 
 
 class OutputWriter:
@@ -134,91 +136,32 @@ class OutputWriter:
 IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragment)])
 
 
-class Scanner:
-    def __init__(
-        self,
-        output_writer: OutputWriter,
-        codon_writer: FASTAWriter,
-        amino_writer: FASTAWriter,
-        genetic_code: GeneticCode,
-        epsilon: float,
-        window_length: int,
-        stdout,
-    ):
+class Scanner(ABC):
+    def __init__(self, output_writer: OutputWriter, window_length: int, stdout):
         self._output_writer = output_writer
-        self._codon_writer = codon_writer
-        self._amino_writer = amino_writer
-        self._genetic_code = genetic_code
-        self._epsilon = epsilon
         self._window_length = window_length
         self._stdout = stdout
 
-    def process_profile(self, M, profile_parser: HMMERParser, targets: List[FASTAItem]):
-
-        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
-        base_alphabet = self._genetic_code.base_alphabet
-        start = time()
-        prof = create_profile(profile_parser, base_alphabet, self._epsilon)
-        elapsed_create = time() - start
-
-        self._show_header("Profile")
-        self._show_profile(profile_parser)
-
-        self._show_header("Targets")
-        start = time()
-        for target in targets:
-            self._scan_target(prof, target)
-            self._stdout.write("\n")
-        elapsed_scan = time() - start
-
-        print(f"{M},{elapsed_create:.8f},{elapsed_scan:.8f}")
-
-    def finalize_stream(self, stream: LazyFile):
+    def finalize_stream(self, name: str, stream: LazyFile):
         if stream.name != "-":
-            self._stdout.write(f"Writing to <{stream.name}> file.\n")
+            self._stdout.write(f"Writing {name} to <{stream.name}> file.\n")
 
         stream.close_intelligently()
 
-    def _scan_target(self, profile: FrameProfile, target: FASTAItem):
+    @abstractmethod
+    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
+        del profile_parser
+        del targets
+        raise NotImplementedError()
 
-        self._stdout.write(">" + target.defline + "\n")
-        self._stdout.write(sequence_summary(target.sequence) + "\n")
+    def show_profile_parser(self, profile_parser: HMMERParser):
+        self._show_header("Profile")
+        self._show_profile(profile_parser)
 
-        seq = Sequence.create(target.sequence.encode(), profile.alphabet)
-        search_results = profile.search(seq, self._window_length)
-        seqid = f"{target.defline.split()[0]}"
-
-        waiting: List[IntFrag] = []
-
-        for window, result in zip(search_results.windows, search_results.results):
-
-            self._show_search_result(result, window)
-            candidates: List[IntFrag] = []
-
-            for i, frag in zip(result.intervals, result.fragments):
-                if not frag.homologous:
-                    continue
-
-                interval = Interval(window.start + i.start, window.start + i.stop)
-                candidates.append(IntFrag(interval, frag))
-
-            ready, waiting = intersect_fragments(waiting, candidates)
-
-            self._write_fragments(seqid, ready)
-
-        self._write_fragments(seqid, waiting)
-
-    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
-        for ifrag in ifragments:
-            start = ifrag.interval.start
-            stop = ifrag.interval.stop
-            item_id = self._output_writer.write_item(seqid, start, stop)
-
-            codon_result = ifrag.fragment.decode()
-            self._codon_writer.write_item(item_id, str(codon_result.sequence))
-
-            amino_result = codon_result.decode(self._genetic_code)
-            self._amino_writer.write_item(item_id, str(amino_result.sequence))
+    def _show_header(self, title: str):
+        self._stdout.write(title + "\n")
+        self._stdout.write("=" * len(title) + "\n")
+        self._stdout.write("\n")
 
     def _show_profile(self, hmmprof: HMMERParser):
         name = dict(hmmprof.metadata)["NAME"]
@@ -260,10 +203,97 @@ class Scanner:
             self._stdout.write("\t".join(matches) + "\n")
             j += 1
 
-    def _show_header(self, title: str):
-        self._stdout.write(title + "\n")
-        self._stdout.write("=" * len(title) + "\n")
-        self._stdout.write("\n")
+    def _scan_targets(self, profile, targets: List[FASTAItem]):
+        self._show_header("Targets")
+        for target in targets:
+            self._scan_target(profile, target)
+            self._stdout.write("\n")
+
+    def _scan_target(self, profile: FrameProfile, target: FASTAItem):
+
+        self._stdout.write(">" + target.defline + "\n")
+        self._stdout.write(sequence_summary(target.sequence) + "\n")
+
+        seq = Sequence.create(target.sequence.encode(), profile.alphabet)
+        search_results = profile.search(seq, self._window_length)
+        seqid = f"{target.defline.split()[0]}"
+
+        waiting: List[IntFrag] = []
+
+        for window, result in zip(search_results.windows, search_results.results):
+
+            self._show_search_result(result, window)
+            candidates: List[IntFrag] = []
+
+            for i, frag in zip(result.intervals, result.fragments):
+                if not frag.homologous:
+                    continue
+
+                interval = Interval(window.start + i.start, window.start + i.stop)
+                candidates.append(IntFrag(interval, frag))
+
+            ready, waiting = intersect_fragments(waiting, candidates)
+
+            self._write_fragments(seqid, ready)
+
+        self._write_fragments(seqid, waiting)
+
+    @abstractmethod
+    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
+        del seqid
+        del ifragments
+        raise NotImplementedError()
+
+
+class StandardScanner(Scanner):
+    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
+
+        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
+        prof = create_standard_profile(profile_parser)
+        self._scan_targets(prof, targets)
+
+    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
+        for ifrag in ifragments:
+            start = ifrag.interval.start
+            stop = ifrag.interval.stop
+            self._output_writer.write_item(seqid, start, stop)
+
+
+class FrameScanner(Scanner):
+    def __init__(
+        self,
+        output_writer: OutputWriter,
+        codon_writer: FASTAWriter,
+        amino_writer: FASTAWriter,
+        genetic_code: GeneticCode,
+        epsilon: float,
+        window_length: int,
+        stdout,
+    ):
+        super().__init__(output_writer, window_length, stdout)
+        self._codon_writer = codon_writer
+        self._amino_writer = amino_writer
+        self._genetic_code = genetic_code
+        self._epsilon = epsilon
+
+    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
+
+        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
+        base_alphabet = self._genetic_code.base_alphabet
+        prof = create_frame_profile(profile_parser, base_alphabet, self._epsilon)
+        self._scan_targets(prof, targets)
+
+    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
+        for ifrag in ifragments:
+            start = ifrag.interval.start
+            stop = ifrag.interval.stop
+            item_id = self._output_writer.write_item(seqid, start, stop)
+
+            codon_result = ifrag.fragment.decode()
+            self._codon_writer.write_item(item_id, str(codon_result.sequence))
+
+            amino_result = codon_result.decode(self._genetic_code)
+            self._amino_writer.write_item(item_id, str(amino_result.sequence))
 
 
 def sequence_summary(sequence: str):
@@ -325,3 +355,21 @@ def intersect_fragments(
         j += 1
 
     return ready, new_waiting
+
+
+def _infer_profile_alphabet(profile: IO[str]):
+    hmmer = open_hmmer(profile)
+    hmmer_alphabet = infer_hmmer_alphabet(hmmer)
+    profile.seek(0)
+    if hmmer_alphabet is None:
+        raise click.UsageError("Could not infer alphabet from PROFILE.")
+    return hmmer_alphabet
+
+
+def _infer_target_alphabet(target: IO[str]):
+    fasta = open_fasta(target)
+    target_alphabet = infer_fasta_alphabet(fasta)
+    target.seek(0)
+    if target_alphabet is None:
+        raise click.UsageError("Could not infer alphabet from TARGET.")
+    return target_alphabet

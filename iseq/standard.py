@@ -31,7 +31,7 @@ __all__ = [
     "StandardNullModel",
     "StandardProfile",
     "StandardStep",
-    "create_profile",
+    "create_standard_profile",
 ]
 
 
@@ -111,7 +111,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         return search_results
 
 
-def create_profile(reader: HMMERProfile) -> StandardProfile:
+def create_standard_profile(reader: HMMERProfile) -> StandardProfile:
 
     alphabet = Alphabet.create(reader.alphabet.encode(), b"X")
 
