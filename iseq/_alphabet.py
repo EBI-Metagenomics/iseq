@@ -1,18 +1,24 @@
-from typing import Union
+from typing import Optional, Union
 
-from nmm.alphabet import DNAAlphabet, RNAAlphabet
+from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+
+Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 
 
-def infer_alphabet(sequence: bytes) -> Union[DNAAlphabet, RNAAlphabet, None]:
+def infer_alphabet(sequence: bytes) -> Optional[Alphabets]:
     dna = DNAAlphabet()
     rna = RNAAlphabet()
+    amino = CanonicalAminoAlphabet()
 
-    abc = sorted(list(set(sequence)))
+    abc = set(sequence)
 
-    if sorted(list(dna.symbols)) == abc:
+    if len(abc - set(dna.symbols)) == 0:
         return dna
 
-    if sorted(list(rna.symbols)) == abc:
+    if len(abc - set(rna.symbols)) == 0:
         return rna
+
+    if len(abc - set(amino.symbols)) == 0:
+        return amino
 
     return None
