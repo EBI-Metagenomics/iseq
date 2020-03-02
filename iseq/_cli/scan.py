@@ -17,7 +17,7 @@ from .._gff import GFFItem, GFFWriter
 from .._hmmer import infer_hmmer_alphabet
 from .._result import SearchResult
 from ..frame import FrameFragment, FrameProfile, create_frame_profile
-from ..standard import create_standard_profile
+from ..standard import create_standard_profile, create_hmmer3_profile
 
 
 @click.command()
@@ -53,7 +53,22 @@ from ..standard import create_standard_profile
     help="Window length. Defaults to zero, which means no window.",
     default=0,
 )
-def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window: int):
+@click.option(
+    "--hmmer3/--no-hmmer3",
+    help="Window length. Defaults to zero, which means no window.",
+    default=False,
+)
+def scan(
+    profile,
+    target,
+    epsilon: float,
+    output,
+    ocodon,
+    oamino,
+    quiet,
+    window: int,
+    hmmer3: bool,
+):
     """
     Search nucleotide sequence(s) against a protein profiles database.
 
@@ -86,7 +101,10 @@ def scan(profile, target, epsilon: float, output, ocodon, oamino, quiet, window:
     elif profile_abc.symbols != target_abc.symbols:
         raise click.UsageError("Alphabets mismatch.")
     else:
-        scanner = StandardScanner(output_writer, window, stdout)
+        if hmmer3:
+            scanner = HMMER3Scanner(output_writer, window, stdout)
+        else:
+            scanner = StandardScanner(output_writer, window, stdout)
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
@@ -250,6 +268,20 @@ class StandardScanner(Scanner):
 
         self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
         prof = create_standard_profile(profile_parser)
+        self._scan_targets(prof, targets)
+
+    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
+        for ifrag in ifragments:
+            start = ifrag.interval.start
+            stop = ifrag.interval.stop
+            self._output_writer.write_item(seqid, start, stop)
+
+
+class HMMER3Scanner(Scanner):
+    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
+
+        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
+        prof = create_hmmer3_profile(profile_parser)
         self._scan_targets(prof, targets)
 
     def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):

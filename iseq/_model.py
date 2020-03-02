@@ -258,6 +258,11 @@ class AltModel(Generic[TState]):
         self.set_transition(node.J, node.J, t.JJ)
         self.set_transition(node.J, node.B, t.JB)
 
+        # TODO: REMOVE THIS
+        # self.set_transition(node.N, node.N, lprob_zero())
+        # self.set_transition(node.C, node.C, lprob_zero())
+        # self.set_transition(node.J, node.J, lprob_zero())
+
 
 class MSVModel(Generic[TState]):
     def __init__(

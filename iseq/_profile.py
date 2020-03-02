@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from math import log, exp
-from typing import Generic, Dict
+from math import log
+from typing import Generic
 
 from nmm.alphabet import Alphabet
 from nmm.prob import lprob_zero
@@ -53,12 +53,12 @@ class Profile(Generic[TAlphabet, TState], ABC):
             return
 
         if self._multiple_hits:
-            l1q = lq = -log(2)
+            q = 0.5
+            log_q = log(0.5)
         else:
-            lq = lprob_zero()
-            l1q = log(1.0)
+            q = 0.0
+            log_q = lprob_zero()
 
-        q = exp(lq)
         lp = log(L) - log(L + 2 + q / (1 - q))
         l1p = log(2 + q / (1 - q)) - log(L + 2 + q / (1 - q))
         lr = log(L) - log(L + 1)
@@ -68,5 +68,5 @@ class Profile(Generic[TAlphabet, TState], ABC):
         t.NN = t.CC = t.JJ = lp
         t.NB = t.CT = t.JB = l1p
         t.RR = lr
-        t.EJ = lq
-        t.EC = l1q
+        t.EJ = log_q
+        t.EC = log(1 - q)

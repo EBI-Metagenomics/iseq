@@ -1,7 +1,7 @@
 from numpy.testing import assert_allclose, assert_equal
 
 from hmmer_reader import open_hmmer
-from iseq.standard import create_standard_profile
+from iseq.standard import create_standard_profile, create_hmmer3_profile
 from nmm.sequence import Sequence
 
 
@@ -28,6 +28,15 @@ def test_standard_profile_unihit_homologous_1(PF03373):
     frag = frags[0]
     assert_equal(frag.homologous, True)
     assert_equal(bytes(frag.sequence), bytes(most_likely_seq))
+
+
+def test_hmmer3_profile_unihit_homologous_1(PF03373):
+    with open_hmmer(PF03373) as reader:
+        hmmer = create_hmmer3_profile(reader.read_profile())
+
+    alphabet = hmmer.alphabet
+    most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
+    # r = hmmer.search(most_likely_seq).results[0]
 
 
 def test_standard_profile_unihit_homologous_2(PF03373):
