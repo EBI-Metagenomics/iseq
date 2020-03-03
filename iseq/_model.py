@@ -206,6 +206,8 @@ class AltModel(Generic[TState]):
                 hmm.set_transition(prev.D, node.D, trans.DD)
                 prev = node
 
+            pass
+
         self._hmm = hmm
 
     def set_transition(self, a: State, b: State, lprob: float):
@@ -243,6 +245,18 @@ class AltModel(Generic[TState]):
         for node in self.core_nodes()[1:]:
             self.set_transition(node.D, E, 0.0)
 
+    def set_exit_transitions(self):
+        if self.length == 0:
+            return
+
+        E = self.special_node.E
+
+        for node in self.core_nodes():
+            self.set_transition(node.M, E, 0.0)
+
+        for node in self.core_nodes()[1:]:
+            self.set_transition(node.D, E, 0.0)
+
     def update_special_transitions(self):
         t = self._special_transitions
         node = self.special_node
@@ -268,15 +282,38 @@ class AltModel(Generic[TState]):
         # self.set_transition(node.J, node.J, lprob_zero())
 
     def calculate_occupancy(self):
-        # t = self._special_transitions.
-        occ = [0.0]
-        prev_M = self._core_nodes[0].M
-        next_M = self._core_nodes[1].M
-        next_I = self._core_nodes[1].I
-        hmm = self._hmm
-        breakpoint()
-        occ.append(hmm.transition(prev_M, next_I), hmm.transition(prev_M, next_M))
+        from numpy import logaddexp
+        from math import exp
+
+        trans = self._hmm.transition
+        B = self._special_node.B
+        M1 = self._core_nodes[0].M
+        I1 = self._core_nodes[0].I
+        # print(exp(hmm.transition(B, M0)))
+        # print(exp(hmm.transition(B, I0)))
+        log_occ = [lprob_zero()]
+        log_occ.append(logaddexp(trans(B, M1), trans(B, I1)))
+
+        prev = self._core_nodes[0]
+
+        for curr in self._core_nodes[1:]:
+
+            val0 = log_occ[-1] + logaddexp(trans(prev.M, curr.M), trans(prev.M, prev.I))
+            val1 = log1_p(log_occ[-1]) + trans(prev.D, curr.M)
+            log_occ.append(logaddexp(val0, val1))
+            prev = curr
+
+        print([exp(v) for v in log_occ])
         pass
+
+
+def log1_p(log_p: float):
+    """
+    Computes log(1 - p) given log(p).
+    """
+    from scipy.special import logsumexp
+
+    return logsumexp([0.0, log_p], b=[1.0, -1.0])
 
 
 class MSVModel(Generic[TState]):

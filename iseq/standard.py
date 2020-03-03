@@ -61,6 +61,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             self._special_node, nodes_trans, self._special_transitions
         )
         self._alt_model.set_fragment_length()
+        # self._alt_model.set_exit_transitions()
 
         self._msv_model = StandardMSVModel(
             self._special_node, nodes_trans, self._special_transitions
