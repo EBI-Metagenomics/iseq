@@ -175,7 +175,9 @@ def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
 
         nodes_trans.append((node, trans))
 
-    return StandardProfile(alphabet, one_lprobs, nodes_trans)
+    prof = StandardProfile(alphabet, one_lprobs, nodes_trans)
+    # prof.alt_model.calculate_occupancy()
+    return prof
 
 
 def _hmmer3_null_amino_frequences(alphabet: AminoAlphabet):

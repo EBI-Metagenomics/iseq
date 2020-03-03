@@ -186,6 +186,10 @@ class AltModel(Generic[TState]):
             hmm.add_state(node.M)
             hmm.add_state(node.I)
             hmm.add_state(node.D)
+
+            hmm.set_transition(special_node.B, node.M, trans.MM)
+            hmm.set_transition(special_node.B, node.I, trans.MI)
+            # hmm.set_transition(special_node.B, node.D, trans.MD)
             prev = node
 
             for node, trans in nodes_trans[1:]:
@@ -262,6 +266,17 @@ class AltModel(Generic[TState]):
         # self.set_transition(node.N, node.N, lprob_zero())
         # self.set_transition(node.C, node.C, lprob_zero())
         # self.set_transition(node.J, node.J, lprob_zero())
+
+    def calculate_occupancy(self):
+        # t = self._special_transitions.
+        occ = [0.0]
+        prev_M = self._core_nodes[0].M
+        next_M = self._core_nodes[1].M
+        next_I = self._core_nodes[1].I
+        hmm = self._hmm
+        breakpoint()
+        occ.append(hmm.transition(prev_M, next_I), hmm.transition(prev_M, next_M))
+        pass
 
 
 class MSVModel(Generic[TState]):
