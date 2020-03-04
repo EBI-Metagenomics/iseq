@@ -93,7 +93,8 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         self._msv_model.update_special_transitions()
         self._null_model.update_special_transitions()
 
-        # self._alt_model.view()
+        # self._alt_model.view(core_model_only=False)
+        # self._alt_model.view(core_model_only=True)
         # self._alt_model._hmm.view()
         # self._null_model._hmm.view()
 
@@ -167,20 +168,17 @@ def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
 
     nodes_trans: List[Tuple[StandardNode, Transitions]] = []
 
-    for m in range(1, reader.M + 1):
-        lprobs = lprob_normalize(list(reader.match(m).values())) - null_lprobs
-        # lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
-        M = NormalState(f"M{m}".encode(), alphabet, lprobs.tolist())
+    for m in range(0, reader.M + 1):
 
-        # lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
-        # I = NormalState(f"I{m}".encode(), alphabet, lprobs)
+        lprobs = list(reader.match(m).values()) - null_lprobs
+
+        M = NormalState(f"M{m}".encode(), alphabet, lprobs.tolist())
         I = NormalState(f"I{m}".encode(), alphabet, one_lprobs)
         D = MuteState(f"D{m}".encode(), alphabet)
 
         node = StandardNode(M, I, D)
 
-        trans = Transitions(**reader.trans(m - 1))
-        # trans.normalize()
+        trans = Transitions(**reader.trans(m))
 
         nodes_trans.append((node, trans))
 

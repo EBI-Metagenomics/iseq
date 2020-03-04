@@ -180,43 +180,97 @@ class AltModel(Generic[TState]):
         hmm.add_state(special_node.J)
         hmm.add_state(special_node.C)
         hmm.add_state(special_node.T)
+        self._hmm = hmm
 
-        if len(nodes_trans) > 0:
-            node, trans = nodes_trans[0]
+        assert len(nodes_trans) >= 2
+
+        # node, trans = nodes_trans[0]
+        # # hmm.add_state(node.M)
+        # hmm.add_state(special_node.B)
+        # hmm.add_state(node.I)
+        # hmm.add_state(node.D)
+        # # hmm.set_transition(node.M, node.I, trans.MI)
+        # hmm.set_transition(special_node.B, node.I, trans.MI)
+        # hmm.set_transition(node.I, node.I, trans.II)
+        # prev_node, prev_trans = node, trans
+
+        # node, trans = nodes_trans[1]
+        # hmm.add_state(node.M)
+        # hmm.add_state(node.I)
+        # hmm.add_state(node.D)
+        # # hmm.set_transition(prev_node.M, node.M, prev_trans.MM)
+        # hmm.set_transition(special_node.B, node.M, prev_trans.MM)
+        # hmm.set_transition(node.M, node.I, trans.MI)
+        # hmm.set_transition(prev_node.M, node.D, trans.MD)
+        # hmm.set_transition(prev_node.I, node.M, trans.IM)
+        # hmm.set_transition(node.I, node.I, trans.II)
+        # hmm.set_transition(prev_node.D, node.M, trans.DM)
+        # hmm.set_transition(prev_node.D, node.D, trans.DD)
+        # prev_node, prev_trans = node, trans
+
+        # for node, trans in nodes_trans[2:]:
+        #     hmm.add_state(node.M)
+        #     hmm.add_state(node.I)
+        #     hmm.add_state(node.D)
+
+        #     # hmm.set_transition(prev.M, node.M, trans.MM)
+        #     # hmm.set_transition(prev.M, prev.I, trans.MI)
+        #     # hmm.set_transition(prev.M, node.D, trans.MD)
+        #     # hmm.set_transition(prev.I, node.M, trans.IM)
+        #     # hmm.set_transition(prev.I, prev.I, trans.II)
+        #     # hmm.set_transition(prev.D, node.M, trans.DM)
+        #     # hmm.set_transition(prev.D, node.D, trans.DD)
+        #     prev = node
+
+        node, trans = nodes_trans[0]
+        hmm.add_state(node.M)
+        hmm.add_state(node.I)
+        hmm.add_state(node.D)
+        hmm.set_transition(node.M, node.I, trans.MI)
+        hmm.set_transition(node.I, node.I, trans.II)
+        prev_node = node
+        prev_trans = trans
+
+        for node, trans in nodes_trans[1:]:
             hmm.add_state(node.M)
             hmm.add_state(node.I)
             hmm.add_state(node.D)
 
-            hmm.set_transition(special_node.B, node.M, trans.MM)
-            hmm.set_transition(special_node.B, node.I, trans.MI)
-            # hmm.set_transition(special_node.B, node.D, trans.MD)
-            prev = node
+            hmm.set_transition(prev_node.M, node.M, prev_trans.MM)
+            hmm.set_transition(node.M, node.I, trans.MI)
+            hmm.set_transition(prev_node.M, node.D, prev_trans.MD)
+            hmm.set_transition(prev_node.I, node.M, prev_trans.IM)
+            hmm.set_transition(node.I, node.I, trans.II)
+            hmm.set_transition(prev_node.D, node.M, prev_trans.DM)
+            hmm.set_transition(prev_node.D, node.D, prev_trans.DD)
+            prev_node = node
+            prev_trans = trans
 
-            for node, trans in nodes_trans[1:]:
-                hmm.add_state(node.M)
-                hmm.add_state(node.I)
-                hmm.add_state(node.D)
+        node0, trans0 = nodes_trans[0]
+        hmm.set_transition(special_node.B, node0.I, trans0.MI)
+        node1 = nodes_trans[1][0]
+        hmm.set_transition(special_node.B, node1.M, trans0.MM)
+        hmm.set_transition(special_node.B, node1.D, trans0.MD)
 
-                hmm.set_transition(prev.M, node.M, trans.MM)
-                hmm.set_transition(prev.M, prev.I, trans.MI)
-                hmm.set_transition(prev.M, node.D, trans.MD)
-                hmm.set_transition(prev.I, node.M, trans.IM)
-                hmm.set_transition(prev.I, prev.I, trans.II)
-                hmm.set_transition(prev.D, node.M, trans.DM)
-                hmm.set_transition(prev.D, node.D, trans.DD)
-                prev = node
+        last_node, last_trans = nodes_trans[-1]
+        hmm.set_transition(last_node.M, special_node.E, last_trans.MM)
+        hmm.set_transition(last_node.I, special_node.E, last_trans.IM)
+        hmm.set_transition(last_node.D, special_node.E, last_trans.DM)
 
-        self._hmm = hmm
+        # self.view(core_model_only=True)
 
-    def view(self):
+    def view(self, core_model_only=False):
         from graphviz import Digraph
 
         dot = Digraph(comment="Profile")
         dot.attr(rankdir="LR")
 
-        states = [self._special_node.S, self._special_node.N, self._special_node.B]
-        for state in states:
-            dot.node(state.name.decode())
+        dot.node(self._special_node.B.name.decode())
+
+        if not core_model_only:
+            states = [self._special_node.S, self._special_node.N]
+            for state in states:
+                dot.node(state.name.decode())
 
         rank = 0
         for core in self._core_nodes:
@@ -227,12 +281,15 @@ class AltModel(Generic[TState]):
                 cluster.node(core.I.name.decode(), shape="diamond")
             rank += 1
 
-        states = [self._special_node.E, self._special_node.C, self._special_node.T]
-        for state in states:
-            dot.node(state.name.decode())
+        dot.node(self._special_node.E.name.decode())
 
-        state = self._special_node.J
-        dot.node(state.name.decode())
+        if not core_model_only:
+            states = [self._special_node.C, self._special_node.T]
+            for state in states:
+                dot.node(state.name.decode())
+
+            state = self._special_node.J
+            dot.node(state.name.decode())
 
         for s0 in self._states.values():
             for s1 in self._states.values():
@@ -241,6 +298,10 @@ class AltModel(Generic[TState]):
                     continue
                 label = f"{t:.4f}"
                 special = self._is_special_state(s0) or self._is_special_state(s1)
+                core_trans = self._is_core_state(s0) and self._is_core_state(s1)
+                if core_model_only and not core_trans:
+                    continue
+
                 name0 = s0.name.decode()
                 name1 = s1.name.decode()
                 if special:
@@ -253,6 +314,11 @@ class AltModel(Generic[TState]):
 
     def _is_special_state(self, state: MutableState[TState]) -> bool:
         return state in self._special_node.states()
+
+    def _is_core_state(self, state: MutableState[TState]) -> bool:
+        B = self._special_node.B
+        E = self._special_node.E
+        return state not in self._special_node.states() or state in [B, E]
 
     def set_transition(self, a: State, b: State, lprob: float):
         self._hmm.set_transition(a, b, lprob)
@@ -291,7 +357,7 @@ class AltModel(Generic[TState]):
 
     def set_entry_transitions(self, lprobs):
         B = self.special_node.B
-        for logp, node in zip(lprobs, self.core_nodes()):
+        for logp, node in zip(lprobs, self.core_nodes()[1:]):
             self.set_transition(B, node.M, logp)
 
     def set_exit_transitions(self):
@@ -331,6 +397,9 @@ class AltModel(Generic[TState]):
         self.set_transition(node.J, node.J, t.JJ)
         self.set_transition(node.J, node.B, t.JB)
 
+        self.set_transition(node.B, self._core_nodes[1].D, lprob_zero())
+        self.set_transition(node.B, self._core_nodes[0].I, lprob_zero())
+
     def calculate_occupancy(self) -> Tuple[List[float], float]:
         from numpy import logaddexp
 
@@ -352,7 +421,9 @@ class AltModel(Generic[TState]):
         for i in range(self.length):
             logZ = logaddexp(logZ, log_occ[i] + log(self.length - i))
 
-        return log_occ, logZ
+        # TODO: fix this function
+        log_occ = [lprob_zero()] * len(log_occ)
+        return log_occ[1:], logZ
 
 
 def log1_p(log_p: float):
