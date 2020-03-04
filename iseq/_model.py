@@ -165,6 +165,7 @@ class AltModel(Generic[TState]):
         self._core_nodes = core_nodes
         self._states: Dict[CData, MutableState[TState]] = {}
         self._special_transitions = special_trans
+        self._log_occ, self._logZ = _calculate_occupancy(core_trans)
 
         for node in self._core_nodes:
             for state in node.states():
@@ -183,43 +184,38 @@ class AltModel(Generic[TState]):
         hmm.add_state(special_node.T)
         self._hmm = hmm
 
-        node = core_nodes[0]
-        trans = core_trans[0]
-        hmm.add_state(node.M)
-        hmm.add_state(node.I)
-        hmm.add_state(node.D)
-        hmm.set_transition(node.M, node.I, trans.MI)
-        hmm.set_transition(node.I, node.I, trans.II)
-        prev_node = node
-        prev_trans = trans
-
-        for node, trans in zip(core_nodes[1:], core_trans[1:]):
+        for node in core_nodes:
             hmm.add_state(node.M)
             hmm.add_state(node.I)
             hmm.add_state(node.D)
 
-            hmm.set_transition(prev_node.M, node.M, prev_trans.MM)
-            hmm.set_transition(node.M, node.I, trans.MI)
-            hmm.set_transition(prev_node.M, node.D, prev_trans.MD)
-            hmm.set_transition(prev_node.I, node.M, prev_trans.IM)
-            hmm.set_transition(node.I, node.I, trans.II)
-            hmm.set_transition(prev_node.D, node.M, prev_trans.DM)
-            hmm.set_transition(prev_node.D, node.D, prev_trans.DD)
-            prev_node = node
-            prev_trans = trans
+        M1 = core_nodes[0].M
+        hmm.set_transition(special_node.B, M1, core_trans[0].MM)
 
-        node0, trans0 = core_nodes[0], core_trans[0]
-        hmm.set_transition(special_node.B, node0.I, trans0.MI)
-        node1 = core_nodes[1]
-        hmm.set_transition(special_node.B, node1.M, trans0.MM)
-        hmm.set_transition(special_node.B, node1.D, trans0.MD)
+        for i, trans in enumerate(core_trans[1:-1]):
+            prev = core_nodes[i]
+            next = core_nodes[i + 1]
+            hmm.set_transition(prev.M, prev.I, trans.MI)
+            hmm.set_transition(prev.I, prev.I, trans.II)
+            hmm.set_transition(prev.M, next.M, trans.MM)
+            hmm.set_transition(prev.I, next.M, trans.IM)
+            hmm.set_transition(prev.M, next.D, trans.MD)
+            hmm.set_transition(prev.D, next.D, trans.DD)
+            hmm.set_transition(prev.D, next.M, trans.DM)
 
-        last_node, last_trans = core_nodes[-1], core_trans[-1]
-        hmm.set_transition(last_node.M, special_node.E, last_trans.MM)
-        hmm.set_transition(last_node.I, special_node.E, last_trans.IM)
-        hmm.set_transition(last_node.D, special_node.E, last_trans.DM)
+        Mm = core_nodes[-1].M
+        hmm.set_transition(Mm, special_node.E, core_trans[-1].MM)
 
         # self.view(core_model_only=True)
+
+    def view_emissions(self):
+        abc = self._core_nodes[0].M.alphabet
+        print("V", self._core_nodes[0].M.lprob(Sequence.create(b"V", abc)))
+        print("E", self._core_nodes[1].M.lprob(Sequence.create(b"E", abc)))
+        print("V", self._core_nodes[2].M.lprob(Sequence.create(b"V", abc)))
+        print("E", self._core_nodes[3].I.lprob(Sequence.create(b"E", abc)))
+        print("V", self._core_nodes[4].M.lprob(Sequence.create(b"V", abc)))
+        print("Y", self._core_nodes[5].M.lprob(Sequence.create(b"Y", abc)))
 
     def view(self, core_model_only=False):
         from graphviz import Digraph
@@ -317,10 +313,12 @@ class AltModel(Generic[TState]):
         for node in self.core_nodes()[1:]:
             self.set_transition(node.D, E, 0.0)
 
-    def set_entry_transitions(self, lprobs):
+    def set_entry_transitions(self):
+        log_odds = [locc - self._logZ for locc in self._log_occ]
+
         B = self.special_node.B
-        for logp, node in zip(lprobs, self.core_nodes()[1:]):
-            self.set_transition(B, node.M, logp)
+        for lodd, node in zip(log_odds, self.core_nodes()):
+            self.set_transition(B, node.M, lodd)
 
     def set_exit_transitions(self):
         if self.length == 0:
@@ -362,30 +360,27 @@ class AltModel(Generic[TState]):
         self.set_transition(node.B, self._core_nodes[1].D, lprob_zero())
         self.set_transition(node.B, self._core_nodes[0].I, lprob_zero())
 
-    def calculate_occupancy(self) -> Tuple[List[float], float]:
-        from numpy import logaddexp
 
-        trans = self._hmm.transition
+def _calculate_occupancy(core_trans: List[Transitions],) -> Tuple[List[float], float]:
+    from numpy import logaddexp
+    from math import exp
+    import sys
 
-        curr = self._core_nodes[0]
-        B = self._special_node.B
-        log_occ = [logaddexp(trans(B, curr.M), trans(B, curr.I))]
-        prev = curr
+    log_occ = [logaddexp(core_trans[0].MI, core_trans[0].MM)]
+    for trans in core_trans[1:-1]:
+        val0 = log_occ[-1] + logaddexp(trans.MM, trans.MI)
+        val1 = log1_p(log_occ[-1]) + trans.DM
+        log_occ.append(logaddexp(val0, val1))
 
-        for curr in self._core_nodes[1:]:
+    print([exp(i) for i in log_occ])
 
-            val0 = log_occ[-1] + logaddexp(trans(prev.M, curr.M), trans(prev.M, prev.I))
-            val1 = log1_p(log_occ[-1]) + trans(prev.D, curr.M)
-            log_occ.append(logaddexp(val0, val1))
-            prev = curr
+    logZ = lprob_zero()
+    for i, locc in enumerate(log_occ):
+        logZ = logaddexp(logZ, locc + log(len(log_occ) - i))
 
-        logZ = lprob_zero()
-        for i in range(self.length):
-            logZ = logaddexp(logZ, log_occ[i] + log(self.length - i))
+    print("Z", exp(logZ))
 
-        # TODO: fix this function
-        log_occ = [lprob_zero()] * len(log_occ)
-        return log_occ[1:], logZ
+    return log_occ, logZ
 
 
 def log1_p(log_p: float):

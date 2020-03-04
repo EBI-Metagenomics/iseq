@@ -40,22 +40,22 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
     def __init__(
         self,
         alphabet: TAlphabet,
-        null_lprobs: List[float],
+        null_log_odds: List[float],
         core_nodes: List[Node],
         core_trans: List[Transitions],
         hmmer3=False,
     ):
         super().__init__(alphabet)
-        R = NormalState(b"R", alphabet, null_lprobs)
+        R = NormalState(b"R", alphabet, null_log_odds)
         self._null_model = StandardNullModel(R, self._special_transitions)
 
         self._special_node = StandardSpecialNode(
             S=MuteState(b"S", alphabet),
-            N=NormalState(b"N", alphabet, null_lprobs),
+            N=NormalState(b"N", alphabet, null_log_odds),
             B=MuteState(b"B", alphabet),
             E=MuteState(b"E", alphabet),
-            J=NormalState(b"J", alphabet, null_lprobs),
-            C=NormalState(b"C", alphabet, null_lprobs),
+            J=NormalState(b"J", alphabet, null_log_odds),
+            C=NormalState(b"C", alphabet, null_log_odds),
             T=MuteState(b"T", alphabet),
         )
 
@@ -63,8 +63,8 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             self._special_node, core_nodes, core_trans, self._special_transitions
         )
         if hmmer3:
-            log_occ, logZ = self._alt_model.calculate_occupancy()
-            self._alt_model.set_entry_transitions([v - logZ for v in log_occ])
+            self._alt_model.set_entry_transitions()
+            # self._alt_model.set_entry_transitions([v - logZ for v in log_occ])
             self._alt_model.set_exit_transitions()
         else:
             self._alt_model.set_fragment_length()
@@ -91,6 +91,8 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
 
         self._set_special_transitions(len(sequence))
         self._alt_model.update_special_transitions(self._hmmer3)
+        # self._alt_model.view_emissions()
+        # self._alt_model.view()
         # self._msv_model.update_special_transitions()
         self._null_model.update_special_transitions()
 
@@ -154,44 +156,37 @@ def create_standard_profile(reader: HMMERProfile) -> StandardProfile:
 
 
 def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
-    pass
+    alphabet = AminoAlphabet.create(reader.alphabet.encode(), b"X")
+    # null_lprobs = lprob_normalize(_hmmer3_null_amino_frequences(alphabet))
+    null_lprobs = _hmmer3_null_amino_frequences(alphabet)
+    null_log_odds = [0.0] * len(null_lprobs)
 
+    # if isinstance(alphabet, AminoAlphabet):
+    #     _hmmer3_null_amino_frequences(alphabet)
+    # else:
+    #     raise NotImplementedError()
 
-#     # alphabet = Alphabet.create(reader.alphabet.encode(), b"X")
-#     alphabet = AminoAlphabet.create(reader.alphabet.encode(), b"X")
-#     null_lprobs = lprob_normalize(_hmmer3_null_amino_frequences(alphabet))
-#     one_lprobs = [0.0] * len(null_lprobs)
+    nodes: List[StandardNode] = []
+    for m in range(1, reader.M + 1):
+        lodds = [v0 - v1 for v0, v1 in zip(reader.match(m).values(), null_lprobs)]
+        M = NormalState(f"M{m}".encode(), alphabet, lodds)
+        I = NormalState(f"I{m}".encode(), alphabet, null_log_odds)
+        D = MuteState(f"D{m}".encode(), alphabet)
 
-#     # if isinstance(alphabet, AminoAlphabet):
-#     #     _hmmer3_null_amino_frequences(alphabet)
-#     # else:
-#     #     raise NotImplementedError()
+        nodes.append(StandardNode(M, I, D))
 
-#     # null_lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
+    trans: List[Transitions] = []
+    for m in range(0, reader.M + 1):
+        t = Transitions(**reader.trans(m))
+        trans.append(t)
 
-#     nodes_trans: List[Tuple[StandardNode, Transitions]] = []
+    prof = StandardProfile(alphabet, null_log_odds, nodes, trans, hmmer3=True)
+    # print(log_occ)
+    # print(logZ)
+    # from numpy.testing import assert_allclose
 
-#     for m in range(0, reader.M + 1):
-
-#         lprobs = list(reader.match(m).values()) - null_lprobs
-
-#         M = NormalState(f"M{m}".encode(), alphabet, lprobs.tolist())
-#         I = NormalState(f"I{m}".encode(), alphabet, one_lprobs)
-#         D = MuteState(f"D{m}".encode(), alphabet)
-
-#         node = StandardNode(M, I, D)
-
-#         trans = Transitions(**reader.trans(m))
-
-#         nodes_trans.append((node, trans))
-
-#     prof = StandardProfile(alphabet, one_lprobs, nodes_trans, hmmer3=True)
-#     # print(log_occ)
-#     # print(logZ)
-#     # from numpy.testing import assert_allclose
-
-#     # assert_allclose(logZ, 1.714319096412121)
-#     return prof
+    # assert_allclose(logZ, 1.714319096412121)
+    return prof
 
 
 def _hmmer3_null_amino_frequences(alphabet: AminoAlphabet):
