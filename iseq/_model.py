@@ -4,7 +4,7 @@ from typing import Dict, Generic, List, Tuple, Union
 
 from nmm import HMM, CData
 from nmm.path import Path, Step
-from nmm.prob import lprob_zero
+from nmm.prob import lprob_zero, lprob_is_zero
 from nmm.sequence import Sequence
 from nmm.state import MuteState, State
 
@@ -124,7 +124,7 @@ class SpecialNode(Generic[TState]):
     def T(self) -> MuteState:
         return self._T
 
-    def states(self) -> List[Union[TState, MuteState]]:
+    def states(self) -> List[MutableState[TState]]:
         return [self._S, self._N, self._B, self._E, self._J, self._C, self._T]
 
 
@@ -162,7 +162,7 @@ class AltModel(Generic[TState]):
     ):
         self._special_node = special_node
         self._core_nodes = [nt[0] for nt in nodes_trans]
-        self._states: Dict[CData, Union[TState, MuteState]] = {}
+        self._states: Dict[CData, MutableState[TState]] = {}
         self._special_transitions = special_trans
 
         for node in self._core_nodes:
@@ -206,9 +206,53 @@ class AltModel(Generic[TState]):
                 hmm.set_transition(prev.D, node.D, trans.DD)
                 prev = node
 
-            pass
-
         self._hmm = hmm
+
+    def view(self):
+        from graphviz import Digraph
+
+        dot = Digraph(comment="Profile")
+        dot.attr(rankdir="LR")
+
+        states = [self._special_node.S, self._special_node.N, self._special_node.B]
+        for state in states:
+            dot.node(state.name.decode())
+
+        rank = 0
+        for core in self._core_nodes:
+            with dot.subgraph() as cluster:
+                cluster.attr(rank=str(rank))
+                cluster.node(core.M.name.decode(), shape="square")
+                cluster.node(core.D.name.decode(), shape="circle")
+                cluster.node(core.I.name.decode(), shape="diamond")
+            rank += 1
+
+        states = [self._special_node.E, self._special_node.C, self._special_node.T]
+        for state in states:
+            dot.node(state.name.decode())
+
+        state = self._special_node.J
+        dot.node(state.name.decode())
+
+        for s0 in self._states.values():
+            for s1 in self._states.values():
+                t = self._hmm.transition(s0, s1)
+                if lprob_is_zero(t):
+                    continue
+                label = f"{t:.4f}"
+                special = self._is_special_state(s0) or self._is_special_state(s1)
+                name0 = s0.name.decode()
+                name1 = s1.name.decode()
+                if special:
+                    color = "lightgrey"
+                else:
+                    color = "black"
+                dot.edge(name0, name1, label=label, color=color)
+
+        dot.view()
+
+    def _is_special_state(self, state: MutableState[TState]) -> bool:
+        return state in self._special_node.states()
 
     def set_transition(self, a: State, b: State, lprob: float):
         self._hmm.set_transition(a, b, lprob)
@@ -245,6 +289,11 @@ class AltModel(Generic[TState]):
         for node in self.core_nodes()[1:]:
             self.set_transition(node.D, E, 0.0)
 
+    def set_entry_transitions(self, lprobs):
+        B = self.special_node.B
+        for logp, node in zip(lprobs, self.core_nodes()):
+            self.set_transition(B, node.M, logp)
+
     def set_exit_transitions(self):
         if self.length == 0:
             return
@@ -257,9 +306,15 @@ class AltModel(Generic[TState]):
         for node in self.core_nodes()[1:]:
             self.set_transition(node.D, E, 0.0)
 
-    def update_special_transitions(self):
+    def update_special_transitions(self, hmmer3=False):
         t = self._special_transitions
         node = self.special_node
+
+        # TODO: THIS IS FOR HMMER3 VITERBI FILTER COMPARISON
+        if hmmer3:
+            t.NN = 0.0
+            t.CC = 0.0
+            t.JJ = 0.0
 
         self.set_transition(node.S, node.B, t.NB)
         self.set_transition(node.S, node.N, t.NN)
@@ -276,25 +331,15 @@ class AltModel(Generic[TState]):
         self.set_transition(node.J, node.J, t.JJ)
         self.set_transition(node.J, node.B, t.JB)
 
-        # TODO: REMOVE THIS
-        # self.set_transition(node.N, node.N, lprob_zero())
-        # self.set_transition(node.C, node.C, lprob_zero())
-        # self.set_transition(node.J, node.J, lprob_zero())
-
-    def calculate_occupancy(self):
+    def calculate_occupancy(self) -> Tuple[List[float], float]:
         from numpy import logaddexp
-        from math import exp
 
         trans = self._hmm.transition
-        B = self._special_node.B
-        M1 = self._core_nodes[0].M
-        I1 = self._core_nodes[0].I
-        # print(exp(hmm.transition(B, M0)))
-        # print(exp(hmm.transition(B, I0)))
-        log_occ = [lprob_zero()]
-        log_occ.append(logaddexp(trans(B, M1), trans(B, I1)))
 
-        prev = self._core_nodes[0]
+        curr = self._core_nodes[0]
+        B = self._special_node.B
+        log_occ = [logaddexp(trans(B, curr.M), trans(B, curr.I))]
+        prev = curr
 
         for curr in self._core_nodes[1:]:
 
@@ -303,8 +348,11 @@ class AltModel(Generic[TState]):
             log_occ.append(logaddexp(val0, val1))
             prev = curr
 
-        print([exp(v) for v in log_occ])
-        pass
+        logZ = lprob_zero()
+        for i in range(self.length):
+            logZ = logaddexp(logZ, log_occ[i] + log(self.length - i))
+
+        return log_occ, logZ
 
 
 def log1_p(log_p: float):

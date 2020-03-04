@@ -42,6 +42,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         alphabet: TAlphabet,
         null_lprobs: List[float],
         nodes_trans: List[Tuple[StandardNode, Transitions]],
+        hmmer3=False,
     ):
         super().__init__(alphabet)
         R = NormalState(b"R", alphabet, null_lprobs)
@@ -60,13 +61,18 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         self._alt_model = StandardAltModel(
             self._special_node, nodes_trans, self._special_transitions
         )
-        self._alt_model.set_fragment_length()
-        # self._alt_model.set_exit_transitions()
+        if hmmer3:
+            log_occ, logZ = self._alt_model.calculate_occupancy()
+            self._alt_model.set_entry_transitions([v - logZ for v in log_occ])
+            self._alt_model.set_exit_transitions()
+        else:
+            self._alt_model.set_fragment_length()
 
         self._msv_model = StandardMSVModel(
             self._special_node, nodes_trans, self._special_transitions
         )
         self._msv_model.set_fragment_length()
+        self._hmmer3 = hmmer3
 
     @property
     def null_model(self) -> StandardNullModel:
@@ -83,10 +89,11 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         from time import time
 
         self._set_special_transitions(len(sequence))
-        self._alt_model.update_special_transitions()
+        self._alt_model.update_special_transitions(self._hmmer3)
         self._msv_model.update_special_transitions()
         self._null_model.update_special_transitions()
 
+        # self._alt_model.view()
         # self._alt_model._hmm.view()
         # self._null_model._hmm.view()
 
@@ -109,7 +116,8 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             subseq = alt_result.sequence
             score0 = self.null_model.likelihood(subseq)
             score1 = alt_result.loglikelihood
-            print(f"ALT loglikelihood: {score1:.12f}")
+            print(f"VITERBI {self._alt_model.length} {score1:.12f}")
+            # print(f"ALT loglikelihood (M={self._alt_model.length}): {score1:.12f}")
             score = score1 - score0
             window = Interval(subseq.start, subseq.start + len(subseq))
             search_results.append(score, window, alt_result.path)
@@ -172,12 +180,16 @@ def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
         node = StandardNode(M, I, D)
 
         trans = Transitions(**reader.trans(m - 1))
-        trans.normalize()
+        # trans.normalize()
 
         nodes_trans.append((node, trans))
 
-    prof = StandardProfile(alphabet, one_lprobs, nodes_trans)
-    # prof.alt_model.calculate_occupancy()
+    prof = StandardProfile(alphabet, one_lprobs, nodes_trans, hmmer3=True)
+    # print(log_occ)
+    # print(logZ)
+    # from numpy.testing import assert_allclose
+
+    # assert_allclose(logZ, 1.714319096412121)
     return prof
 
 
