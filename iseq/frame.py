@@ -1,5 +1,5 @@
 from math import log
-from typing import List, Tuple, Union
+from typing import List, Union
 
 from hmmer_reader import HMMERProfile
 from nmm import GeneticCode
@@ -155,7 +155,8 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         self,
         factory: FrameStateFactory,
         null_aminot: AminoTable,
-        nodes_trans: List[Tuple[FrameNode, Transitions]],
+        core_nodes: List[FrameNode],
+        core_trans: List[Transitions],
     ):
         base_alphabet = factory.genetic_code.base_alphabet
         super().__init__(base_alphabet)
@@ -174,7 +175,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         )
 
         self._alt_model = FrameAltModel(
-            self._special_node, nodes_trans, self._special_transitions
+            self._special_node, core_nodes, core_trans, self._special_transitions
         )
         self._alt_model.set_fragment_length()
 
@@ -224,8 +225,7 @@ def create_frame_profile(
     null_aminot = AminoTable.create(amino_abc, lprobs)
     factory = FrameStateFactory(GeneticCode(base_abc, amino_abc), epsilon)
 
-    nodes_trans: List[Tuple[FrameNode, Transitions]] = []
-
+    nodes: List[FrameNode] = []
     for m in range(1, reader.M + 1):
         lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
         M = factory.create(f"M{m}".encode(), AminoTable.create(amino_abc, lprobs))
@@ -235,11 +235,12 @@ def create_frame_profile(
 
         D = MuteState(f"D{m}".encode(), base_abc)
 
-        node = FrameNode(M, I, D,)
+        nodes.append(FrameNode(M, I, D))
 
-        trans = Transitions(**reader.trans(m - 1))
-        trans.normalize()
+    trans: List[Transitions] = []
+    for m in range(0, reader.M + 1):
+        t = Transitions(**reader.trans(m))
+        t.normalize()
+        trans.append(t)
 
-        nodes_trans.append((node, trans))
-
-    return FrameProfile(factory, null_aminot, nodes_trans)
+    return FrameProfile(factory, null_aminot, nodes, trans)

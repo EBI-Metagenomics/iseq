@@ -157,11 +157,12 @@ class AltModel(Generic[TState]):
     def __init__(
         self,
         special_node: SpecialNode,
-        nodes_trans: List[Tuple[Node, Transitions]],
+        core_nodes: List[Node],
+        core_trans: List[Transitions],
         special_trans: SpecialTransitions,
     ):
         self._special_node = special_node
-        self._core_nodes = [nt[0] for nt in nodes_trans]
+        self._core_nodes = core_nodes
         self._states: Dict[CData, MutableState[TState]] = {}
         self._special_transitions = special_trans
 
@@ -182,47 +183,8 @@ class AltModel(Generic[TState]):
         hmm.add_state(special_node.T)
         self._hmm = hmm
 
-        assert len(nodes_trans) >= 2
-
-        # node, trans = nodes_trans[0]
-        # # hmm.add_state(node.M)
-        # hmm.add_state(special_node.B)
-        # hmm.add_state(node.I)
-        # hmm.add_state(node.D)
-        # # hmm.set_transition(node.M, node.I, trans.MI)
-        # hmm.set_transition(special_node.B, node.I, trans.MI)
-        # hmm.set_transition(node.I, node.I, trans.II)
-        # prev_node, prev_trans = node, trans
-
-        # node, trans = nodes_trans[1]
-        # hmm.add_state(node.M)
-        # hmm.add_state(node.I)
-        # hmm.add_state(node.D)
-        # # hmm.set_transition(prev_node.M, node.M, prev_trans.MM)
-        # hmm.set_transition(special_node.B, node.M, prev_trans.MM)
-        # hmm.set_transition(node.M, node.I, trans.MI)
-        # hmm.set_transition(prev_node.M, node.D, trans.MD)
-        # hmm.set_transition(prev_node.I, node.M, trans.IM)
-        # hmm.set_transition(node.I, node.I, trans.II)
-        # hmm.set_transition(prev_node.D, node.M, trans.DM)
-        # hmm.set_transition(prev_node.D, node.D, trans.DD)
-        # prev_node, prev_trans = node, trans
-
-        # for node, trans in nodes_trans[2:]:
-        #     hmm.add_state(node.M)
-        #     hmm.add_state(node.I)
-        #     hmm.add_state(node.D)
-
-        #     # hmm.set_transition(prev.M, node.M, trans.MM)
-        #     # hmm.set_transition(prev.M, prev.I, trans.MI)
-        #     # hmm.set_transition(prev.M, node.D, trans.MD)
-        #     # hmm.set_transition(prev.I, node.M, trans.IM)
-        #     # hmm.set_transition(prev.I, prev.I, trans.II)
-        #     # hmm.set_transition(prev.D, node.M, trans.DM)
-        #     # hmm.set_transition(prev.D, node.D, trans.DD)
-        #     prev = node
-
-        node, trans = nodes_trans[0]
+        node = core_nodes[0]
+        trans = core_trans[0]
         hmm.add_state(node.M)
         hmm.add_state(node.I)
         hmm.add_state(node.D)
@@ -231,7 +193,7 @@ class AltModel(Generic[TState]):
         prev_node = node
         prev_trans = trans
 
-        for node, trans in nodes_trans[1:]:
+        for node, trans in zip(core_nodes[1:], core_trans[1:]):
             hmm.add_state(node.M)
             hmm.add_state(node.I)
             hmm.add_state(node.D)
@@ -246,13 +208,13 @@ class AltModel(Generic[TState]):
             prev_node = node
             prev_trans = trans
 
-        node0, trans0 = nodes_trans[0]
+        node0, trans0 = core_nodes[0], core_trans[0]
         hmm.set_transition(special_node.B, node0.I, trans0.MI)
-        node1 = nodes_trans[1][0]
+        node1 = core_nodes[1]
         hmm.set_transition(special_node.B, node1.M, trans0.MM)
         hmm.set_transition(special_node.B, node1.D, trans0.MD)
 
-        last_node, last_trans = nodes_trans[-1]
+        last_node, last_trans = core_nodes[-1], core_trans[-1]
         hmm.set_transition(last_node.M, special_node.E, last_trans.MM)
         hmm.set_transition(last_node.I, special_node.E, last_trans.IM)
         hmm.set_transition(last_node.D, special_node.E, last_trans.DM)

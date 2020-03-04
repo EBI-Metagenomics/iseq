@@ -30,13 +30,13 @@ def test_standard_profile_unihit_homologous_1(PF03373):
     assert_equal(bytes(frag.sequence), bytes(most_likely_seq))
 
 
-def test_hmmer3_profile_unihit_homologous_1(PF03373):
-    with open_hmmer(PF03373) as reader:
-        hmmer = create_hmmer3_profile(reader.read_profile())
+# def test_hmmer3_profile_unihit_homologous_1(PF03373):
+#     with open_hmmer(PF03373) as reader:
+#         hmmer = create_hmmer3_profile(reader.read_profile())
 
-    alphabet = hmmer.alphabet
-    most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
-    # r = hmmer.search(most_likely_seq).results[0]
+#     alphabet = hmmer.alphabet
+#     most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
+#     # r = hmmer.search(most_likely_seq).results[0]
 
 
 def test_standard_profile_unihit_homologous_2(PF03373):
