@@ -7,6 +7,7 @@ include iseq/_data/PF03373_GALNBKIG_cut.codon.fasta
 include iseq/_data/PF03373_GALNBKIG_cut.gff
 include iseq/_data/amino1.fasta
 include iseq/_data/database1.hmm
+include iseq/_data/ecori.hmm
 include iseq/_data/large_rna_seq.fasta
 include iseq/_data/large_rna_seq_amino0.fasta
 include iseq/_data/large_rna_seq_amino48.fasta

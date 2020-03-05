@@ -55,6 +55,11 @@ def problematic1(tmp_path):
 
 
 @pytest.fixture
+def ecori(tmp_path):
+    return _write_file(tmp_path, "ecori.hmm")
+
+
+@pytest.fixture
 def large_rna(tmp_path):
     return {
         "fasta": _write_file(tmp_path, "large_rna_seq.fasta"),

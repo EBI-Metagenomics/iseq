@@ -110,14 +110,8 @@ def create_hmmer3_profile(
     reader: HMMERModel, hmmer3_compat: bool = False
 ) -> StandardProfile:
     alphabet = AminoAlphabet.create(reader.alphabet.encode(), b"X")
-    # null_lprobs = lprob_normalize(_hmmer3_null_amino_frequences(alphabet))
     null_lprobs = _hmmer3_null_amino_frequences(alphabet)
     null_log_odds = [0.0] * len(null_lprobs)
-
-    # if isinstance(alphabet, AminoAlphabet):
-    #     _hmmer3_null_amino_frequences(alphabet)
-    # else:
-    #     raise NotImplementedError()
 
     nodes: List[StandardNode] = []
     for m in range(1, reader.M + 1):
