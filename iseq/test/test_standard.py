@@ -5,6 +5,7 @@ from fasta_reader import open_fasta
 from iseq.standard import create_standard_profile, create_hmmer3_profile
 from nmm.sequence import Sequence
 from iseq._misc import brotli_decompress, diff, download, tmp_cwd
+from iseq import HMMData
 
 
 def test_standard_profile_unihit_homologous_1(PF03373):
@@ -34,7 +35,9 @@ def test_standard_profile_unihit_homologous_1(PF03373):
 
 def test_hmmer3_profile_problematic1(problematic1):
     with open_hmmer(problematic1["hmm"]) as reader:
-        prof = create_hmmer3_profile(reader.read_model(), True)
+        hmmdata = HMMData(reader.read_model())
+
+    prof = create_hmmer3_profile(hmmdata, True)
 
     with open_fasta(problematic1["fasta"]) as reader:
         item = reader.read_items()[0]
@@ -55,7 +58,9 @@ def test_hmmer3_profile_small_viterbi_score():
         fasta = brotli_decompress(fasta_zip)
 
         with open_hmmer(profile) as reader:
-            prof = create_hmmer3_profile(reader.read_model(), True)
+            hmmdata = HMMData(reader.read_model())
+
+        prof = create_hmmer3_profile(hmmdata, True)
 
         with open_fasta(fasta) as reader:
             item = reader.read_items()[0]
@@ -76,7 +81,9 @@ def test_hmmer3_profile_large_viterbi_score():
         fasta = brotli_decompress(fasta_zip)
 
         with open_hmmer(profile) as reader:
-            prof = create_hmmer3_profile(reader.read_model(), True)
+            hmmdata = HMMData(reader.read_model())
+
+        prof = create_hmmer3_profile(hmmdata, True)
 
         with open_fasta(fasta) as reader:
             item = reader.read_items()[0]

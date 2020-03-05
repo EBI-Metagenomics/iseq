@@ -1,26 +1,49 @@
 from math import log
-from nmm.prob import lprob_zero
-from typing import Union, List
+from typing import List, Mapping, Union
+
 from hmmer_reader import HMMERModel
-from nmm.alphabet import RNAAlphabet, DNAAlphabet, CanonicalAminoAlphabet
+from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm.prob import lprob_zero
 
 from ._alphabet import infer_alphabet
+from ._model import Transitions
 
 HMMERAlphabet = Union[RNAAlphabet, DNAAlphabet, CanonicalAminoAlphabet]
 
 
 class HMMData:
     def __init__(self, hmmer: HMMERModel):
-        alphabet = infer_alphabet(hmmer.alphabet.encode())
+        self._original_symbols: str = hmmer.alphabet
+        alphabet = infer_alphabet(self._original_symbols.encode())
+
         if alphabet is None:
             raise ValueError("Could not infer alphabet from HMMER model.")
         self._alphabet = alphabet
 
         if isinstance(self._alphabet, CanonicalAminoAlphabet):
-            self._null_lprobs = _null_amino_lprobs(alphabet)
+            self._null_lprobs = _null_amino_lprobs(self._original_symbols)
         else:
             k = alphabet.length
             self._null_lprobs = [log(1 / k)] * k
+
+        self._match_lprobs = [self._sort(hmmer.match(i)) for i in range(1, hmmer.M + 1)]
+        self._insert_lprobs = [
+            self._sort(hmmer.insert(i)) for i in range(1, hmmer.M + 1)
+        ]
+        self._model_length = hmmer.M
+
+        self._transitions: List[Transitions] = []
+        for m in range(0, hmmer.M + 1):
+            t = Transitions(**hmmer.trans(m))
+            self._transitions.append(t)
+
+    @property
+    def transitions(self) -> List[Transitions]:
+        return self._transitions
+
+    @property
+    def model_length(self) -> int:
+        return self._model_length
 
     @property
     def alphabet(self) -> HMMERAlphabet:
@@ -30,8 +53,18 @@ class HMMData:
     def null_lprobs(self) -> List[float]:
         return self._null_lprobs
 
+    def match_lprobs(self, m: int) -> List[float]:
+        return self._match_lprobs[m - 1]
 
-def _null_amino_lprobs(alphabet: CanonicalAminoAlphabet):
+    def insert_lprobs(self, m: int) -> List[float]:
+        return self._insert_lprobs[m - 1]
+
+    def _sort(self, lprobs: Mapping[str, float]) -> List[float]:
+        symbols = self._alphabet.symbols.decode()
+        return [lprobs.get(sym, lprob_zero()) for sym in symbols]
+
+
+def _null_amino_lprobs(symbols: str):
     """
     Copy/paste from HMMER3 amino acid frequences infered form Swiss-Prot 50.8,
     (Oct 2006), counting over 85956127 (86.0M) residues.
@@ -58,5 +91,4 @@ def _null_amino_lprobs(alphabet: CanonicalAminoAlphabet):
         "W": log(0.0114135),
         "Y": log(0.0304133),
     }
-    abc = list(alphabet.symbols.decode())
-    return [lprobs.get(sym, lprob_zero()) for sym in abc]
+    return [lprobs.get(sym, lprob_zero()) for sym in list(symbols)]
