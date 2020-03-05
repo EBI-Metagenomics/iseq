@@ -43,12 +43,11 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         core_trans: List[Transitions],
     ):
         base_alphabet = factory.genetic_code.base_alphabet
-        super().__init__(base_alphabet)
 
         R = factory.create(b"R", null_aminot)
-        self._null_model = FrameNullModel(R)
+        null_model = FrameNullModel(R)
 
-        self._special_node = FrameSpecialNode(
+        special_node = FrameSpecialNode(
             S=MuteState(b"S", base_alphabet),
             N=factory.create(b"N", null_aminot),
             B=MuteState(b"B", base_alphabet),
@@ -58,28 +57,31 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
             T=MuteState(b"T", base_alphabet),
         )
 
-        self._alt_model = FrameAltModel(
-            self._special_node, core_nodes, core_trans, EntryDistr.UNIFORM,
+        alt_model = FrameAltModel(
+            special_node, core_nodes, core_trans, EntryDistr.UNIFORM,
         )
-        self._alt_model.set_fragment_length(self._special_transitions)
+        # alt_model.set_fragment_length(self._special_transitions)
+        super().__init__(base_alphabet, null_model, alt_model, False)
 
-    @property
-    def null_model(self) -> FrameNullModel:
-        return self._null_model
+    # @property
+    # def null_model(self) -> FrameNullModel:
+    #     return self._null_model
 
-    @property
-    def alt_model(self) -> FrameAltModel:
-        return self._alt_model
+    # @property
+    # def alt_model(self) -> FrameAltModel:
+    #     return self._alt_model
 
     def search(
         self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0
     ) -> FrameSearchResults:
 
-        special_trans = self._get_target_length_model(len(sequence))
-        self._alt_model.set_special_transitions(special_trans)
-        self._null_model.set_special_transitions(special_trans)
+        # special_trans = self._get_target_length_model(len(sequence))
+        # self._alt_model.set_special_transitions(special_trans)
+        # self._null_model.set_special_transitions(special_trans)
 
-        alt_results = self.alt_model.viterbi(sequence, window_length)
+        # alt_results = self.alt_model.viterbi(sequence, window_length)
+        self._set_target_length_model(len(sequence))
+        alt_results = self._alt_model.viterbi(sequence, window_length)
 
         def create_fragment(
             seq: SequenceABC[BaseAlphabet], path: Path[FrameStep], homologous: bool
@@ -90,11 +92,11 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
 
         for alt_result in alt_results:
             subseq = alt_result.sequence
-            score0 = self.null_model.likelihood(subseq)
+            score0 = self._null_model.likelihood(subseq)
             score1 = alt_result.loglikelihood
             score = score1 - score0
             window = Interval(subseq.start, subseq.start + len(subseq))
-            search_results.append(score, window, alt_result.path)
+            search_results.append(score, window, alt_result.path, score1)
 
         return search_results
 

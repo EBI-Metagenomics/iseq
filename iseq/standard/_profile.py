@@ -44,11 +44,10 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         entry_distr: EntryDistr,
         hmmer3_compat=False,
     ):
-        super().__init__(alphabet)
         R = NormalState(b"R", alphabet, null_log_odds)
-        self._null_model = StandardNullModel(R)
+        null_model = StandardNullModel(R)
 
-        self._special_node = StandardSpecialNode(
+        special_node = StandardSpecialNode(
             S=MuteState(b"S", alphabet),
             N=NormalState(b"N", alphabet, null_log_odds),
             B=MuteState(b"B", alphabet),
@@ -58,31 +57,30 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             T=MuteState(b"T", alphabet),
         )
 
-        self._alt_model = StandardAltModel(
-            self._special_node, core_nodes, core_trans, entry_distr,
-        )
-        self._hmmer3_compat = hmmer3_compat
+        alt_model = StandardAltModel(special_node, core_nodes, core_trans, entry_distr)
+        super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
 
-    @property
-    def null_model(self) -> StandardNullModel:
-        return self._null_model
+    # @property
+    # def null_model(self) -> StandardNullModel:
+    #     return self._null_model
 
-    @property
-    def alt_model(self) -> StandardAltModel:
-        return self._alt_model
+    # @property
+    # def alt_model(self) -> StandardAltModel:
+    #     return self._alt_model
 
     def search(
         self, sequence: SequenceABC[TAlphabet], window_length: int = 0
     ) -> StandardSearchResults:
 
-        from time import time
+        # from time import time
 
-        special_trans = self._get_target_length_model(len(sequence))
-        self._alt_model.set_special_transitions(special_trans, self._hmmer3_compat)
+        self._set_target_length_model(len(sequence))
+        # special_trans = self._get_target_length_model(len(sequence))
+        # self._alt_model.set_special_transitions(special_trans, self._hmmer3_compat)
         # self._alt_model.view_emissions()
         # self._alt_model.view()
         # self._msv_model.update_special_transitions()
-        self._null_model.set_special_transitions(special_trans)
+        # self._null_model.set_special_transitions(special_trans)
 
         # self._alt_model.view(core_model_only=False)
         # self._alt_model.view(core_model_only=True)
@@ -93,9 +91,9 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         # self._msv_model.viterbi(sequence, window_length)
         # print(f"MSV elapsed: {time()-start} seconds")
 
-        start = time()
-        alt_results = self.alt_model.viterbi(sequence, window_length)
-        print(f"ALT elapsed: {time()-start} seconds")
+        # start = time()
+        alt_results = self._alt_model.viterbi(sequence, window_length)
+        # print(f"ALT elapsed: {time()-start} seconds")
 
         def create_fragment(
             seq: SequenceABC[TAlphabet], path: Path[StandardStep], homologous: bool
@@ -106,11 +104,11 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
 
         for alt_result in alt_results:
             subseq = alt_result.sequence
-            score0 = self.null_model.likelihood(subseq)
+            score0 = self._null_model.likelihood(subseq)
             score1 = alt_result.loglikelihood
             score = score1 - score0
             window = Interval(subseq.start, subseq.start + len(subseq))
-            search_results.append(score, window, alt_result.path)
+            search_results.append(score, window, alt_result.path, score1)
 
         return search_results
 
@@ -141,7 +139,9 @@ def create_standard_profile(reader: HMMERProfile) -> StandardProfile:
     return StandardProfile(alphabet, null_lprobs, nodes, trans, EntryDistr.UNIFORM)
 
 
-def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
+def create_hmmer3_profile(
+    reader: HMMERProfile, hmmer3_compat: bool = False
+) -> StandardProfile:
     alphabet = AminoAlphabet.create(reader.alphabet.encode(), b"X")
     # null_lprobs = lprob_normalize(_hmmer3_null_amino_frequences(alphabet))
     null_lprobs = _hmmer3_null_amino_frequences(alphabet)
@@ -167,7 +167,7 @@ def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
         trans.append(t)
 
     return StandardProfile(
-        alphabet, null_log_odds, nodes, trans, EntryDistr.OCCUPANCY, hmmer3_compat=True
+        alphabet, null_log_odds, nodes, trans, EntryDistr.OCCUPANCY, hmmer3_compat
     )
 
 

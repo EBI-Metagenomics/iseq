@@ -34,20 +34,15 @@ def test_standard_profile_unihit_homologous_1(PF03373):
 
 def test_hmmer3_profile_problematic1(problematic1):
     with open_hmmer(problematic1["hmm"]) as reader:
-        prof = create_hmmer3_profile(reader.read_profile())
+        prof = create_hmmer3_profile(reader.read_profile(), True)
 
     with open_fasta(problematic1["fasta"]) as reader:
         item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
-    prof._get_target_length_model(len(sequence))
-    prof._alt_model.set_special_transitions(
-        prof._special_transitions, hmmer3_compat=True
-    )
-    results = prof.alt_model.viterbi(sequence)
-
-    assert len(results) == 1
-    assert_allclose(results[0].loglikelihood, -2.103729125681)
+    r = prof.search(sequence)
+    assert len(r.results) == 1
+    assert_allclose(r.results[0].viterbi_score, -2.103729125681)
 
 
 def test_hmmer3_profile_small_viterbi_score():
@@ -60,20 +55,15 @@ def test_hmmer3_profile_small_viterbi_score():
         fasta = brotli_decompress(fasta_zip)
 
         with open_hmmer(profile) as reader:
-            prof = create_hmmer3_profile(reader.read_profile())
+            prof = create_hmmer3_profile(reader.read_profile(), True)
 
         with open_fasta(fasta) as reader:
             item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
-    prof._get_target_length_model(len(sequence))
-    prof._alt_model.set_special_transitions(
-        prof._special_transitions, hmmer3_compat=True
-    )
-    results = prof.alt_model.viterbi(sequence)
-
-    assert len(results) == 1
-    assert_allclose(results[0].loglikelihood, -15.424065160005625)
+    r = prof.search(sequence)
+    assert len(r.results) == 1
+    assert_allclose(r.results[0].viterbi_score, -15.424065160005625)
 
 
 def test_hmmer3_profile_large_viterbi_score():
@@ -86,20 +76,15 @@ def test_hmmer3_profile_large_viterbi_score():
         fasta = brotli_decompress(fasta_zip)
 
         with open_hmmer(profile) as reader:
-            prof = create_hmmer3_profile(reader.read_profile())
+            prof = create_hmmer3_profile(reader.read_profile(), True)
 
         with open_fasta(fasta) as reader:
             item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
-    prof._get_target_length_model(len(sequence))
-    prof._alt_model.set_special_transitions(
-        prof._special_transitions, hmmer3_compat=True
-    )
-    results = prof.alt_model.viterbi(sequence)
-
-    assert len(results) == 1
-    assert_allclose(results[0].loglikelihood, 6.480341268180834)
+    r = prof.search(sequence)
+    assert len(r.results) == 1
+    assert_allclose(r.results[0].viterbi_score, 6.480341268180834)
 
 
 def test_standard_profile_unihit_homologous_2(PF03373):

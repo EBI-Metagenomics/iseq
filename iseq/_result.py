@@ -25,10 +25,16 @@ class SearchResults(Generic[TAlphabet, TState]):
         self._windows: List[Interval] = []
 
     def append(
-        self, loglik: float, window: Interval, path: MutablePath[TState],
+        self,
+        loglik: float,
+        window: Interval,
+        path: MutablePath[TState],
+        viterbi_score: float,
     ):
         subseq = self._sequence[window.start : window.stop]
-        r = SearchResult[TAlphabet, TState](loglik, subseq, path, self._create_fragment)
+        r = SearchResult[TAlphabet, TState](
+            loglik, subseq, path, self._create_fragment, viterbi_score
+        )
         self._results.append(r)
         self._windows.append(window)
 
@@ -58,10 +64,12 @@ class SearchResult(Generic[TAlphabet, TState]):
         sequence: SequenceABC[TAlphabet],
         path: MutablePath[TState],
         create_fragment: create_fragment_type,
+        viterbi_score: float,
     ):
         self._loglik = loglik
         self._fragments: List[Fragment[TAlphabet, TState]] = []
         self._intervals: List[Interval] = []
+        self._viterbi_score = viterbi_score
 
         steps = list(path)
         for fragi, stepi, homologous in _create_fragments(path):
@@ -72,6 +80,10 @@ class SearchResult(Generic[TAlphabet, TState]):
             frag = create_fragment(seq, new_path, homologous)
             self._fragments.append(frag)
             self._intervals.append(fragi)
+
+    @property
+    def viterbi_score(self) -> float:
+        return self._viterbi_score
 
     @property
     def fragments(self) -> List[Fragment[TAlphabet, TState]]:
