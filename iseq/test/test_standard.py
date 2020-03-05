@@ -9,7 +9,7 @@ from iseq._misc import brotli_decompress, diff, download, tmp_cwd
 
 def test_standard_profile_unihit_homologous_1(PF03373):
     with open_hmmer(PF03373) as reader:
-        hmmer = create_standard_profile(reader.read_profile())
+        hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
     most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
@@ -34,7 +34,7 @@ def test_standard_profile_unihit_homologous_1(PF03373):
 
 def test_hmmer3_profile_problematic1(problematic1):
     with open_hmmer(problematic1["hmm"]) as reader:
-        prof = create_hmmer3_profile(reader.read_profile(), True)
+        prof = create_hmmer3_profile(reader.read_model(), True)
 
     with open_fasta(problematic1["fasta"]) as reader:
         item = reader.read_items()[0]
@@ -55,7 +55,7 @@ def test_hmmer3_profile_small_viterbi_score():
         fasta = brotli_decompress(fasta_zip)
 
         with open_hmmer(profile) as reader:
-            prof = create_hmmer3_profile(reader.read_profile(), True)
+            prof = create_hmmer3_profile(reader.read_model(), True)
 
         with open_fasta(fasta) as reader:
             item = reader.read_items()[0]
@@ -76,7 +76,7 @@ def test_hmmer3_profile_large_viterbi_score():
         fasta = brotli_decompress(fasta_zip)
 
         with open_hmmer(profile) as reader:
-            prof = create_hmmer3_profile(reader.read_profile(), True)
+            prof = create_hmmer3_profile(reader.read_model(), True)
 
         with open_fasta(fasta) as reader:
             item = reader.read_items()[0]
@@ -89,7 +89,7 @@ def test_hmmer3_profile_large_viterbi_score():
 
 def test_standard_profile_unihit_homologous_2(PF03373):
     with open_hmmer(PF03373) as reader:
-        hmmer = create_standard_profile(reader.read_profile())
+        hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PGKENNK", alphabet)
@@ -105,7 +105,7 @@ def test_standard_profile_unihit_homologous_2(PF03373):
 
 def test_standard_profile_unihit_homologous_3(PF03373):
     with open_hmmer(PF03373) as reader:
-        hmmer = create_standard_profile(reader.read_profile())
+        hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PGKEPNNK", alphabet)
@@ -120,7 +120,7 @@ def test_standard_profile_unihit_homologous_3(PF03373):
 
 def test_standard_profile_nonhomo_and_homologous(PF03373):
     with open_hmmer(PF03373) as reader:
-        hmmer = create_standard_profile(reader.read_profile())
+        hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"KKKPGKEDNNK", alphabet)
@@ -148,7 +148,7 @@ def test_standard_profile_nonhomo_and_homologous(PF03373):
 
 def test_standard_profile_multihit_homologous1(PF03373):
     with open_hmmer(PF03373) as reader:
-        hmmer = create_standard_profile(reader.read_profile())
+        hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)
@@ -206,7 +206,7 @@ def test_standard_profile_multihit_homologous1(PF03373):
 
 def test_standard_profile_window(PF03373):
     with open_hmmer(PF03373) as reader:
-        hmmer = create_standard_profile(reader.read_profile())
+        hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)

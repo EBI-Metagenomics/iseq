@@ -1,35 +1,29 @@
-from typing import List
 from math import log
+from typing import List
 
-from hmmer_reader import HMMERProfile
+from hmmer_reader import HMMERModel
+from nmm import Interval
 from nmm.alphabet import Alphabet, AminoAlphabet
-from nmm.path import Path, Step
+from nmm.path import Path
 from nmm.prob import lprob_normalize, lprob_zero
 from nmm.sequence import SequenceABC
 from nmm.state import MuteState, NormalState
-from nmm import Interval
 
-from .._fragment import Fragment
-from .._model import AltModel, Node, NullModel, SpecialNode, Transitions, EntryDistr
+from .._model import EntryDistr, Node, Transitions
 from .._profile import Profile
-from .._result import SearchResults
-from .._typing import TAlphabet, MutableStep
-
-StandardFragment = Fragment[TAlphabet, NormalState]
-StandardStep = Step[MutableStep[NormalState]]
-StandardSearchResults = SearchResults[TAlphabet, NormalState]
-
-StandardNode = Node[NormalState]
-StandardSpecialNode = SpecialNode[NormalState]
-StandardNullModel = NullModel[NormalState]
-StandardAltModel = AltModel[NormalState]
+from .._typing import TAlphabet
+from ._typing import (
+    StandardAltModel,
+    StandardFragment,
+    StandardNode,
+    StandardNullModel,
+    StandardSearchResults,
+    StandardSpecialNode,
+    StandardStep,
+)
 
 __all__ = [
-    "StandardAltModel",
-    "StandardFragment",
-    "StandardNullModel",
     "StandardProfile",
-    "StandardStep",
     "create_standard_profile",
 ]
 
@@ -60,40 +54,13 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         alt_model = StandardAltModel(special_node, core_nodes, core_trans, entry_distr)
         super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
 
-    # @property
-    # def null_model(self) -> StandardNullModel:
-    #     return self._null_model
-
-    # @property
-    # def alt_model(self) -> StandardAltModel:
-    #     return self._alt_model
-
     def search(
         self, sequence: SequenceABC[TAlphabet], window_length: int = 0
     ) -> StandardSearchResults:
 
-        # from time import time
-
         self._set_target_length_model(len(sequence))
-        # special_trans = self._get_target_length_model(len(sequence))
-        # self._alt_model.set_special_transitions(special_trans, self._hmmer3_compat)
-        # self._alt_model.view_emissions()
-        # self._alt_model.view()
-        # self._msv_model.update_special_transitions()
-        # self._null_model.set_special_transitions(special_trans)
 
-        # self._alt_model.view(core_model_only=False)
-        # self._alt_model.view(core_model_only=True)
-        # self._alt_model._hmm.view()
-        # self._null_model._hmm.view()
-
-        # start = time()
-        # self._msv_model.viterbi(sequence, window_length)
-        # print(f"MSV elapsed: {time()-start} seconds")
-
-        # start = time()
         alt_results = self._alt_model.viterbi(sequence, window_length)
-        # print(f"ALT elapsed: {time()-start} seconds")
 
         def create_fragment(
             seq: SequenceABC[TAlphabet], path: Path[StandardStep], homologous: bool
@@ -113,7 +80,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         return search_results
 
 
-def create_standard_profile(reader: HMMERProfile) -> StandardProfile:
+def create_standard_profile(reader: HMMERModel) -> StandardProfile:
 
     alphabet = Alphabet.create(reader.alphabet.encode(), b"X")
 
@@ -140,7 +107,7 @@ def create_standard_profile(reader: HMMERProfile) -> StandardProfile:
 
 
 def create_hmmer3_profile(
-    reader: HMMERProfile, hmmer3_compat: bool = False
+    reader: HMMERModel, hmmer3_compat: bool = False
 ) -> StandardProfile:
     alphabet = AminoAlphabet.create(reader.alphabet.encode(), b"X")
     # null_lprobs = lprob_normalize(_hmmer3_null_amino_frequences(alphabet))

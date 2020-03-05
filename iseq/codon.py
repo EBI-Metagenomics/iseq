@@ -1,7 +1,7 @@
 from math import log
 from typing import List, Tuple, Union
 
-from hmmer_reader import HMMERProfile
+from hmmer_reader import HMMERModel
 from nmm import GeneticCode
 from nmm.alphabet import AminoAlphabet, BaseAlphabet
 from nmm.codon import Codon, codon_iter
@@ -208,7 +208,7 @@ class CodonProfile(Profile[BaseAlphabet, CodonState]):
 
 
 def create_profile(
-    reader: HMMERProfile, base_abc: BaseAlphabet, epsilon: float = 0.1
+    reader: HMMERModel, base_abc: BaseAlphabet, epsilon: float = 0.1
 ) -> CodonProfile:
 
     amino_abc = AminoAlphabet.create(reader.alphabet.encode(), b"X")

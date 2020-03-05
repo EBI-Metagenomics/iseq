@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import log
 from typing import List
 
-from hmmer_reader import HMMERProfile
+from hmmer_reader import HMMERModel
 from nmm import GeneticCode, Interval
 from nmm.alphabet import AminoAlphabet, BaseAlphabet
 from nmm.codon import codon_iter
@@ -102,7 +102,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
 
 
 def create_frame_profile(
-    reader: HMMERProfile, base_abc: BaseAlphabet, epsilon: float = 0.1
+    reader: HMMERModel, base_abc: BaseAlphabet, epsilon: float = 0.1
 ) -> FrameProfile:
 
     amino_abc = AminoAlphabet.create(reader.alphabet.encode(), b"X")
