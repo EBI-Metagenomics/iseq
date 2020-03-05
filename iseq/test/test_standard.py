@@ -1,6 +1,7 @@
 from numpy.testing import assert_allclose, assert_equal
 
 from hmmer_reader import open_hmmer
+from fasta_reader import open_fasta
 from iseq.standard import create_standard_profile, create_hmmer3_profile
 from nmm.sequence import Sequence
 
@@ -30,13 +31,20 @@ def test_standard_profile_unihit_homologous_1(PF03373):
     assert_equal(bytes(frag.sequence), bytes(most_likely_seq))
 
 
-# def test_hmmer3_profile_unihit_homologous_1(PF03373):
-#     with open_hmmer(PF03373) as reader:
-#         hmmer = create_hmmer3_profile(reader.read_profile())
+def test_hmmer3_profile_problematic1(problematic1):
+    with open_hmmer(problematic1["hmm"]) as reader:
+        prof = create_hmmer3_profile(reader.read_profile())
 
-#     alphabet = hmmer.alphabet
-#     most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
-#     # r = hmmer.search(most_likely_seq).results[0]
+    with open_fasta(problematic1["fasta"]) as reader:
+        item = reader.read_items()[0]
+
+    sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
+    prof._set_special_transitions(len(sequence))
+    prof._alt_model.update_special_transitions(hmmer3=True)
+    results = prof.alt_model.viterbi(sequence)
+
+    assert len(results) == 1
+    assert_allclose(results[0].loglikelihood, -2.103729125681)
 
 
 def test_standard_profile_unihit_homologous_2(PF03373):

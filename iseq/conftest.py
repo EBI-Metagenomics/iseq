@@ -47,6 +47,14 @@ def output1_evalue(tmp_path):
 
 
 @pytest.fixture
+def problematic1(tmp_path):
+    return {
+        "hmm": _write_file(tmp_path, "problematic1.hmm"),
+        "fasta": _write_file(tmp_path, "problematic1.fasta"),
+    }
+
+
+@pytest.fixture
 def large_rna(tmp_path):
     return {
         "fasta": _write_file(tmp_path, "large_rna_seq.fasta"),
