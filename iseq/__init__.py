@@ -1,4 +1,6 @@
-from . import codon, frame, io, standard
+from . import codon, io
+from . import standard
+from . import frame
 from ._cli import cli
 
 __version__ = "0.0.1"
