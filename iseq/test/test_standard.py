@@ -40,8 +40,10 @@ def test_hmmer3_profile_problematic1(problematic1):
         item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
-    prof._set_special_transitions(len(sequence))
-    prof._alt_model.update_special_transitions(hmmer3=True)
+    prof._get_target_length_model(len(sequence))
+    prof._alt_model.set_special_transitions(
+        prof._special_transitions, hmmer3_compat=True
+    )
     results = prof.alt_model.viterbi(sequence)
 
     assert len(results) == 1
@@ -64,8 +66,10 @@ def test_hmmer3_profile_small_viterbi_score():
             item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
-    prof._set_special_transitions(len(sequence))
-    prof._alt_model.update_special_transitions(hmmer3=True)
+    prof._get_target_length_model(len(sequence))
+    prof._alt_model.set_special_transitions(
+        prof._special_transitions, hmmer3_compat=True
+    )
     results = prof.alt_model.viterbi(sequence)
 
     assert len(results) == 1
@@ -88,8 +92,10 @@ def test_hmmer3_profile_large_viterbi_score():
             item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
-    prof._set_special_transitions(len(sequence))
-    prof._alt_model.update_special_transitions(hmmer3=True)
+    prof._get_target_length_model(len(sequence))
+    prof._alt_model.set_special_transitions(
+        prof._special_transitions, hmmer3_compat=True
+    )
     results = prof.alt_model.viterbi(sequence)
 
     assert len(results) == 1

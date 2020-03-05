@@ -183,7 +183,7 @@ class CodonProfile(Profile[BaseAlphabet, CodonState]):
         self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0
     ) -> CodonSearchResults:
 
-        self._set_special_transitions(len(sequence))
+        self._get_target_length_model(len(sequence))
         self._alt_model.update_special_transitions()
         self._null_model.update_special_transitions()
 

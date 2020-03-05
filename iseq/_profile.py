@@ -47,10 +47,10 @@ class Profile(Generic[TAlphabet, TState], ABC):
         del window_length
         raise NotImplementedError()
 
-    def _set_special_transitions(self, length: int):
-        L = length
+    def _get_target_length_model(self, target_length: int) -> SpecialTransitions:
+        L = target_length
         if L == 0:
-            return
+            raise ValueError("Target length cannot be zero.")
 
         if self._multiple_hits:
             q = 0.5
@@ -70,3 +70,5 @@ class Profile(Generic[TAlphabet, TState], ABC):
         t.RR = lr
         t.EJ = log_q
         t.EC = log(1 - q)
+
+        return t

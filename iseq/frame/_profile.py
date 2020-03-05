@@ -19,7 +19,7 @@ from nmm.prob import (
 from nmm.sequence import SequenceABC
 from nmm.state import FrameState, MuteState
 
-from .._model import Transitions
+from .._model import Transitions, EntryDistr
 from .._profile import Profile
 from ._fragment import FrameFragment
 from ._typing import (
@@ -46,7 +46,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         super().__init__(base_alphabet)
 
         R = factory.create(b"R", null_aminot)
-        self._null_model = FrameNullModel(R, self._special_transitions)
+        self._null_model = FrameNullModel(R)
 
         self._special_node = FrameSpecialNode(
             S=MuteState(b"S", base_alphabet),
@@ -59,9 +59,9 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         )
 
         self._alt_model = FrameAltModel(
-            self._special_node, core_nodes, core_trans, self._special_transitions
+            self._special_node, core_nodes, core_trans, EntryDistr.UNIFORM,
         )
-        self._alt_model.set_fragment_length()
+        self._alt_model.set_fragment_length(self._special_transitions)
 
     @property
     def null_model(self) -> FrameNullModel:
@@ -75,9 +75,9 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0
     ) -> FrameSearchResults:
 
-        self._set_special_transitions(len(sequence))
-        self._alt_model.update_special_transitions()
-        self._null_model.update_special_transitions()
+        special_trans = self._get_target_length_model(len(sequence))
+        self._alt_model.set_special_transitions(special_trans)
+        self._null_model.set_special_transitions(special_trans)
 
         alt_results = self.alt_model.viterbi(sequence, window_length)
 

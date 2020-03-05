@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 from math import log
 
 from hmmer_reader import HMMERProfile
@@ -10,7 +10,7 @@ from nmm.state import MuteState, NormalState
 from nmm import Interval
 
 from .._fragment import Fragment
-from .._model import AltModel, Node, NullModel, SpecialNode, Transitions
+from .._model import AltModel, Node, NullModel, SpecialNode, Transitions, EntryDistr
 from .._profile import Profile
 from .._result import SearchResults
 from .._typing import TAlphabet, MutableStep
@@ -41,11 +41,12 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         null_log_odds: List[float],
         core_nodes: List[Node],
         core_trans: List[Transitions],
-        hmmer3=False,
+        entry_distr: EntryDistr,
+        hmmer3_compat=False,
     ):
         super().__init__(alphabet)
         R = NormalState(b"R", alphabet, null_log_odds)
-        self._null_model = StandardNullModel(R, self._special_transitions)
+        self._null_model = StandardNullModel(R)
 
         self._special_node = StandardSpecialNode(
             S=MuteState(b"S", alphabet),
@@ -58,15 +59,9 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         )
 
         self._alt_model = StandardAltModel(
-            self._special_node, core_nodes, core_trans, self._special_transitions
+            self._special_node, core_nodes, core_trans, entry_distr,
         )
-        if hmmer3:
-            self._alt_model.set_entry_transitions()
-            self._alt_model.set_exit_transitions()
-        else:
-            self._alt_model.set_fragment_length()
-
-        self._hmmer3 = hmmer3
+        self._hmmer3_compat = hmmer3_compat
 
     @property
     def null_model(self) -> StandardNullModel:
@@ -82,12 +77,12 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
 
         from time import time
 
-        self._set_special_transitions(len(sequence))
-        self._alt_model.update_special_transitions(self._hmmer3)
+        special_trans = self._get_target_length_model(len(sequence))
+        self._alt_model.set_special_transitions(special_trans, self._hmmer3_compat)
         # self._alt_model.view_emissions()
         # self._alt_model.view()
         # self._msv_model.update_special_transitions()
-        self._null_model.update_special_transitions()
+        self._null_model.set_special_transitions(special_trans)
 
         # self._alt_model.view(core_model_only=False)
         # self._alt_model.view(core_model_only=True)
@@ -143,7 +138,7 @@ def create_standard_profile(reader: HMMERProfile) -> StandardProfile:
         t.normalize()
         trans.append(t)
 
-    return StandardProfile(alphabet, null_lprobs, nodes, trans)
+    return StandardProfile(alphabet, null_lprobs, nodes, trans, EntryDistr.UNIFORM)
 
 
 def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
@@ -171,7 +166,9 @@ def create_hmmer3_profile(reader: HMMERProfile) -> StandardProfile:
         t = Transitions(**reader.trans(m))
         trans.append(t)
 
-    return StandardProfile(alphabet, null_log_odds, nodes, trans, hmmer3=True)
+    return StandardProfile(
+        alphabet, null_log_odds, nodes, trans, EntryDistr.OCCUPANCY, hmmer3_compat=True
+    )
 
 
 def _hmmer3_null_amino_frequences(alphabet: AminoAlphabet):
