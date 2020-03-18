@@ -12,11 +12,12 @@ from nmm.sequence import Sequence
 from .._hmmdata import HMMData
 
 
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_hmmer3_viterbi_scores_compat():
     with tmp_cwd():
         profiles_filepath = get_filepath("Pfam-A.hmm")
         target_filepath = get_filepath("A0ALD9.fasta")
+        scores_iseq = loadtxt(get_filepath("Pfam-A_iseq_viterbi_scores.txt"))
 
         with open_fasta(target_filepath) as fasta:
             target = list(fasta)[0]

@@ -13,7 +13,7 @@ _filenames = {
     "PF00113_A0ALD9_dna_huge_output1776.gff": "4276b590cbf94df33d3c75ff091a910019a6dae6fdcb32f084a490bfb2a30901",
     "PF00113_A0ALD9_dna_huge_codon1776.fasta": "53804506d7152139bfb4fb9eada69986fcdf7ded7df991dd47279a4d1a42206a",
     "PF00113_A0ALD9_dna_huge_amino1776.fasta": "f817d721ab19c588effdaf6986973cb35063a424bb509017c7d075df81fb5a5f",
-    "Pfam-A_iseq_viterbi_scores.txt": "",
+    "Pfam-A_iseq_viterbi_scores.txt": "af4ecc5a6f04614b00a1697f3849b1f4e677fee172cdf565e0d6bc3bf107609a",
 }
 
 
