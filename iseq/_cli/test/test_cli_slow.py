@@ -5,20 +5,17 @@ from click.testing import CliRunner
 
 from iseq import cli
 from iseq._misc import brotli_decompress, diff, download, tmp_cwd
+from iseq._test_data import get_filepath
 
 
 @pytest.mark.slow
 def test_cli_large_dataset_window():
     with tmp_cwd():
-        base = "https://rest.s3for.me/iseq"
-        profile_zip = download(f"{base}/PF00113.hmm.br")
-        target_zip = download(f"{base}/A0ALD9_dna_huge.fasta.br")
-        output = download(f"{base}/PF00113_A0ALD9_dna_huge_output1776.gff")
-        codon = download(f"{base}/PF00113_A0ALD9_dna_huge_codon1776.fasta")
-        amino = download(f"{base}/PF00113_A0ALD9_dna_huge_amino1776.fasta")
-
-        profile = brotli_decompress(profile_zip)
-        target = brotli_decompress(target_zip)
+        profile = get_filepath("PF00113.hmm")
+        target = get_filepath("A0ALD9_dna_huge.fasta")
+        output = get_filepath("PF00113_A0ALD9_dna_huge_output1776.gff")
+        codon = get_filepath("PF00113_A0ALD9_dna_huge_codon1776.fasta")
+        amino = get_filepath("PF00113_A0ALD9_dna_huge_amino1776.fasta")
 
         invoke = CliRunner().invoke
         r = invoke(

@@ -76,6 +76,8 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             score1 = alt_result.loglikelihood
             score = score1 - score0
             window = Interval(subseq.start, subseq.start + len(subseq))
+            if self._hmmer3_compat:
+                score1 -= 3
             search_results.append(score, window, alt_result.path, score1)
 
         return search_results

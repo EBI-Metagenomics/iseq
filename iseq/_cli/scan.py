@@ -18,6 +18,7 @@ from .._hmmer import infer_hmmer_alphabet
 from .._result import SearchResult
 from ..frame import FrameFragment, FrameProfile, create_frame_profile
 from ..standard import create_standard_profile, create_hmmer3_profile
+from .._hmmdata import HMMData
 
 
 @click.command()
@@ -281,7 +282,7 @@ class HMMER3Scanner(Scanner):
     def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
         self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
-        prof = create_hmmer3_profile(profile_parser)
+        prof = create_hmmer3_profile(HMMData(profile_parser))
         self._scan_targets(prof, targets)
 
     def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):

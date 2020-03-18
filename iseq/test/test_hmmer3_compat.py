@@ -1,47 +1,38 @@
-from filecmp import cmp
-
 import pytest
-from click.testing import CliRunner
+from numpy import asarray, isfinite, loadtxt
+from numpy.testing import assert_allclose
 
-from iseq import cli
-from iseq._misc import brotli_decompress, diff, download, tmp_cwd
+from fasta_reader import open_fasta
+from hmmer_reader import open_hmmer
+from iseq._misc import tmp_cwd
+from iseq._test_data import get_filepath
+from iseq.standard import create_hmmer3_profile
+from nmm.sequence import Sequence
+
+from .._hmmdata import HMMData
 
 
-# @pytest.mark.slow
+@pytest.mark.slow
 def test_hmmer3_viterbi_scores_compat():
     with tmp_cwd():
-        base = "https://rest.s3for.me/iseq"
-        profiles_zip = download(f"{base}/Pfam-A.hmm.br")
-        target_zip = download(f"{base}/A0ALD9.fasta.br")
-        viterbi_scores_zip = download(f"{base}/Pfam-A_hmmer3.3_viterbi_scores.txt.br")
+        profiles_filepath = get_filepath("Pfam-A.hmm")
+        target_filepath = get_filepath("A0ALD9.fasta")
 
-        # output = download(f"{base}/PF00113_A0ALD9_dna_huge_output1776.gff")
-        # codon = download(f"{base}/PF00113_A0ALD9_dna_huge_codon1776.fasta")
-        # amino = download(f"{base}/PF00113_A0ALD9_dna_huge_amino1776.fasta")
+        with open_fasta(target_filepath) as fasta:
+            target = list(fasta)[0]
 
-        profiles = brotli_decompress(profiles_zip)
-        target = brotli_decompress(target_zip)
-        viterbi_scores = brotli_decompress(viterbi_scores_zip)
-        pass
+        actual_scores = []
+        for hmmprof in open_hmmer(profiles_filepath):
+            prof = create_hmmer3_profile(HMMData(hmmprof), hmmer3_compat=True)
+            seq = Sequence.create(target.sequence.encode(), prof.alphabet)
+            search_results = prof.search(seq, 0)
+            actual_score = search_results.results[0].viterbi_score
+            actual_scores.append(actual_score)
 
-        # invoke = CliRunner().invoke
-        # r = invoke(
-        #     cli,
-        #     [
-        #         "scan",
-        #         str(profile),
-        #         str(target),
-        #         "--output",
-        #         "output.gff",
-        #         "--ocodon",
-        #         "codon.fasta",
-        #         "--oamino",
-        #         "amino.fasta",
-        #         "--window",
-        #         "1776",
-        #     ],
-        # )
-        # assert r.exit_code == 0, r.output
-        # assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
-        # assert cmp(codon, "codon.fasta", shallow=False), diff(codon, "codon.fasta")
-        # assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
+        actual_scores = asarray(actual_scores)
+        scores_hmmer3 = loadtxt(get_filepath("Pfam-A_hmmer3.3_viterbi_scores.txt"))
+        ok = isfinite(scores_hmmer3)
+        assert_allclose(actual_scores[ok], scores_hmmer3[ok], 3e-2)
+
+        scores_iseq = loadtxt(get_filepath("Pfam-A_iseq_viterbi_scores.txt"))
+        assert_allclose(actual_scores[ok], scores_iseq[ok])

@@ -98,3 +98,22 @@ def diff(filepath_a, filepath_b):
         b = file_b.readlines()
 
     return "".join([line.expandtabs(1) for line in ndiff(a, b)])
+
+
+def make_sure_dir_exist(dirpath: Path):
+    dirpath.mkdir(parents=True, exist_ok=True)
+
+
+def file_hash(filepath: Path) -> str:
+    import hashlib
+
+    BLOCK_SIZE = 65536
+
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        fb = f.read(BLOCK_SIZE)
+        while len(fb) > 0:
+            sha256.update(fb)
+            fb = f.read(BLOCK_SIZE)
+
+    return sha256.hexdigest()
