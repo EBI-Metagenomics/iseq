@@ -12,7 +12,7 @@ from nmm.sequence import Sequence
 from .._hmmdata import HMMData
 
 
-# @pytest.mark.slow
+@pytest.mark.slow
 def test_hmmer3_viterbi_scores_compat():
     with tmp_cwd():
         profiles_filepath = get_filepath("Pfam-A.hmm")

@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 from math import exp, log
-from typing import Dict, Generic, List, Tuple, Union
+from typing import Dict, Generic, List, Tuple, Union, Optional
 
-from nmm import HMM, CData
+from nmm import HMM, CData, DP
 from nmm.path import Path, Step
 from nmm.prob import lprob_is_zero, lprob_zero
 from nmm.sequence import Sequence
@@ -169,6 +169,7 @@ class AltModel(Generic[TState]):
         self._special_node = special_node
         self._core_nodes = core_nodes
         self._states: Dict[CData, MutableState[TState]] = {}
+        self._dp: Optional[DP[TState]] = None
 
         for node in self._core_nodes:
             for state in node.states():
@@ -274,6 +275,7 @@ class AltModel(Generic[TState]):
         return state not in self._special_node.states() or state in [B, E]
 
     def set_transition(self, a: State, b: State, lprob: float):
+        self._dp = None
         self._hmm.set_transition(a, b, lprob)
 
     def core_nodes(self) -> List[Node]:
@@ -288,13 +290,16 @@ class AltModel(Generic[TState]):
         return len(self._core_nodes)
 
     def viterbi(self, seq: Sequence, window_length: int = 0) -> MutableResults[TState]:
-        return self._hmm.viterbi(seq, self.special_node.T, window_length)
+        if self._dp is None:
+            self._dp = self._hmm.create_dp(self.special_node.T)
+        return self._dp.viterbi(seq, window_length)
 
     def set_fragment_length(self, special_trans: SpecialTransitions):
         M = self.core_length
         if M == 0:
             return
 
+        self._dp = None
         B = self.special_node.B
         E = self.special_node.E
 
@@ -338,6 +343,7 @@ class AltModel(Generic[TState]):
     ):
         t = special_trans
         node = self.special_node
+        self._dp = None
 
         if hmmer3_compat:
             t.NN = 0.0
