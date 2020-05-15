@@ -10,6 +10,7 @@ from iseq.standard import create_hmmer3_profile
 from nmm.sequence import Sequence
 
 from .._hmmdata import HMMData
+from tqdm import tqdm
 
 
 @pytest.mark.slow
@@ -22,13 +23,25 @@ def test_hmmer3_viterbi_scores_compat():
         with open_fasta(target_filepath) as fasta:
             target = list(fasta)[0]
 
+        breakpoint()
         actual_scores = []
-        for hmmprof in open_hmmer(profiles_filepath):
+        # i = 0
+        for hmmprof in tqdm(open_hmmer(profiles_filepath)):
             prof = create_hmmer3_profile(HMMData(hmmprof), hmmer3_compat=True)
             seq = Sequence.create(target.sequence.encode(), prof.alphabet)
             search_results = prof.search(seq, 0)
             actual_score = search_results.results[0].viterbi_score
             actual_scores.append(actual_score)
+            # if i == 100:
+            #     break
+            # i += 1
+
+        import iseq._model
+        import pandas as pd
+
+        elapsed = iseq._model._ELAPSED
+        df = pd.DataFrame(elapsed, columns=("M", "elapsed"))
+        df.to_csv("/Users/horta/viterbi_perf.csv")
 
         actual_scores = asarray(actual_scores)
         scores_hmmer3 = loadtxt(get_filepath("Pfam-A_hmmer3.3_viterbi_scores.txt"))
