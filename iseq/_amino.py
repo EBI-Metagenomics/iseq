@@ -1,11 +1,9 @@
 from typing import Union
 
-from nmm.alphabet import AminoAlphabet
-from nmm.path import Path, Step
-from nmm.state import MuteState, NormalState
+from imm import MuteState, NormalState, Path, Step
+from nmm import AminoAlphabet
 
 from ._fragment import Fragment
-
 
 AminoStep = Step[Union[NormalState, MuteState]]
 AminoPath = Path[AminoStep]

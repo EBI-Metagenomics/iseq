@@ -8,17 +8,16 @@ from click.utils import LazyFile
 
 from fasta_reader import FASTAItem, FASTAWriter, open_fasta
 from hmmer_reader import HMMERParser, open_hmmer
-from nmm import GeneticCode, Interval
-from nmm.alphabet import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet
-from nmm.sequence import Sequence
+from imm import Interval, Sequence
+from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
 from .._fasta import infer_fasta_alphabet
 from .._gff import GFFItem, GFFWriter
+from .._hmmdata import HMMData
 from .._hmmer import infer_hmmer_alphabet
 from .._result import SearchResult
 from ..frame import FrameFragment, FrameProfile, create_frame_profile
-from ..standard import create_standard_profile, create_hmmer3_profile
-from .._hmmdata import HMMData
+from ..standard import create_hmmer3_profile, create_standard_profile
 
 
 @click.command()

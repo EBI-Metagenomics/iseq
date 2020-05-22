@@ -1,5 +1,4 @@
-from nmm.path import Step
-from nmm.state import NormalState
+from imm import NormalState, Step
 
 from .._fragment import Fragment
 from .._model import AltModel, Node, NullModel, SpecialNode

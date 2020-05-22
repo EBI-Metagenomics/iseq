@@ -1,16 +1,16 @@
 import pytest
 from numpy import asarray, isfinite, loadtxt
 from numpy.testing import assert_allclose
+from tqdm import tqdm
 
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
+from imm import Sequence
 from iseq._misc import tmp_cwd
 from iseq._test_data import get_filepath
 from iseq.standard import create_hmmer3_profile
-from nmm.sequence import Sequence
 
 from .._hmmdata import HMMData
-from tqdm import tqdm
 
 
 @pytest.mark.slow

@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from fasta_reader import FASTAParser
-from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 from ._alphabet import infer_alphabet
 

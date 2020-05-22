@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 

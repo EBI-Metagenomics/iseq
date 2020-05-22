@@ -1,13 +1,8 @@
 from math import log
 from typing import List, Tuple, Union
 
-from nmm import GeneticCode
-from nmm.alphabet import BaseAlphabet
-from nmm.codon import Codon
-from nmm.path import Path, Step
-from nmm.prob import lprob_zero
-from nmm.sequence import Sequence, SequenceABC
-from nmm.state import CodonState, MuteState, NormalState
+from imm import MuteState, NormalState, Path, Sequence, SequenceABC, Step, lprob_zero
+from nmm import BaseAlphabet, Codon, CodonState, GeneticCode
 
 from ._amino import AminoFragment, AminoPath, AminoStep
 from ._fragment import Fragment
@@ -19,14 +14,6 @@ __all__ = ["CodonFragment", "CodonStep", "CodonPath"]
 
 
 class CodonFragment(Fragment[BaseAlphabet, CodonState]):
-    def __init__(
-        self,
-        sequence: SequenceABC[BaseAlphabet],
-        path: Path[CodonStep],
-        homologous: bool,
-    ):
-        super().__init__(sequence, path, homologous)
-
     def decode(self, genetic_code: GeneticCode) -> AminoFragment:
         aminos: List[bytes] = []
         steps: List[AminoStep] = []
@@ -37,7 +24,7 @@ class CodonFragment(Fragment[BaseAlphabet, CodonState]):
         for step in self.path:
             if isinstance(step.state, MuteState):
 
-                mstate = MuteState(step.state.name, amino_abc)
+                mstate = MuteState.create(step.state.name, amino_abc)
                 steps.append(AminoStep.create(mstate, 0))
 
             elif isinstance(step.state, CodonState):
@@ -70,6 +57,6 @@ def _create_step(
     amino_abc = gcode.amino_alphabet
     lprobs = [lprob_zero()] * amino_abc.length
     lprobs[amino_abc.symbol_idx(amino)] = log(1.0)
-    state = NormalState(state_name, amino_abc, lprobs)
+    state = NormalState.create(state_name, amino_abc, lprobs)
 
     return amino, AminoStep.create(state, 1)

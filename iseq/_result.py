@@ -1,9 +1,8 @@
 from __future__ import annotations
+
 from typing import Callable, Generic, Iterable, List, Tuple
 
-from nmm import Interval
-from nmm.path import Path, Step
-from nmm.sequence import SequenceABC
+from imm import Interval, Path, SequenceABC, Step
 
 from ._fragment import Fragment
 from ._typing import MutablePath, TAlphabet, TState

@@ -2,9 +2,7 @@ from abc import ABC, abstractmethod
 from math import log
 from typing import Generic
 
-from nmm.alphabet import Alphabet
-from nmm.prob import lprob_zero
-from nmm.sequence import Sequence
+from imm import Alphabet, Sequence, lprob_zero
 
 from ._model import AltModel, NullModel, SpecialTransitions
 from ._result import SearchResults

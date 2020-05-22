@@ -1,7 +1,7 @@
 from typing import Union
-from nmm.path import Step
-from nmm.state import FrameState, MuteState
-from nmm.alphabet import BaseAlphabet
+
+from imm import MuteState, Step
+from nmm import BaseAlphabet, FrameState
 
 from .._model import AltModel, Node, NullModel, SpecialNode
 from .._result import SearchResults

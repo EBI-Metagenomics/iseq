@@ -4,22 +4,21 @@ from math import log
 from typing import List
 
 from hmmer_reader import HMMERModel
-from nmm import GeneticCode, Interval
-from nmm.alphabet import AminoAlphabet, BaseAlphabet
-from nmm.codon import codon_iter
-from nmm.path import Path
-from nmm.prob import (
+
+from imm import Interval, MuteState, Path, SequenceABC, lprob_normalize, lprob_zero
+from nmm import (
+    AminoAlphabet,
     AminoTable,
+    BaseAlphabet,
     BaseTable,
     CodonProb,
     CodonTable,
-    lprob_normalize,
-    lprob_zero,
+    FrameState,
+    GeneticCode,
+    codon_iter,
 )
-from nmm.sequence import SequenceABC
-from nmm.state import FrameState, MuteState
 
-from .._model import Transitions, EntryDistr
+from .._model import EntryDistr, Transitions
 from .._profile import Profile
 from ._fragment import FrameFragment
 from ._typing import (
@@ -48,13 +47,13 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         null_model = FrameNullModel(R)
 
         special_node = FrameSpecialNode(
-            S=MuteState(b"S", base_alphabet),
+            S=MuteState.create(b"S", base_alphabet),
             N=factory.create(b"N", null_aminot),
-            B=MuteState(b"B", base_alphabet),
-            E=MuteState(b"E", base_alphabet),
+            B=MuteState.create(b"B", base_alphabet),
+            E=MuteState.create(b"E", base_alphabet),
             J=factory.create(b"J", null_aminot),
             C=factory.create(b"C", null_aminot),
-            T=MuteState(b"T", base_alphabet),
+            T=MuteState.create(b"T", base_alphabet),
         )
 
         alt_model = FrameAltModel(
@@ -119,7 +118,7 @@ def create_frame_profile(
         lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
         I = factory.create(f"I{m}".encode(), AminoTable.create(amino_abc, lprobs))
 
-        D = MuteState(f"D{m}".encode(), base_abc)
+        D = MuteState.create(f"D{m}".encode(), base_abc)
 
         nodes.append(FrameNode(M, I, D))
 
@@ -143,7 +142,7 @@ class _FrameStateFactory:
         codonp = _create_codon_prob(aminot, self._gcode)
         baset = _create_base_table(codonp)
         codont = CodonTable.create(codonp)
-        return FrameState(name, baset, codont, self._epsilon)
+        return FrameState.create(name, baset, codont, self._epsilon)
 
     @property
     def genetic_code(self) -> GeneticCode:

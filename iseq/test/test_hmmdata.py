@@ -1,8 +1,10 @@
 from math import log
+
 from numpy.testing import assert_allclose
+
 from hmmer_reader import open_hmmer
-from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet
 from iseq import HMMData
+from nmm import CanonicalAminoAlphabet, DNAAlphabet
 
 
 def test_hmmdata_amino(PF03373):

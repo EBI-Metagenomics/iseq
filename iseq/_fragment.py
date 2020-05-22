@@ -1,6 +1,4 @@
-from nmm.fragment import Fragment as FragmentBase
-from nmm.path import Path, Step
-from nmm.sequence import SequenceABC
+from imm import Fragment as FragmentBase, Path, SequenceABC, Step
 
 from ._typing import TAlphabet, TState
 

@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from hmmer_reader import HMMERParser
-from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 

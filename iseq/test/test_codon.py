@@ -1,10 +1,10 @@
-from numpy.testing import assert_allclose, assert_equal
+# from numpy.testing import assert_allclose, assert_equal
 
-from hmmer_reader import open_hmmer
-from iseq.codon import create_profile
-from nmm import GeneticCode
-from nmm.alphabet import CanonicalAminoAlphabet, RNAAlphabet
-from nmm.sequence import Sequence
+# from hmmer_reader import open_hmmer
+# from iseq.codon import create_profile
+# from nmm import GeneticCode
+# from nmm.alphabet import CanonicalAminoAlphabet, RNAAlphabet
+# from nmm.sequence import Sequence
 
 
 # def test_codon_profile1(PF03373):

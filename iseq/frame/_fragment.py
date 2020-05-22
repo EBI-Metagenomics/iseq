@@ -1,11 +1,8 @@
 from math import log
 from typing import List
 
-from nmm.alphabet import BaseAlphabet
-from nmm.codon import Codon
-from nmm.path import Path
-from nmm.sequence import Sequence, SequenceABC
-from nmm.state import CodonState, FrameState, MuteState
+from nmm import BaseAlphabet, Codon, CodonState, FrameState, CodonProb
+from imm import Path, Sequence, SequenceABC, MuteState
 
 from .._codon import CodonFragment, CodonPath, CodonStep
 from .._fragment import Fragment
@@ -31,7 +28,7 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
         for step in self.path:
             if isinstance(step.state, MuteState):
 
-                mstate = MuteState(step.state.name, step.state.alphabet)
+                mstate = MuteState.create(step.state.name, step.state.alphabet)
                 steps.append(CodonStep.create(mstate, 0))
 
             elif isinstance(step.state, FrameState):
@@ -41,7 +38,9 @@ class FrameFragment(Fragment[BaseAlphabet, FrameState]):
                 codons.append(codon)
 
                 name = step.state.name
-                cstate = CodonState(name, self.sequence.alphabet, {codon: log(1.0)})
+                codonp = CodonProb.create(self.sequence.alphabet)
+                codonp.set_lprob(codon, log(1.0))
+                cstate = CodonState.create(name, codonp)
                 steps.append(CodonStep.create(cstate, 3))
 
             else:

@@ -1,9 +1,7 @@
-from . import codon, io
-from . import standard
-from . import frame
-from ._hmmdata import HMMData
+from . import frame, io, standard
 from ._cli import cli
+from ._hmmdata import HMMData
 
 __version__ = "0.0.1"
 
-__all__ = ["standard", "frame", "io", "cli", "__version__", "codon", "HMMData"]
+__all__ = ["standard", "frame", "io", "cli", "__version__", "HMMData"]

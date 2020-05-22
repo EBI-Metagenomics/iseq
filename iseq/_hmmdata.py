@@ -2,8 +2,8 @@ from math import log
 from typing import List, Mapping, Union
 
 from hmmer_reader import HMMERModel
-from nmm.alphabet import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
-from nmm.prob import lprob_zero
+from imm import lprob_zero
+from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 from ._alphabet import infer_alphabet
 from ._model import Transitions

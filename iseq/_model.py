@@ -1,13 +1,20 @@
 from dataclasses import dataclass
 from enum import Enum
-from math import exp, log
-from typing import Dict, Generic, List, Tuple, Union, Optional
+from math import log
+from typing import Dict, Generic, List, Optional, Tuple
 
-from nmm import HMM, CData, DP
-from nmm.path import Path, Step
-from nmm.prob import lprob_is_zero, lprob_zero
-from nmm.sequence import Sequence
-from nmm.state import MuteState, State
+from imm import (
+    DP,
+    HMM,
+    CData,
+    MuteState,
+    Path,
+    Sequence,
+    State,
+    Step,
+    lprob_is_zero,
+    lprob_zero,
+)
 
 from ._typing import MutableResults, MutableState, TState
 
@@ -141,7 +148,7 @@ class NullModel(Generic[TState]):
     def __init__(
         self, state: TState,
     ):
-        self._hmm = HMM(state.alphabet)
+        self._hmm = HMM.create(state.alphabet)
         self._hmm.add_state(state, 0.0)
         self._state = state
 
@@ -181,7 +188,7 @@ class AltModel(Generic[TState]):
         for state in special_node.states():
             self._states[state.imm_state] = state
 
-        hmm = HMM(special_node.S.alphabet)
+        hmm = HMM.create(special_node.S.alphabet)
         hmm.add_state(special_node.S, 0.0)
         hmm.add_state(special_node.N)
         hmm.add_state(special_node.B)

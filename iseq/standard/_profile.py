@@ -1,13 +1,15 @@
-from math import log
 from typing import List
 
 from hmmer_reader import HMMERModel
-from nmm import Interval
-from nmm.alphabet import Alphabet, AminoAlphabet
-from nmm.path import Path
-from nmm.prob import lprob_normalize, lprob_zero
-from nmm.sequence import SequenceABC
-from nmm.state import MuteState, NormalState
+from imm import (
+    Alphabet,
+    Interval,
+    MuteState,
+    NormalState,
+    Path,
+    SequenceABC,
+    lprob_normalize,
+)
 
 from .._hmmdata import HMMData
 from .._model import EntryDistr, Node, Transitions
@@ -39,17 +41,17 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         entry_distr: EntryDistr,
         hmmer3_compat=False,
     ):
-        R = NormalState(b"R", alphabet, null_log_odds)
+        R = NormalState.create(b"R", alphabet, null_log_odds)
         null_model = StandardNullModel(R)
 
         special_node = StandardSpecialNode(
-            S=MuteState(b"S", alphabet),
-            N=NormalState(b"N", alphabet, null_log_odds),
-            B=MuteState(b"B", alphabet),
-            E=MuteState(b"E", alphabet),
-            J=NormalState(b"J", alphabet, null_log_odds),
-            C=NormalState(b"C", alphabet, null_log_odds),
-            T=MuteState(b"T", alphabet),
+            S=MuteState.create(b"S", alphabet),
+            N=NormalState.create(b"N", alphabet, null_log_odds),
+            B=MuteState.create(b"B", alphabet),
+            E=MuteState.create(b"E", alphabet),
+            J=NormalState.create(b"J", alphabet, null_log_odds),
+            C=NormalState.create(b"C", alphabet, null_log_odds),
+            T=MuteState.create(b"T", alphabet),
         )
 
         alt_model = StandardAltModel(special_node, core_nodes, core_trans, entry_distr)
@@ -92,11 +94,11 @@ def create_standard_profile(reader: HMMERModel) -> StandardProfile:
     nodes: List[StandardNode] = []
     for m in range(1, reader.M + 1):
         lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
-        M = NormalState(f"M{m}".encode(), alphabet, lprobs)
+        M = NormalState.create(f"M{m}".encode(), alphabet, lprobs)
 
         lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
-        I = NormalState(f"I{m}".encode(), alphabet, lprobs)
-        D = MuteState(f"D{m}".encode(), alphabet)
+        I = NormalState.create(f"I{m}".encode(), alphabet, lprobs)
+        D = MuteState.create(f"D{m}".encode(), alphabet)
 
         nodes.append(StandardNode(M, I, D))
 
@@ -116,9 +118,9 @@ def create_hmmer3_profile(hmm: HMMData, hmmer3_compat: bool = False) -> Standard
     nodes: List[StandardNode] = []
     for m in range(1, hmm.model_length + 1):
         lodds = [v0 - v1 for v0, v1 in zip(hmm.match_lprobs(m), null_lprobs)]
-        M = NormalState(f"M{m}".encode(), hmm.alphabet, lodds)
-        I = NormalState(f"I{m}".encode(), hmm.alphabet, null_log_odds)
-        D = MuteState(f"D{m}".encode(), hmm.alphabet)
+        M = NormalState.create(f"M{m}".encode(), hmm.alphabet, lodds)
+        I = NormalState.create(f"I{m}".encode(), hmm.alphabet, null_log_odds)
+        D = MuteState.create(f"D{m}".encode(), hmm.alphabet)
 
         nodes.append(StandardNode(M, I, D))
 
