@@ -1,16 +1,16 @@
+import os
 from numpy.testing import assert_allclose, assert_equal
 
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 from imm import Sequence
-from iseq import HMMData
-from iseq._misc import download, tmp_cwd
-from iseq._file import brotli_decompress
+from iseq import HMMData, file_example
 from iseq.standard import create_hmmer3_profile, create_standard_profile
 
 
-def test_standard_profile_unihit_homologous_1(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_standard_profile_unihit_homologous_1():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
@@ -34,13 +34,13 @@ def test_standard_profile_unihit_homologous_1(PF03373):
     assert_equal(bytes(frag.sequence), bytes(most_likely_seq))
 
 
-def test_hmmer3_profile_problematic1(problematic1):
-    with open_hmmer(problematic1["hmm"]) as reader:
+def test_hmmer3_profile_problematic1():
+    with open_hmmer(file_example("problematic1.hmm")) as reader:
         hmmdata = HMMData(reader.read_model())
 
     prof = create_hmmer3_profile(hmmdata, True)
 
-    with open_fasta(problematic1["fasta"]) as reader:
+    with open_fasta(file_example("problematic1.fasta")) as reader:
         item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
@@ -49,22 +49,18 @@ def test_hmmer3_profile_problematic1(problematic1):
     assert_allclose(r.results[0].viterbi_score, -5.103729125681)
 
 
-def test_hmmer3_profile_small_viterbi_score():
-    with tmp_cwd():
-        base = "https://rest.s3for.me/iseq"
-        profile_zip = download(f"{base}/PF15449.6.hmm.br")
-        fasta_zip = download(f"{base}/A0ALD9.fasta.br")
+def test_hmmer3_profile_small_viterbi_score(tmp_path):
+    os.chdir(tmp_path)
+    profile = file_example("PF15449.6.hmm")
+    fasta = file_example("A0ALD9.fasta")
 
-        profile = brotli_decompress(profile_zip)
-        fasta = brotli_decompress(fasta_zip)
+    with open_hmmer(profile) as reader:
+        hmmdata = HMMData(reader.read_model())
 
-        with open_hmmer(profile) as reader:
-            hmmdata = HMMData(reader.read_model())
+    prof = create_hmmer3_profile(hmmdata, True)
 
-        prof = create_hmmer3_profile(hmmdata, True)
-
-        with open_fasta(fasta) as reader:
-            item = reader.read_items()[0]
+    with open_fasta(fasta) as reader:
+        item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
     r = prof.search(sequence)
@@ -72,22 +68,18 @@ def test_hmmer3_profile_small_viterbi_score():
     assert_allclose(r.results[0].viterbi_score, -18.424065160005625)
 
 
-def test_hmmer3_profile_large_viterbi_score():
-    with tmp_cwd():
-        base = "https://rest.s3for.me/iseq"
-        profile_zip = download(f"{base}/PF07476.11.hmm.br")
-        fasta_zip = download(f"{base}/A0ALD9.fasta.br")
+def test_hmmer3_profile_large_viterbi_score(tmp_path):
+    os.chdir(tmp_path)
+    profile = file_example("PF07476.11.hmm")
+    fasta = file_example("A0ALD9.fasta")
 
-        profile = brotli_decompress(profile_zip)
-        fasta = brotli_decompress(fasta_zip)
+    with open_hmmer(profile) as reader:
+        hmmdata = HMMData(reader.read_model())
 
-        with open_hmmer(profile) as reader:
-            hmmdata = HMMData(reader.read_model())
+    prof = create_hmmer3_profile(hmmdata, True)
 
-        prof = create_hmmer3_profile(hmmdata, True)
-
-        with open_fasta(fasta) as reader:
-            item = reader.read_items()[0]
+    with open_fasta(fasta) as reader:
+        item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
     r = prof.search(sequence)
@@ -95,8 +87,9 @@ def test_hmmer3_profile_large_viterbi_score():
     assert_allclose(r.results[0].viterbi_score, 3.480341268180834)
 
 
-def test_standard_profile_unihit_homologous_2(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_standard_profile_unihit_homologous_2():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
@@ -111,8 +104,9 @@ def test_standard_profile_unihit_homologous_2(PF03373):
     assert_equal(str(frag)[:31], "('P', '<M1,1>'),('G', '<M2,1>')")
 
 
-def test_standard_profile_unihit_homologous_3(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_standard_profile_unihit_homologous_3():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
@@ -126,8 +120,9 @@ def test_standard_profile_unihit_homologous_3(PF03373):
     assert_equal(bytes(frag.sequence), bytes(seq))
 
 
-def test_standard_profile_nonhomo_and_homologous(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_standard_profile_nonhomo_and_homologous():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
@@ -154,8 +149,9 @@ def test_standard_profile_nonhomo_and_homologous(PF03373):
     assert_equal(bytes(frags[1].sequence), b"PGKEDNNK")
 
 
-def test_standard_profile_multihit_homologous1(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_standard_profile_multihit_homologous1():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
@@ -212,8 +208,9 @@ def test_standard_profile_multihit_homologous1(PF03373):
     assert_equal(frags[2].homologous, False)
 
 
-def test_standard_profile_window(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_standard_profile_window():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_standard_profile(reader.read_model())
 
     alphabet = hmmer.alphabet
