@@ -66,9 +66,9 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
     # def null_model(self) -> FrameNullModel:
     #     return self._null_model
 
-    # @property
-    # def alt_model(self) -> FrameAltModel:
-    #     return self._alt_model
+    @property
+    def alt_model(self) -> FrameAltModel:
+        return self._alt_model
 
     def search(
         self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0

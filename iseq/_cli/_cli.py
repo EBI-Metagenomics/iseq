@@ -1,11 +1,11 @@
 import click
 
 from ._misc import get_version
+from .gff import gff_dedup
+from .press import press
 from .scan import scan
 from .score import score
-from .gff import gff_dedup
-
-# from .press import press
+from .unpress import unpress
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
@@ -18,5 +18,6 @@ def cli():
 
 cli.add_command(scan)
 cli.add_command(score)
-# cli.add_command(press)
+cli.add_command(press)
+cli.add_command(unpress)
 cli.add_command(gff_dedup)

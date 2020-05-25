@@ -34,9 +34,9 @@ class Profile(Generic[TAlphabet, TState], ABC):
     # def null_model(self) -> NullModel:
     #     raise NotImplementedError()
 
-    # @property
-    # def alt_model(self) -> AltModel:
-    #     raise NotImplementedError()
+    @property
+    def alt_model(self) -> AltModel:
+        raise NotImplementedError()
 
     @property
     def multiple_hits(self) -> bool:
