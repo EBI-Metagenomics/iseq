@@ -7,7 +7,7 @@ from hmmer_reader import open_hmmer
 from tqdm import tqdm
 from nmm import DNAAlphabet, GeneticCode, CanonicalAminoAlphabet, Input, Model
 
-from .._hmmer import infer_hmmer_alphabet
+from .._alphabet import infer_hmmer_alphabet
 from ..standard import create_standard_profile
 from ..frame import create_frame_profile
 

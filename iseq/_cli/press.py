@@ -2,14 +2,14 @@ import os
 from typing import IO
 
 import click
+from tqdm import tqdm
 
 from hmmer_reader import open_hmmer
-from tqdm import tqdm
-from nmm import DNAAlphabet, GeneticCode, CanonicalAminoAlphabet, Output, Model
+from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Model, Output
 
-from .._hmmer import infer_hmmer_alphabet
-from ..standard import create_standard_profile
+from .._alphabet import infer_hmmer_alphabet
 from ..frame import create_frame_profile
+from ..standard import create_standard_profile
 
 
 @click.command()

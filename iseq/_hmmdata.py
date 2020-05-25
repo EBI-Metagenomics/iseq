@@ -1,14 +1,15 @@
 from math import log
-from typing import List, Mapping, Union
+from typing import List, Mapping
 
 from hmmer_reader import HMMERModel
 from imm import lprob_zero
-from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import CanonicalAminoAlphabet
 
 from ._alphabet import infer_alphabet
 from ._model import Transitions
+from ._typing import HMMERAlphabet
 
-HMMERAlphabet = Union[RNAAlphabet, DNAAlphabet, CanonicalAminoAlphabet]
+__all__ = ["HMMData"]
 
 
 class HMMData:

@@ -1,11 +1,17 @@
 from typing import Optional, Union
 
 from fasta_reader import FASTAParser
+from hmmer_reader import HMMERParser
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 
-__all__ = ["Alphabets", "infer_alphabet", "infer_fasta_alphabet"]
+__all__ = [
+    "Alphabets",
+    "infer_alphabet",
+    "infer_fasta_alphabet",
+    "infer_hmmer_alphabet",
+]
 
 
 def infer_alphabet(sequence: bytes) -> Optional[Alphabets]:
@@ -49,5 +55,19 @@ def infer_fasta_alphabet(parser: FASTAParser) -> Optional[Alphabets]:
         alphabet = infer_alphabet(item.sequence.encode())
         if alphabet is not None:
             return alphabet
+
+    return None
+
+
+def infer_hmmer_alphabet(parser: HMMERParser) -> Optional[Alphabets]:
+
+    for prof in parser:
+        alph = dict(prof.metadata)["ALPH"]
+        if alph == "amino":
+            return CanonicalAminoAlphabet()
+        if alph == "dna":
+            return DNAAlphabet()
+        if alph == "rna":
+            return RNAAlphabet()
 
     return None

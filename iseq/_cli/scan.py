@@ -11,10 +11,9 @@ from hmmer_reader import HMMERParser, open_hmmer
 from imm import Interval, Sequence
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
-from .._alphabet import infer_fasta_alphabet
+from .._alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from ..gff import GFFItem, GFFWriter
 from .._hmmdata import HMMData
-from .._hmmer import infer_hmmer_alphabet
 from .._result import SearchResult
 from ..frame import FrameFragment, FrameProfile, create_frame_profile
 from ..standard import create_hmmer3_profile, create_standard_profile
