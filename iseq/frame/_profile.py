@@ -5,7 +5,15 @@ from typing import List
 
 from hmmer_reader import HMMERModel
 
-from imm import Interval, MuteState, Path, SequenceABC, lprob_normalize, lprob_zero
+from imm import (
+    Interval,
+    MuteState,
+    Path,
+    SequenceABC,
+    lprob_normalize,
+    lprob_zero,
+    lprob_add,
+)
 from nmm import (
     AminoAlphabet,
     AminoTable,
@@ -154,8 +162,6 @@ class _FrameStateFactory:
 
 
 def _create_base_table(codonp: CodonProb):
-    from numpy import logaddexp
-
     base_abc = codonp.alphabet
     base_lprob = {base: lprob_zero() for base in base_abc.symbols}
     norm = log(3)
@@ -163,16 +169,14 @@ def _create_base_table(codonp: CodonProb):
         lprob = codonp.get_lprob(codon)
         triplet = codon.symbols
 
-        base_lprob[triplet[0]] = logaddexp(base_lprob[triplet[0]], lprob - norm)
-        base_lprob[triplet[1]] = logaddexp(base_lprob[triplet[1]], lprob - norm)
-        base_lprob[triplet[2]] = logaddexp(base_lprob[triplet[2]], lprob - norm)
+        base_lprob[triplet[0]] = lprob_add(base_lprob[triplet[0]], lprob - norm)
+        base_lprob[triplet[1]] = lprob_add(base_lprob[triplet[1]], lprob - norm)
+        base_lprob[triplet[2]] = lprob_add(base_lprob[triplet[2]], lprob - norm)
 
     return BaseTable.create(base_abc, [base_lprob[base] for base in base_abc.symbols])
 
 
 def _create_codon_prob(aminot: AminoTable, gencode: GeneticCode) -> CodonProb:
-    from numpy import logaddexp
-
     codonp = CodonProb.create(gencode.base_alphabet)
 
     codon_lprobs = []
@@ -188,7 +192,7 @@ def _create_codon_prob(aminot: AminoTable, gencode: GeneticCode) -> CodonProb:
         norm = log(len(codons))
         for codon in codons:
             codon_lprobs.append((codon, lprob - norm))
-            lprob_norm = logaddexp(lprob_norm, codon_lprobs[-1][1])
+            lprob_norm = lprob_add(lprob_norm, codon_lprobs[-1][1])
 
     for codon, lprob in codon_lprobs:
         codonp.set_lprob(codon, lprob - lprob_norm)

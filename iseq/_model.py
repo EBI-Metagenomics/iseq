@@ -14,11 +14,20 @@ from imm import (
     Step,
     lprob_is_zero,
     lprob_zero,
+    lprob_add,
 )
 
 from ._typing import MutableResults, MutableState, TState
 
-__all__ = ["AltModel", "Node", "NullModel", "SpecialNode", "Transitions", "EntryDistr"]
+__all__ = [
+    "AltModel",
+    "Node",
+    "NullModel",
+    "SpecialNode",
+    "Transitions",
+    "EntryDistr",
+    "SpecialTransitions",
+]
 
 
 class EntryDistr(Enum):
@@ -40,18 +49,16 @@ class Transitions:
     DD: float = lprob_zero()
 
     def normalize(self):
-        from numpy import logaddexp
-
-        m_norm: float = logaddexp(logaddexp(self.MM, self.MI), self.MD)
+        m_norm: float = lprob_add(lprob_add(self.MM, self.MI), self.MD)
         self.MM -= m_norm
         self.MI -= m_norm
         self.MD -= m_norm
 
-        i_norm: float = logaddexp(self.IM, self.II)
+        i_norm: float = lprob_add(self.IM, self.II)
         self.IM -= i_norm
         self.II -= i_norm
 
-        d_norm: float = logaddexp(self.DM, self.DD)
+        d_norm: float = lprob_add(self.DM, self.DD)
         self.DM -= d_norm
         self.DD -= d_norm
 
@@ -388,25 +395,23 @@ class AltModel(Generic[TState]):
 
 
 def _calculate_occupancy(core_trans: List[Transitions]) -> Tuple[List[float], float]:
-    from numpy import logaddexp
-
-    log_occ = [logaddexp(core_trans[0].MI, core_trans[0].MM)]
+    log_occ = [lprob_add(core_trans[0].MI, core_trans[0].MM)]
     for trans in core_trans[1:-1]:
-        val0 = log_occ[-1] + logaddexp(trans.MM, trans.MI)
-        val1 = log1_p(log_occ[-1]) + trans.DM
-        log_occ.append(logaddexp(val0, val1))
+        val0 = log_occ[-1] + lprob_add(trans.MM, trans.MI)
+        val1 = _log1_p(log_occ[-1]) + trans.DM
+        log_occ.append(lprob_add(val0, val1))
 
     logZ = lprob_zero()
     for i, locc in enumerate(log_occ):
-        logZ = logaddexp(logZ, locc + log(len(log_occ) - i))
+        logZ = lprob_add(logZ, locc + log(len(log_occ) - i))
 
     return log_occ, logZ
 
 
-def log1_p(log_p: float):
+def _log1_p(log_p: float):
     """
     Computes log(1 - p) given log(p).
     """
-    from scipy.special import logsumexp
+    from math import log1p, exp
 
-    return logsumexp([0.0, log_p], b=[1.0, -1.0])
+    return log1p(-exp(log_p))
