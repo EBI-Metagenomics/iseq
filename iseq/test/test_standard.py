@@ -4,7 +4,8 @@ from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 from imm import Sequence
 from iseq import HMMData
-from iseq._misc import brotli_decompress, download, tmp_cwd
+from iseq._misc import download, tmp_cwd
+from iseq._file import brotli_decompress
 from iseq.standard import create_hmmer3_profile, create_standard_profile
 
 

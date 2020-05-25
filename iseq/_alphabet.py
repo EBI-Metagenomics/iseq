@@ -5,7 +5,7 @@ from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 
-__all__ = ["Alphabets", "infer_alphabet"]
+__all__ = ["Alphabets", "infer_alphabet", "infer_fasta_alphabet"]
 
 
 def infer_alphabet(sequence: bytes) -> Optional[Alphabets]:

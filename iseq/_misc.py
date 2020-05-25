@@ -4,7 +4,6 @@ import tempfile
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from subprocess import check_call
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
@@ -63,26 +62,6 @@ def tmp_cwd():
             yield
         finally:
             os.chdir(oldpwd)
-
-
-def brotli_decompress(filepath: Path):
-    """
-    Decompress a brotli file.
-    """
-    cmd = shutil.which("brotli")
-    if cmd is None:
-        raise RuntimeError("Could not find the `brotli` command-line tool.")
-
-    if filepath.suffix != ".br":
-        raise ValueError("File suffix must be `.br`.")
-
-    output_filepath = filepath.parents[0] / filepath.stem
-    if output_filepath.exists():
-        raise RuntimeError(f"`{output_filepath}` already exists.")
-
-    check_call([cmd, "-d", "-k", str(filepath), "-o", str(output_filepath)])
-
-    return output_filepath
 
 
 def diff(filepath_a, filepath_b):

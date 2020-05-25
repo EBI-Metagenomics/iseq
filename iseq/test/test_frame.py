@@ -2,12 +2,14 @@ from numpy.testing import assert_allclose, assert_equal
 
 from hmmer_reader import open_hmmer
 from imm import Sequence
+from iseq import file_example
 from iseq.frame import create_frame_profile
 from nmm import CanonicalAminoAlphabet, GeneticCode, RNAAlphabet
 
 
-def test_frame_profile_frame1(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_frame1():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(reader.read_model(), RNAAlphabet())
 
     rna_abc = hmmer.alphabet
@@ -25,8 +27,9 @@ def test_frame_profile_frame1(PF03373):
     assert_equal(str(frag)[:53], desired)
 
 
-def test_frame_profile_frame2(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_frame2():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
@@ -44,8 +47,9 @@ def test_frame_profile_frame2(PF03373):
     assert_equal(bytes(frags[1].sequence), b"CCUGGUAAAGAAGAUAAUAACAAA")
 
 
-def test_frame_profile_frame3(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_frame3():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
 
     rna_abc = hmmer.alphabet
@@ -60,8 +64,9 @@ def test_frame_profile_frame3(PF03373):
     assert_equal(bytes(frags[0].sequence), b"CCUGGUAAAGAAGAUAAUAACAAA")
 
 
-def test_frame_profile_frame4(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_frame4():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
 
     rna_abc = hmmer.alphabet
@@ -74,8 +79,9 @@ def test_frame_profile_frame4(PF03373):
     assert_equal(len(frags), 0)
 
 
-def test_frame_profile_frame5(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_frame5():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(
             reader.read_model(), RNAAlphabet(), epsilon=0.00001
         )
@@ -92,8 +98,9 @@ def test_frame_profile_frame5(PF03373):
     assert_equal(bytes(frags[0].sequence), b"CCUUGGUAAAGAAGAUAAUAACAAA")
 
 
-def test_frame_profile_frame6(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_frame6():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(
             reader.read_model(), RNAAlphabet(), epsilon=0.00001
         )
@@ -128,8 +135,9 @@ def test_frame_profile_frame6(PF03373):
     assert_equal(bytes(frags[2].sequence), b"GAAGAAGA")
 
 
-def test_frame_profile_codons(PF03373):
-    with open_hmmer(PF03373) as reader:
+def test_frame_profile_codons():
+    filepath = file_example("PF03373.hmm")
+    with open_hmmer(filepath) as reader:
         hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
