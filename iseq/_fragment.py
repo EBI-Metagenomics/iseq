@@ -1,8 +1,12 @@
-from imm import Fragment as FragmentBase, Path, SequenceABC, Step
+from typing import TypeVar
 
-from ._typing import TAlphabet, TState
+from imm import Alphabet, Fragment as FragmentBase, Path, SequenceABC, State, Step
 
 __all__ = ["Fragment"]
+
+
+TState = TypeVar("TState", bound=State)
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
 
 class Fragment(FragmentBase[TAlphabet, TState]):

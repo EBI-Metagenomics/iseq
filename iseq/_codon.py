@@ -1,16 +1,13 @@
 from math import log
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
-from imm import MuteState, NormalState, Path, Sequence, SequenceABC, Step, lprob_zero
+from imm import MuteState, NormalState, Sequence, SequenceABC, lprob_zero
 from nmm import BaseAlphabet, Codon, CodonState, GeneticCode
 
-from ._amino import AminoFragment, AminoPath, AminoStep
 from ._fragment import Fragment
+from ._typing import AminoFragment, AminoPath, AminoStep
 
-CodonStep = Step[Union[CodonState, MuteState]]
-CodonPath = Path[CodonStep]
-
-__all__ = ["CodonFragment", "CodonStep", "CodonPath"]
+__all__ = ["CodonFragment"]
 
 
 class CodonFragment(Fragment[BaseAlphabet, CodonState]):

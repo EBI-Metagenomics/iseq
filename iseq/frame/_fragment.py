@@ -4,9 +4,10 @@ from typing import List
 from nmm import BaseAlphabet, Codon, CodonState, FrameState, CodonProb
 from imm import Path, Sequence, SequenceABC, MuteState
 
-from .._codon import CodonFragment, CodonPath, CodonStep
+from .._codon import CodonFragment
 from .._fragment import Fragment
 from ._typing import FrameStep
+from .._typing import CodonPath, CodonStep
 
 __all__ = ["FrameFragment"]
 
