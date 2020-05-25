@@ -12,7 +12,7 @@ from imm import Interval, Sequence
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
 from .._alphabet import infer_fasta_alphabet
-from .._gff import GFFItem, GFFWriter
+from ..gff import GFFItem, GFFWriter
 from .._hmmdata import HMMData
 from .._hmmer import infer_hmmer_alphabet
 from .._result import SearchResult

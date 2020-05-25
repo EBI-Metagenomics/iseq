@@ -43,6 +43,8 @@ import pathlib
 from typing import IO, NamedTuple, Union, List
 from collections import OrderedDict
 
+__all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
+
 GFFItem = NamedTuple(
     "GFFItem",
     [
@@ -73,7 +75,7 @@ _columns = OrderedDict(
 )
 
 
-def read_gff(file: Union[str, pathlib.Path, IO[str]]) -> GFF:
+def read(file: Union[str, pathlib.Path, IO[str]]) -> GFF:
     from pandas import read_csv
 
     if isinstance(file, IO):

@@ -2,7 +2,7 @@ import sys
 
 import click
 
-from iseq._gff import read_gff
+from iseq import gff
 
 
 @click.command()
@@ -14,7 +14,7 @@ def gff_dedup(gff_file):
     The deduplicated GFF_FILE will be written to the standard output.
     """
 
-    gff = read_gff(gff_file)
+    gff = gff.read(gff_file)
     gff.deduplicate()
 
     gff.write_file(sys.stdout)
