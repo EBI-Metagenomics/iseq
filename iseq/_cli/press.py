@@ -2,7 +2,6 @@ import os
 from typing import IO
 
 import click
-from tqdm import tqdm
 
 from hmmer_reader import open_hmmer
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Model, Output
@@ -40,6 +39,8 @@ def press(
     profile and represents a potential homology. Expect many false positive
     associations as we are not filtering out by statistical significance.
     """
+    from tqdm import tqdm
+
     if quiet:
         click.open_file(os.devnull, "a")
     else:

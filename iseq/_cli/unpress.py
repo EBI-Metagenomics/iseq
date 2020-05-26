@@ -4,7 +4,6 @@ from typing import IO
 import click
 
 from hmmer_reader import open_hmmer
-from tqdm import tqdm
 from nmm import DNAAlphabet, GeneticCode, CanonicalAminoAlphabet, Input, Model
 
 from .._alphabet import infer_hmmer_alphabet
@@ -34,6 +33,8 @@ def unpress(
     profile and represents a potential homology. Expect many false positive
     associations as we are not filtering out by statistical significance.
     """
+    from tqdm import tqdm
+
     if quiet:
         click.open_file(os.devnull, "a")
     else:

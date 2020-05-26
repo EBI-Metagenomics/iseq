@@ -1,6 +1,7 @@
-from path import Path
+from pathlib import Path
+
 from ._environment import ISEQ_CACHE_HOME
-from ._file import file_hash, brotli_decompress
+from ._file import brotli_decompress, file_hash
 
 __all__ = ["file_example"]
 

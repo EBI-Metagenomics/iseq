@@ -5,19 +5,11 @@ from .press import press
 from .scan import scan
 from .score import score
 from .unpress import unpress
-
-
-def get_version():
-    try:
-        from importlib import metadata
-    except ImportError:
-        # Running on pre-3.8 Python; use importlib-metadata package
-        import importlib_metadata as metadata
-    return metadata.version("iseq")
+from .._version import __version__
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
-@click.version_option(get_version())
+@click.version_option(__version__)
 def cli():
     """
     Find nucleotide sequences against protein profiles.

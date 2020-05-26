@@ -2,8 +2,7 @@ from . import frame, gff, standard
 from ._cli import cli
 from ._example import file_example
 from ._hmmdata import HMMData
-
-__version__ = "0.0.1"
+from ._version import __version__
 
 __all__ = [
     "standard",
