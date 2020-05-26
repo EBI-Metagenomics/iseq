@@ -4,7 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from iseq import cli
-from iseq._misc import diff, download, tmp_cwd
+from .misc import diff
 from iseq._file import brotli_decompress
 
 

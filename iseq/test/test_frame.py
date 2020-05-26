@@ -1,7 +1,6 @@
-from numpy.testing import assert_allclose, assert_equal
-
 from hmmer_reader import open_hmmer
 from imm import Sequence
+from imm.testing import assert_allclose
 from iseq import file_example
 from iseq.frame import create_frame_profile
 from nmm import CanonicalAminoAlphabet, GeneticCode, RNAAlphabet
@@ -19,12 +18,12 @@ def test_frame_profile_frame1():
 
     assert_allclose(r.loglikelihood, 125.83363182422178)
     frags = r.fragments
-    assert_equal(len(frags), 1)
+    assert len(frags) == 1
     frag = frags[0]
-    assert_equal(frag.homologous, True)
-    assert_equal(bytes(frag.sequence), bytes(most_likely_seq))
+    assert frag.homologous
+    assert bytes(frag.sequence) == bytes(most_likely_seq)
     desired = "('CCU', '<M1,3>'),('GGU', '<M2,3>'),('AAA', '<M3,3>')"
-    assert_equal(str(frag)[:53], desired)
+    assert str(frag)[:53] == desired
 
 
 def test_frame_profile_frame2():
@@ -40,11 +39,11 @@ def test_frame_profile_frame2():
     r = hmmer.search(seq).results[0]
     assert_allclose(r.loglikelihood, 168.23071232889802)
     frags = r.fragments
-    assert_equal(len(frags), 2)
-    assert_equal(frags[0].homologous, False)
-    assert_equal(bytes(frags[0].sequence), b"AAAAAAAAA")
-    assert_equal(frags[1].homologous, True)
-    assert_equal(bytes(frags[1].sequence), b"CCUGGUAAAGAAGAUAAUAACAAA")
+    assert len(frags) == 2
+    assert not frags[0].homologous
+    assert bytes(frags[0].sequence) == b"AAAAAAAAA"
+    assert frags[1].homologous
+    assert bytes(frags[1].sequence) == b"CCUGGUAAAGAAGAUAAUAACAAA"
 
 
 def test_frame_profile_frame3():
@@ -59,9 +58,9 @@ def test_frame_profile_frame3():
 
     r = hmmer.search(seq).results[0]
     frags = r.fragments
-    assert_equal(len(frags), 1)
-    assert_equal(frags[0].homologous, True)
-    assert_equal(bytes(frags[0].sequence), b"CCUGGUAAAGAAGAUAAUAACAAA")
+    assert len(frags) == 1
+    assert frags[0].homologous
+    assert bytes(frags[0].sequence) == b"CCUGGUAAAGAAGAUAAUAACAAA"
 
 
 def test_frame_profile_frame4():
@@ -76,7 +75,7 @@ def test_frame_profile_frame4():
 
     r = hmmer.search(seq).results[0]
     frags = r.fragments
-    assert_equal(len(frags), 0)
+    assert len(frags) == 0
 
 
 def test_frame_profile_frame5():
@@ -93,9 +92,9 @@ def test_frame_profile_frame5():
 
     r = hmmer.search(seq).results[0]
     frags = r.fragments
-    assert_equal(len(frags), 1)
-    assert_equal(frags[0].homologous, True)
-    assert_equal(bytes(frags[0].sequence), b"CCUUGGUAAAGAAGAUAAUAACAAA")
+    assert len(frags) == 1
+    assert frags[0].homologous
+    assert bytes(frags[0].sequence) == b"CCUUGGUAAAGAAGAUAAUAACAAA"
 
 
 def test_frame_profile_frame6():
@@ -112,27 +111,27 @@ def test_frame_profile_frame6():
 
     r = hmmer.search(seq).results[0]
     frags = r.fragments
-    assert_equal(len(frags), 4)
-    assert_equal(frags[0].homologous, True)
-    assert_equal(bytes(frags[0].sequence), b"CCUUGGUAAAGAAGAUAAUAACAAA")
-    assert_equal(frags[1].homologous, False)
-    assert_equal(bytes(frags[1].sequence), b"GAAGAA")
-    assert_equal(frags[2].homologous, True)
-    assert_equal(bytes(frags[2].sequence), b"CCUGGUAAAGAAGAUAAUAACAAA")
-    assert_equal(frags[3].homologous, False)
-    assert_equal(bytes(frags[3].sequence), b"GAAGAAGA")
+    assert len(frags) == 4
+    assert frags[0].homologous
+    assert bytes(frags[0].sequence) == b"CCUUGGUAAAGAAGAUAAUAACAAA"
+    assert not frags[1].homologous
+    assert bytes(frags[1].sequence) == b"GAAGAA"
+    assert frags[2].homologous
+    assert bytes(frags[2].sequence) == b"CCUGGUAAAGAAGAUAAUAACAAA"
+    assert not frags[3].homologous
+    assert bytes(frags[3].sequence) == b"GAAGAAGA"
 
     hmmer.multiple_hits = False
     r = hmmer.search(seq).results[0]
     frags = r.fragments
     assert_allclose(r.loglikelihood, 1445.0314253859958)
-    assert_equal(len(frags), 3)
-    assert_equal(frags[0].homologous, False)
-    assert_equal(bytes(frags[0].sequence), b"CCUUGGUAAAGAAGAUAAUAACAAAGAAGAA")
-    assert_equal(frags[1].homologous, True)
-    assert_equal(bytes(frags[1].sequence), b"CCUGGUAAAGAAGAUAAUAACAAA")
-    assert_equal(frags[2].homologous, False)
-    assert_equal(bytes(frags[2].sequence), b"GAAGAAGA")
+    assert len(frags) == 3
+    assert not frags[0].homologous
+    assert bytes(frags[0].sequence) == b"CCUUGGUAAAGAAGAUAAUAACAAAGAAGAA"
+    assert frags[1].homologous
+    assert bytes(frags[1].sequence) == b"CCUGGUAAAGAAGAUAAUAACAAA"
+    assert not frags[2].homologous
+    assert bytes(frags[2].sequence) == b"GAAGAAGA"
 
 
 def test_frame_profile_codons():
@@ -154,79 +153,79 @@ def test_frame_profile_codons():
     cfrags = [f.decode() for f in frags]
     aafrags = [f.decode(gcode) for f in cfrags]
 
-    assert_equal(len(frags), 2)
-    assert_equal(len(cfrags), 2)
-    assert_equal(len(aafrags), 2)
+    assert len(frags) == 2
+    assert len(cfrags) == 2
+    assert len(aafrags) == 2
 
-    assert_equal(frags[0].homologous, False)
-    assert_equal(cfrags[0].homologous, False)
-    assert_equal(aafrags[0].homologous, False)
+    assert not frags[0].homologous
+    assert not cfrags[0].homologous
+    assert not aafrags[0].homologous
 
-    assert_equal(bytes(frags[0].sequence), b"AAGAAAAAAA")
-    assert_equal(bytes(cfrags[0].sequence), b"AAGAAAAAA")
-    assert_equal(bytes(aafrags[0].sequence), b"KKK")
+    assert bytes(frags[0].sequence) == b"AAGAAAAAAA"
+    assert bytes(cfrags[0].sequence) == b"AAGAAAAAA"
+    assert bytes(aafrags[0].sequence) == b"KKK"
 
     items = list(iter(frags[0]))
     citems = list(iter(cfrags[0]))
     aaitems = list(iter(aafrags[0]))
 
-    assert_equal(bytes(items[0].sequence), b"")
-    assert_equal(str(items[0].step), "<S,0>")
-    assert_equal(bytes(citems[0].sequence), b"")
-    assert_equal(str(citems[0].step), "<S,0>")
-    assert_equal(bytes(aaitems[0].sequence), b"")
-    assert_equal(str(aaitems[0].step), "<S,0>")
+    assert bytes(items[0].sequence) == b""
+    assert str(items[0].step) == "<S,0>"
+    assert bytes(citems[0].sequence) == b""
+    assert str(citems[0].step) == "<S,0>"
+    assert bytes(aaitems[0].sequence) == b""
+    assert str(aaitems[0].step) == "<S,0>"
 
-    assert_equal(bytes(items[1].sequence), b"AAG")
-    assert_equal(str(items[1].step), "<N,3>")
-    assert_equal(bytes(citems[1].sequence), b"AAG")
-    assert_equal(str(citems[1].step), "<N,3>")
-    assert_equal(bytes(aaitems[1].sequence), b"K")
-    assert_equal(str(aaitems[1].step), "<N,1>")
+    assert bytes(items[1].sequence) == b"AAG"
+    assert str(items[1].step) == "<N,3>"
+    assert bytes(citems[1].sequence) == b"AAG"
+    assert str(citems[1].step) == "<N,3>"
+    assert bytes(aaitems[1].sequence) == b"K"
+    assert str(aaitems[1].step) == "<N,1>"
 
-    assert_equal(bytes(items[2].sequence), b"AAAA")
-    assert_equal(str(items[2].step), "<N,4>")
-    assert_equal(bytes(citems[2].sequence), b"AAA")
-    assert_equal(str(citems[2].step), "<N,3>")
-    assert_equal(bytes(aaitems[2].sequence), b"K")
-    assert_equal(str(aaitems[2].step), "<N,1>")
+    assert bytes(items[2].sequence) == b"AAAA"
+    assert str(items[2].step) == "<N,4>"
+    assert bytes(citems[2].sequence) == b"AAA"
+    assert str(citems[2].step) == "<N,3>"
+    assert bytes(aaitems[2].sequence) == b"K"
+    assert str(aaitems[2].step) == "<N,1>"
 
-    assert_equal(bytes(items[3].sequence), b"AAA")
-    assert_equal(str(items[3].step), "<N,3>")
-    assert_equal(bytes(citems[3].sequence), b"AAA")
-    assert_equal(str(citems[3].step), "<N,3>")
-    assert_equal(bytes(aaitems[3].sequence), b"K")
-    assert_equal(str(aaitems[3].step), "<N,1>")
+    assert bytes(items[3].sequence) == b"AAA"
+    assert str(items[3].step) == "<N,3>"
+    assert bytes(citems[3].sequence) == b"AAA"
+    assert str(citems[3].step) == "<N,3>"
+    assert bytes(aaitems[3].sequence) == b"K"
+    assert str(aaitems[3].step) == "<N,1>"
 
-    assert_equal(bytes(items[4].sequence), b"")
-    assert_equal(str(items[4].step), "<B,0>")
-    assert_equal(bytes(citems[4].sequence), b"")
-    assert_equal(str(citems[4].step), "<B,0>")
-    assert_equal(bytes(aaitems[4].sequence), b"")
-    assert_equal(str(aaitems[4].step), "<B,0>")
+    assert bytes(items[4].sequence) == b""
+    assert str(items[4].step) == "<B,0>"
+    assert bytes(citems[4].sequence) == b""
+    assert str(citems[4].step) == "<B,0>"
+    assert bytes(aaitems[4].sequence) == b""
+    assert str(aaitems[4].step) == "<B,0>"
 
-    assert_equal(frags[1].homologous, True)
-    assert_equal(cfrags[1].homologous, True)
-    assert_equal(aafrags[1].homologous, True)
-    assert_equal(bytes(frags[1].sequence), b"CCUGGUAAAGAAGAUAAUAACAAAG")
-    assert_equal(bytes(cfrags[1].sequence), b"CCUGGUAAAGAAGAUAAUAACAAG")
+    assert frags[1].homologous
+    assert cfrags[1].homologous
+    assert aafrags[1].homologous
+    assert bytes(frags[1].sequence) == b"CCUGGUAAAGAAGAUAAUAACAAAG"
+    assert bytes(cfrags[1].sequence) == b"CCUGGUAAAGAAGAUAAUAACAAG"
 
-    assert_equal(bytes(aafrags[1].sequence), b"PGKEDNNK")
+    assert bytes(aafrags[1].sequence) == b"PGKEDNNK"
 
     items = list(iter(frags[1]))
     citems = list(iter(cfrags[1]))
     aaitems = list(iter(aafrags[1]))
 
-    assert_equal(bytes(items[0].sequence), b"CCU")
-    assert_equal(str(items[0].step), "<M1,3>")
-    assert_equal(bytes(citems[0].sequence), b"CCU")
-    assert_equal(str(citems[0].step), "<M1,3>")
-    assert_equal(bytes(aaitems[0].sequence), b"P")
-    assert_equal(str(aaitems[0].step), "<M1,1>")
+    assert bytes(items[0].sequence) == b"CCU"
+    assert str(items[0].step) == "<M1,3>"
+    assert bytes(citems[0].sequence) == b"CCU"
+    assert str(citems[0].step) == "<M1,3>"
+    assert bytes(aaitems[0].sequence) == b"P"
+    assert str(aaitems[0].step) == "<M1,1>"
 
-    assert_equal(bytes(items[7].sequence), b"AAAG")
-    assert_equal(str(items[7].step), "<M8,4>")
-    assert_equal(bytes(citems[7].sequence), b"AAG")
-    assert_equal(str(citems[7].step), "<M8,3>")
-    assert_equal(bytes(aaitems[7].sequence), b"K")
-    assert_equal(str(aaitems[7].step), "<M8,1>")
+    assert bytes(items[7].sequence) == b"AAAG"
+    assert str(items[7].step) == "<M8,4>"
+    assert bytes(citems[7].sequence) == b"AAG"
+    assert str(citems[7].step) == "<M8,3>"
+    assert bytes(aaitems[7].sequence) == b"K"
+    assert str(aaitems[7].step) == "<M8,1>"

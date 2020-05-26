@@ -11,7 +11,7 @@ create_fragment_type = Callable[
     [SequenceABC[TAlphabet], MutablePath[TState], bool], Fragment[TAlphabet, TState]
 ]
 
-__all__ = ["SearchResults", "SearchResult"]
+__all__ = ["SearchResults", "SearchResult", "create_fragment_type"]
 
 
 class SearchResults(Generic[TAlphabet, TState]):

@@ -1,6 +1,6 @@
-from typing import NamedTuple, Generator
+from typing import Generator, NamedTuple
 
-from ._misc import decomment
+__all__ = ["TBLScore", "TBLRow", "tblout_reader"]
 
 TBLScore = NamedTuple("TBLScore", [("e_value", str), ("score", str), ("bias", str)])
 
@@ -30,7 +30,7 @@ TBLRow = NamedTuple(
 def tblout_reader(file) -> Generator[TBLRow, None, None]:
     import csv
 
-    reader = csv.reader(decomment(file), delimiter=" ", skipinitialspace=True)
+    reader = csv.reader(_decomment(file), delimiter=" ", skipinitialspace=True)
     for row in reader:
         full_sequence = TBLScore(e_value=row[4], score=row[5], bias=row[6])
         best_1_domain = TBLScore(e_value=row[7], score=row[8], bias=row[9])
@@ -51,3 +51,10 @@ def tblout_reader(file) -> Generator[TBLRow, None, None]:
             inc=row[17],
             description=row[18],
         )
+
+
+def _decomment(rows):
+    for row in rows:
+        if row.startswith("#"):
+            continue
+        yield row

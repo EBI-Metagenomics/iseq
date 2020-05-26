@@ -1,5 +1,5 @@
 from iseq import file_example
-from iseq.io import tblout_reader
+from iseq._tblout import tblout_reader
 
 
 def test_tblout():

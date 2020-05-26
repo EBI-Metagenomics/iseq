@@ -1,9 +1,13 @@
 import fileinput
+import os
 import re
 from collections import OrderedDict
 from typing import Dict, Mapping
 
 import click
+
+from .._file import tmp_cwd
+from .._tblout import tblout_reader
 
 
 @click.command()
@@ -36,10 +40,7 @@ class HMMSearch:
         self._prog_path = prog_path
 
     def compute_scores(self, profile, target):
-        import os
         import subprocess
-        from ..io import tblout_reader
-        from iseq._misc import tmp_cwd
 
         profile = os.path.abspath(profile)
         target = os.path.abspath(target)

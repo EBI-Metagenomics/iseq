@@ -1,7 +1,10 @@
+import os
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 from subprocess import check_call
 
-__all__ = ["file_hash", "make_sure_dir_exist"]
+__all__ = ["file_hash", "make_sure_dir_exist", "brotli_decompress", "tmp_cwd"]
 
 
 def file_hash(filepath: Path) -> str:
@@ -43,3 +46,21 @@ def brotli_decompress(filepath: Path):
     check_call([cmd, "-d", "-k", str(filepath), "-o", str(output_filepath)])
 
     return output_filepath
+
+
+@contextmanager
+def tmp_cwd():
+    """
+    Create and enter a temporary directory.
+    The previous working directory is saved and switched back when
+    leaving the context. The temporary directory is also recursively
+    removed at the context ending.
+    """
+    oldpwd = os.getcwd()
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        os.chdir(tmpdir)
+        try:
+            yield
+        finally:
+            os.chdir(oldpwd)

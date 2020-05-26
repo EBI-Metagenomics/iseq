@@ -1,8 +1,8 @@
 from math import log
 
-from numpy.testing import assert_allclose
-
 from hmmer_reader import open_hmmer
+
+from imm.testing import assert_allclose
 from iseq import HMMData, file_example
 from nmm import CanonicalAminoAlphabet, DNAAlphabet
 

@@ -6,7 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from iseq import cli, file_example
-from iseq._misc import diff
+from .misc import diff
 
 
 @pytest.fixture
