@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Callable, Generic, Iterable, List, Tuple
+from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
 
-from imm import Interval, Path, SequenceABC, Step
+from imm import Alphabet, Interval, Path, SequenceABC, Step
 
 from ._fragment import Fragment
-from ._typing import MutablePath, TAlphabet, TState
+from ._typing import MutablePath, TState
+
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
 create_fragment_type = Callable[
     [SequenceABC[TAlphabet], MutablePath[TState], bool], Fragment[TAlphabet, TState]

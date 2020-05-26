@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TypeVar
 
 from hmmer_reader import HMMERModel
 from imm import (
@@ -14,7 +14,6 @@ from imm import (
 from .._hmmdata import HMMData
 from .._model import EntryDistr, Node, Transitions
 from .._profile import Profile
-from .._typing import TAlphabet
 from ._typing import (
     StandardAltModel,
     StandardFragment,
@@ -29,6 +28,9 @@ __all__ = [
     "StandardProfile",
     "create_standard_profile",
 ]
+
+
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
 
 class StandardProfile(Profile[TAlphabet, NormalState]):

@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from math import log
-from typing import Generic
+from typing import Generic, TypeVar
 
-from imm import Alphabet, Sequence, lprob_zero
+from imm import Alphabet, Sequence, lprob_zero, State
 
 from ._model import AltModel, NullModel, SpecialTransitions
 from ._result import SearchResults
-from ._typing import TAlphabet, TState
+
+TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+TState = TypeVar("TState", bound=State)
 
 __all__ = ["Profile"]
 
