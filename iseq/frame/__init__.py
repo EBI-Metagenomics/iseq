@@ -1,5 +1,5 @@
 from ._fragment import FrameFragment
-from ._profile import FrameProfile, create_frame_profile
+from ._profile import FrameProfile, create_profile
 from ._typing import (
     FrameAltModel,
     FrameNullModel,
@@ -14,5 +14,5 @@ __all__ = [
     "FrameProfile",
     "FrameSearchResults",
     "FrameStep",
-    "create_frame_profile",
+    "create_profile",
 ]

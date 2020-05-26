@@ -15,7 +15,7 @@ from .._alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from ..gff import GFFItem, GFFWriter
 from .._hmmdata import HMMData
 from .._result import SearchResult
-from ..frame import FrameFragment, FrameProfile, create_frame_profile
+from ..frame import FrameFragment, FrameProfile, create_profile as create_frame_profile
 from ..standard import create_profile
 from .._model import EntryDistr
 

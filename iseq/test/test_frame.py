@@ -2,14 +2,14 @@ from hmmer_reader import open_hmmer
 from imm import Sequence
 from imm.testing import assert_allclose
 from iseq import file_example
-from iseq.frame import create_frame_profile
+from iseq.frame import create_profile
 from nmm import CanonicalAminoAlphabet, GeneticCode, RNAAlphabet
 
 
 def test_frame_profile_frame1():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(reader.read_model(), RNAAlphabet())
+        hmmer = create_profile(reader.read_model(), RNAAlphabet())
 
     rna_abc = hmmer.alphabet
     most_likely_rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA".replace(b" ", b"")
@@ -29,7 +29,7 @@ def test_frame_profile_frame1():
 def test_frame_profile_frame2():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
+        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"AAA AAA AAA CCU GGU AAA GAA GAU AAU AAC AAA"
@@ -49,7 +49,7 @@ def test_frame_profile_frame2():
 def test_frame_profile_frame3():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
+        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA"
@@ -66,7 +66,7 @@ def test_frame_profile_frame3():
 def test_frame_profile_frame4():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
+        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA"
@@ -81,9 +81,7 @@ def test_frame_profile_frame4():
 def test_frame_profile_frame5():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(
-            reader.read_model(), RNAAlphabet(), epsilon=0.00001
-        )
+        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.00001)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA"
@@ -100,9 +98,7 @@ def test_frame_profile_frame5():
 def test_frame_profile_frame6():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(
-            reader.read_model(), RNAAlphabet(), epsilon=0.00001
-        )
+        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.00001)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA GAA GAA CCU GGU AAA GAA GAU AAU AAC AAA GAA GAA GA"
@@ -137,7 +133,7 @@ def test_frame_profile_frame6():
 def test_frame_profile_codons():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_frame_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
+        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
     amino_abc = CanonicalAminoAlphabet()

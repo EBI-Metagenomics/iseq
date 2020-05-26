@@ -7,7 +7,7 @@ from hmmer_reader import open_hmmer
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Model, Output
 
 from .._alphabet import infer_hmmer_alphabet
-from ..frame import create_frame_profile
+from ..frame import create_profile
 
 
 @click.command()
@@ -55,7 +55,7 @@ def press(
         for hmmprof in tqdm(open_hmmer(profile)):
             # scanner.show_profile_parser(hmmprof)
             # scanner.process_profile(hmmprof, targets)
-            prof = create_frame_profile(hmmprof, base_abc, epsilon)
+            prof = create_profile(hmmprof, base_abc, epsilon)
             hmm = prof.alt_model._hmm
             dp = hmm.create_dp(prof.alt_model.special_node.T)
             model = Model.create(hmm, dp)

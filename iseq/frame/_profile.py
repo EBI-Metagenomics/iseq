@@ -38,7 +38,7 @@ from ._typing import (
     FrameStep,
 )
 
-__all__ = ["FrameProfile", "create_frame_profile"]
+__all__ = ["FrameProfile", "create_profile"]
 
 
 class FrameProfile(Profile[BaseAlphabet, FrameState]):
@@ -108,7 +108,7 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
         return search_results
 
 
-def create_frame_profile(
+def create_profile(
     reader: HMMERModel, base_abc: BaseAlphabet, epsilon: float = 0.1
 ) -> FrameProfile:
 
