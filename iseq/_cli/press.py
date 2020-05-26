@@ -8,7 +8,6 @@ from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Model, Output
 
 from .._alphabet import infer_hmmer_alphabet
 from ..frame import create_frame_profile
-from ..standard import create_standard_profile
 
 
 @click.command()

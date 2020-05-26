@@ -9,7 +9,7 @@ from hmmer_reader import open_hmmer
 from imm import Sequence
 from imm.testing import assert_allclose
 from iseq import file_example
-from iseq.standard import create_hmmer3_profile
+from iseq.standard import create_profile
 
 from .._hmmdata import HMMData
 
@@ -26,13 +26,12 @@ def test_hmmer3_viterbi_scores_compat(tmp_path):
 
     actual_scores = []
     for hmmprof in open_hmmer(db_filepath):
-        prof = create_hmmer3_profile(HMMData(hmmprof), hmmer3_compat=True)
+        prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
         seq = Sequence.create(target.sequence.encode(), prof.alphabet)
         search_results = prof.search(seq, 0)
         score = search_results.results[0].viterbi_score
         actual_scores.append(score)
 
-    breakpoint()
     iseq_scores = loadtxt(file_example("Pfam-A_iseq_viterbi_scores.txt"))
     assert_allclose(actual_scores, iseq_scores)
 

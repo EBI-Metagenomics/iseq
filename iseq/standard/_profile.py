@@ -1,15 +1,6 @@
 from typing import List, TypeVar
 
-from hmmer_reader import HMMERModel
-from imm import (
-    Alphabet,
-    Interval,
-    MuteState,
-    NormalState,
-    Path,
-    SequenceABC,
-    lprob_normalize,
-)
+from imm import Alphabet, Interval, MuteState, NormalState, Path, SequenceABC
 
 from .._hmmdata import HMMData
 from .._model import EntryDistr, Node, Transitions
@@ -26,7 +17,7 @@ from ._typing import (
 
 __all__ = [
     "StandardProfile",
-    "create_standard_profile",
+    "create_profile",
 ]
 
 
@@ -87,33 +78,11 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         return search_results
 
 
-def create_standard_profile(reader: HMMERModel) -> StandardProfile:
-
-    alphabet = Alphabet.create(reader.alphabet.encode(), b"X")
-
-    null_lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
-
-    nodes: List[StandardNode] = []
-    for m in range(1, reader.M + 1):
-        lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
-        M = NormalState.create(f"M{m}".encode(), alphabet, lprobs)
-
-        lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
-        I = NormalState.create(f"I{m}".encode(), alphabet, lprobs)
-        D = MuteState.create(f"D{m}".encode(), alphabet)
-
-        nodes.append(StandardNode(M, I, D))
-
-    trans: List[Transitions] = []
-    for m in range(0, reader.M + 1):
-        t = Transitions(**reader.trans(m))
-        t.normalize()
-        trans.append(t)
-
-    return StandardProfile(alphabet, null_lprobs, nodes, trans, EntryDistr.UNIFORM)
-
-
-def create_hmmer3_profile(hmm: HMMData, hmmer3_compat: bool = False) -> StandardProfile:
+def create_profile(
+    hmm: HMMData,
+    hmmer3_compat: bool = False,
+    entry_distr: EntryDistr = EntryDistr.OCCUPANCY,
+) -> StandardProfile:
     null_lprobs = hmm.null_lprobs
     null_log_odds = [0.0] * len(null_lprobs)
 
@@ -129,5 +98,5 @@ def create_hmmer3_profile(hmm: HMMData, hmmer3_compat: bool = False) -> Standard
     trans = hmm.transitions
 
     return StandardProfile(
-        hmm.alphabet, null_log_odds, nodes, trans, EntryDistr.OCCUPANCY, hmmer3_compat
+        hmm.alphabet, null_log_odds, nodes, trans, entry_distr, hmmer3_compat
     )

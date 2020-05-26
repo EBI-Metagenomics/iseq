@@ -16,7 +16,8 @@ from ..gff import GFFItem, GFFWriter
 from .._hmmdata import HMMData
 from .._result import SearchResult
 from ..frame import FrameFragment, FrameProfile, create_frame_profile
-from ..standard import create_hmmer3_profile, create_standard_profile
+from ..standard import create_profile
+from .._model import EntryDistr
 
 
 @click.command()
@@ -53,9 +54,19 @@ from ..standard import create_hmmer3_profile, create_standard_profile
     default=0,
 )
 @click.option(
-    "--hmmer3/--no-hmmer3",
-    help="Window length. Defaults to zero, which means no window.",
+    "--hmmer3-compat/--no-hmmer3-compat",
+    help="Enable full HMMER3 compatibility.",
     default=False,
+)
+@click.option(
+    "--hmmer3-compat/--no-hmmer3-compat",
+    help="Enable full HMMER3 compatibility.",
+    default=False,
+)
+@click.option(
+    "--entry-distr",
+    type=click.Choice(["uniform", "occupancy"], case_sensitive=False),
+    default="occupancy",
 )
 def scan(
     profile,
@@ -66,7 +77,8 @@ def scan(
     oamino,
     quiet,
     window: int,
-    hmmer3: bool,
+    hmmer3_compat: bool,
+    entry_distr: str,
 ):
     """
     Search nucleotide sequence(s) against a protein profiles database.
@@ -77,9 +89,14 @@ def scan(
     associations as we are not filtering out by statistical significance.
     """
 
-    output_writer = OutputWriter(output, epsilon, window)
-    codon_writer = FASTAWriter(ocodon)
-    amino_writer = FASTAWriter(oamino)
+    owriter = OutputWriter(output, epsilon, window)
+    cwriter = FASTAWriter(ocodon)
+    awriter = FASTAWriter(oamino)
+
+    if entry_distr == "occupancy":
+        edistr = EntryDistr.OCCUPANCY
+    else:
+        edistr = EntryDistr.UNIFORM
 
     if quiet:
         stdout = click.open_file(os.devnull, "a")
@@ -95,15 +112,12 @@ def scan(
         gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
 
         scanner = FrameScanner(
-            output_writer, codon_writer, amino_writer, gcode, epsilon, window, stdout
+            owriter, cwriter, awriter, gcode, epsilon, window, stdout
         )
     elif profile_abc.symbols != target_abc.symbols:
         raise click.UsageError("Alphabets mismatch.")
     else:
-        if hmmer3:
-            scanner = HMMER3Scanner(output_writer, window, stdout)
-        else:
-            scanner = StandardScanner(output_writer, window, stdout)
+        scanner = HMMER3Scanner(owriter, window, stdout, hmmer3_compat, edistr)
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
@@ -262,25 +276,24 @@ class Scanner(ABC):
         raise NotImplementedError()
 
 
-class StandardScanner(Scanner):
-    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
-
-        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
-        prof = create_standard_profile(profile_parser)
-        self._scan_targets(prof, targets)
-
-    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
-        for ifrag in ifragments:
-            start = ifrag.interval.start
-            stop = ifrag.interval.stop
-            self._output_writer.write_item(seqid, start, stop)
-
-
 class HMMER3Scanner(Scanner):
+    def __init__(
+        self,
+        output_writer: OutputWriter,
+        window_length: int,
+        stdout,
+        hmmer3_compat: bool,
+        entry_distr: EntryDistr,
+    ):
+        self._hmmer3_compat = hmmer3_compat
+        self._entry_distr = entry_distr
+        super().__init__(output_writer, window_length, stdout)
+
     def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
         self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
-        prof = create_hmmer3_profile(HMMData(profile_parser))
+        hmmdata = HMMData(profile_parser)
+        prof = create_profile(hmmdata, self._hmmer3_compat, self._entry_distr)
         self._scan_targets(prof, targets)
 
     def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):

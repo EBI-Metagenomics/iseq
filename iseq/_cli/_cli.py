@@ -1,11 +1,11 @@
 import click
 
+from .._version import __version__
 from .gff import gff_dedup
 from .press import press
 from .scan import scan
 from .score import score
 from .unpress import unpress
-from .._version import __version__
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))

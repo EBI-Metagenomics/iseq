@@ -1,23 +1,27 @@
 import os
-from numpy.testing import assert_allclose, assert_equal
 
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
+from numpy.testing import assert_equal
+
 from imm import Sequence
-from iseq import HMMData, file_example
-from iseq.standard import create_hmmer3_profile, create_standard_profile
+from imm.testing import assert_allclose
+from iseq import EntryDistr, HMMData, file_example
+from iseq.standard import create_profile
 
 
 def test_standard_profile_unihit_homologous_1():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_standard_profile(reader.read_model())
+        hmmdata = HMMData(reader.read_model())
+
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
     alphabet = hmmer.alphabet
     most_likely_seq = Sequence.create(b"PGKEDNNK", alphabet)
     r = hmmer.search(most_likely_seq).results[0]
 
-    assert_allclose(r.loglikelihood, 11.867796719423442)
+    assert_allclose(r.loglikelihood, 13.39978964458627)
     frags = r.fragments
     assert_equal(len(frags), 1)
     frag = frags[0]
@@ -26,7 +30,7 @@ def test_standard_profile_unihit_homologous_1():
 
     hmmer.multiple_hits = False
     r = hmmer.search(most_likely_seq).results[0]
-    assert_allclose(r.loglikelihood, 11.94063404337571)
+    assert_allclose(r.loglikelihood, 13.472626968538535)
     frags = r.fragments
     assert_equal(len(frags), 1)
     frag = frags[0]
@@ -38,7 +42,7 @@ def test_hmmer3_profile_problematic1():
     with open_hmmer(file_example("problematic1.hmm")) as reader:
         hmmdata = HMMData(reader.read_model())
 
-    prof = create_hmmer3_profile(hmmdata, True)
+    prof = create_profile(hmmdata, True)
 
     with open_fasta(file_example("problematic1.fasta")) as reader:
         item = reader.read_items()[0]
@@ -46,7 +50,7 @@ def test_hmmer3_profile_problematic1():
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
     r = prof.search(sequence)
     assert len(r.results) == 1
-    assert_allclose(r.results[0].viterbi_score, -5.103729125681)
+    assert_allclose(r.results[0].viterbi_score, -5.103729125680717)
 
 
 def test_hmmer3_profile_small_viterbi_score(tmp_path):
@@ -57,7 +61,7 @@ def test_hmmer3_profile_small_viterbi_score(tmp_path):
     with open_hmmer(profile) as reader:
         hmmdata = HMMData(reader.read_model())
 
-    prof = create_hmmer3_profile(hmmdata, True)
+    prof = create_profile(hmmdata, True)
 
     with open_fasta(fasta) as reader:
         item = reader.read_items()[0]
@@ -76,7 +80,7 @@ def test_hmmer3_profile_large_viterbi_score(tmp_path):
     with open_hmmer(profile) as reader:
         hmmdata = HMMData(reader.read_model())
 
-    prof = create_hmmer3_profile(hmmdata, True)
+    prof = create_profile(hmmdata, True)
 
     with open_fasta(fasta) as reader:
         item = reader.read_items()[0]
@@ -90,12 +94,14 @@ def test_hmmer3_profile_large_viterbi_score(tmp_path):
 def test_standard_profile_unihit_homologous_2():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_standard_profile(reader.read_model())
+        hmmdata = HMMData(reader.read_model())
+
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PGKENNK", alphabet)
     r = hmmer.search(seq).results[0]
-    assert_allclose(r.loglikelihood, 3.299501501364073)
+    assert_allclose(r.loglikelihood, 4.679028352468922)
     frags = r.fragments
     assert_equal(len(frags), 1)
     frag = frags[0]
@@ -107,12 +113,14 @@ def test_standard_profile_unihit_homologous_2():
 def test_standard_profile_unihit_homologous_3():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_standard_profile(reader.read_model())
+        hmmdata = HMMData(reader.read_model())
+
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PGKEPNNK", alphabet)
     r = hmmer.search(seq).results[0]
-    assert_allclose(r.loglikelihood, 6.883636719423446)
+    assert_allclose(r.loglikelihood, 8.55629338255035)
     frags = r.fragments
     assert_equal(len(frags), 1)
     frag = frags[0]
@@ -123,13 +131,15 @@ def test_standard_profile_unihit_homologous_3():
 def test_standard_profile_nonhomo_and_homologous():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_standard_profile(reader.read_model())
+        hmmdata = HMMData(reader.read_model())
+
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"KKKPGKEDNNK", alphabet)
     assert_equal(hmmer.multiple_hits, True)
     r = hmmer.search(seq).results[0]
-    assert_allclose(r.loglikelihood, 10.707618955640605)
+    assert_allclose(r.loglikelihood, 12.23961188080344)
     frags = r.fragments
     assert_equal(len(frags), 2)
     assert_equal(frags[0].homologous, False)
@@ -140,7 +150,7 @@ def test_standard_profile_nonhomo_and_homologous():
     hmmer.multiple_hits = False
     assert_equal(hmmer.multiple_hits, False)
     r = hmmer.search(seq).results[0]
-    assert_allclose(r.loglikelihood, 10.96037578075283)
+    assert_allclose(r.loglikelihood, 12.492368705915666)
     frags = r.fragments
     assert_equal(len(frags), 2)
     assert_equal(frags[0].homologous, False)
@@ -152,12 +162,14 @@ def test_standard_profile_nonhomo_and_homologous():
 def test_standard_profile_multihit_homologous1():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_standard_profile(reader.read_model())
+        hmmdata = HMMData(reader.read_model())
+
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.OCCUPANCY)
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)
     r = hmmer.search(seq).results[0]
-    assert_allclose(r.loglikelihood, 20.329227532144742)
+    assert_allclose(r.loglikelihood, 23.396127957291384)
     frags = r.fragments
     assert_equal(len(frags), 5)
     assert_equal(frags[0].homologous, False)
@@ -199,7 +211,7 @@ def test_standard_profile_multihit_homologous1():
 
     hmmer.multiple_hits = False
     r = hmmer.search(seq).results[0]
-    assert_allclose(r.loglikelihood, 8.666478660222928)
+    assert_allclose(r.loglikelihood, 10.19992887279622)
     frags = r.fragments
     assert_equal(len(frags), 3)
     assert_equal(frags[0].homologous, False)
@@ -211,13 +223,15 @@ def test_standard_profile_multihit_homologous1():
 def test_standard_profile_window():
     filepath = file_example("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_standard_profile(reader.read_model())
+        hmmdata = HMMData(reader.read_model())
+
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)
     r = hmmer.search(seq, 15)
 
-    assert_allclose(r.results[0].loglikelihood, 8.868483903457452)
+    assert_allclose(r.results[0].loglikelihood, 10.400476828620292)
     frags = r.results[0].fragments
     assert_equal(len(frags), 3)
     assert_equal(frags[0].homologous, False)
@@ -227,7 +241,7 @@ def test_standard_profile_window():
     assert_equal(frags[2].homologous, False)
     assert_equal(bytes(frags[2].sequence), b"DDDP")
 
-    assert_allclose(r.results[1].loglikelihood, 12.123181172648234)
+    assert_allclose(r.results[1].loglikelihood, 14.513128891939548)
     frags = r.results[1].fragments
     assert_equal(len(frags), 3)
     assert_equal(frags[0].homologous, True)
@@ -237,7 +251,7 @@ def test_standard_profile_window():
     assert_equal(frags[2].homologous, True)
     assert_equal(bytes(frags[2].sequence), b"PGKEDNNK")
 
-    assert_allclose(r.results[2].loglikelihood, 9.082860795403896)
+    assert_allclose(r.results[2].loglikelihood, 10.614853720566728)
     frags = r.results[2].fragments
     assert_equal(len(frags), 2)
     assert_equal(frags[0].homologous, True)

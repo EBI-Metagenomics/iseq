@@ -35,6 +35,7 @@ class EntryDistr(Enum):
     OCCUPANCY = 2
 
 
+# TODO: remove this
 _ELAPSED = []
 
 

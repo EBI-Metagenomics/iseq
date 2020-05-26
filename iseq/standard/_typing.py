@@ -9,14 +9,13 @@ from .._typing import MutableStep
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 
-StandardFragment = Fragment[TAlphabet, NormalState]
-StandardSearchResults = SearchResults[TAlphabet, NormalState]
-StandardStep = Step[MutableStep[NormalState]]
-
 StandardAltModel = AltModel[NormalState]
+StandardFragment = Fragment[TAlphabet, NormalState]
 StandardNode = Node[NormalState]
 StandardNullModel = NullModel[NormalState]
+StandardSearchResults = SearchResults[TAlphabet, NormalState]
 StandardSpecialNode = SpecialNode[NormalState]
+StandardStep = Step[MutableStep[NormalState]]
 
 __all__ = [
     "StandardAltModel",
