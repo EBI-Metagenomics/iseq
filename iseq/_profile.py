@@ -32,9 +32,9 @@ class Profile(Generic[TAlphabet, TState], ABC):
     def alphabet(self):
         return self._alphabet
 
-    # @property
-    # def null_model(self) -> NullModel:
-    #     raise NotImplementedError()
+    @property
+    def null_model(self) -> NullModel:
+        raise NotImplementedError()
 
     @property
     def alt_model(self) -> AltModel:

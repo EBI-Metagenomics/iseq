@@ -51,15 +51,40 @@ def press(
     base_abc = DNAAlphabet()
     # gcode = GeneticCode(base_abc, CanonicalAminoAlphabet())
 
-    with Output.create(output) as file:
-        for hmmprof in tqdm(open_hmmer(profile)):
-            # scanner.show_profile_parser(hmmprof)
-            # scanner.process_profile(hmmprof, targets)
-            prof = create_profile(hmmprof, base_abc, epsilon)
-            hmm = prof.alt_model._hmm
-            dp = hmm.create_dp(prof.alt_model.special_node.T)
-            model = Model.create(hmm, dp)
-            file.write(model)
+    with Output.create(output) as afile:
+        with Output.create((profile.name + ".null.nmm").encode()) as nfile:
+            for hmmprof in tqdm(open_hmmer(profile)):
+                prof = create_profile(hmmprof, base_abc, epsilon)
+
+                hmm = prof.alt_model.hmm
+                dp = hmm.create_dp(prof.alt_model.special_node.T)
+                model = Model.create(hmm, dp)
+                afile.write(model)
+
+                hmm = prof.null_model.hmm
+                dp = hmm.create_dp(prof.null_model.state)
+                model = Model.create(hmm, dp)
+                nfile.write(model)
+
+    # with Output.create((profile.name + ".null.nmm").encode()) as nfile:
+    #     for hmmprof in tqdm(open_hmmer(profile)):
+    #         prof = create_profile(hmmprof, base_abc, epsilon)
+    #         hmm = prof.null_model.hmm
+    #         dp = hmm.create_dp(prof.null_model.state)
+    #         model = Model.create(hmm, dp)
+    #         nfile.write(model)
+
+    # with open("base_table.bin", "wb") as baset_file:
+    #     for hmmprof in tqdm(open_hmmer(profile)):
+    #         # scanner.show_profile_parser(hmmprof)
+    #         # scanner.process_profile(hmmprof, targets)
+    #         prof = create_profile(hmmprof, base_abc, epsilon)
+    #         hmm = prof.alt_model._hmm
+    #         dp = hmm.create_dp(prof.alt_model.special_node.T)
+    #         # model = Model.create(hmm, dp)
+    #         # file.write(model)
+    #         state = prof.null_model.state
+    #         state.base_table.tofile(baset_file)
 
 
 # def _infer_profile_alphabet(profile: IO[str]):

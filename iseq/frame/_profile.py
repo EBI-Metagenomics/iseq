@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import log
-from typing import List
+from typing import List, Type
 
 from hmmer_reader import HMMERModel
 
@@ -42,17 +42,19 @@ __all__ = ["FrameProfile", "create_profile"]
 
 
 class FrameProfile(Profile[BaseAlphabet, FrameState]):
-    def __init__(
-        self,
+    @classmethod
+    def create(
+        cls: Type[FrameProfile],
         factory: _FrameStateFactory,
         null_aminot: AminoTable,
         core_nodes: List[FrameNode],
         core_trans: List[Transitions],
-    ):
+    ) -> FrameProfile:
+
         base_alphabet = factory.genetic_code.base_alphabet
 
         R = factory.create(b"R", null_aminot)
-        null_model = FrameNullModel(R)
+        null_model = FrameNullModel.create(R)
 
         special_node = FrameSpecialNode(
             S=MuteState.create(b"S", base_alphabet),
@@ -64,15 +66,25 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
             T=MuteState.create(b"T", base_alphabet),
         )
 
-        alt_model = FrameAltModel(
+        alt_model = FrameAltModel.create(
             special_node, core_nodes, core_trans, EntryDistr.UNIFORM,
         )
         # alt_model.set_fragment_length(self._special_transitions)
-        super().__init__(base_alphabet, null_model, alt_model, False)
+        return cls(base_alphabet, null_model, alt_model, False)
 
-    # @property
-    # def null_model(self) -> FrameNullModel:
-    #     return self._null_model
+    @classmethod
+    def create2(
+        cls: Type[FrameProfile],
+        alphabet: BaseAlphabet,
+        null_model: FrameNullModel,
+        alt_model: FrameAltModel,
+        hmmer3_compat: bool,
+    ):
+        return cls(alphabet, null_model, alt_model, hmmer3_compat)
+
+    @property
+    def null_model(self) -> FrameNullModel:
+        return self._null_model
 
     @property
     def alt_model(self) -> FrameAltModel:
@@ -136,7 +148,7 @@ def create_profile(
         t.normalize()
         trans.append(t)
 
-    return FrameProfile(factory, null_aminot, nodes, trans)
+    return FrameProfile.create(factory, null_aminot, nodes, trans)
 
 
 class _FrameStateFactory:

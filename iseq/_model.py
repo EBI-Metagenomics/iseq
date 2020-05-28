@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 from math import log
-from typing import Dict, Generic, List, Optional, Tuple
+from typing import Dict, Generic, List, Optional, Tuple, Type
 
 from imm import (
     DP,
@@ -153,12 +155,26 @@ class SpecialNode(Generic[TState]):
 
 
 class NullModel(Generic[TState]):
-    def __init__(
-        self, state: TState,
-    ):
-        self._hmm = HMM.create(state.alphabet)
-        self._hmm.add_state(state, 0.0)
+    def __init__(self, hmm: HMM, state: TState):
+        self._hmm = hmm
         self._state = state
+
+    @classmethod
+    def create(cls: Type[NullModel], state: TState) -> NullModel:
+        hmm = HMM.create(state.alphabet)
+        hmm.add_state(state, 0.0)
+        return cls(hmm, state)
+
+    @classmethod
+    def create2(cls: Type[NullModel], hmm: HMM) -> NullModel:
+        states = hmm.states()
+        if len(states) != 1:
+            raise ValueError("Null HMM must have only one state.")
+        return cls(hmm, list(states.values())[0])
+
+    @property
+    def hmm(self) -> HMM:
+        return self._hmm
 
     @property
     def state(self) -> TState:
@@ -175,26 +191,42 @@ class NullModel(Generic[TState]):
     def set_special_transitions(self, special_trans: SpecialTransitions):
         self.set_transition(special_trans.RR)
 
+    def __str__(self):
+        return f"{self._hmm}"
+
 
 class AltModel(Generic[TState]):
     def __init__(
         self,
         special_node: SpecialNode,
         core_nodes: List[Node],
-        core_trans: List[Transitions],
-        entry_distr: EntryDistr,
+        states: Dict[CData, MutableState[TState]],
+        hmm: HMM,
+        dp: Optional[DP[TState]] = None,
     ):
         self._special_node = special_node
         self._core_nodes = core_nodes
-        self._states: Dict[CData, MutableState[TState]] = {}
-        self._dp: Optional[DP[TState]] = None
+        self._states: Dict[CData, MutableState[TState]] = states
+        self._hmm = hmm
+        self._dp: Optional[DP[TState]] = dp
 
-        for node in self._core_nodes:
+    @classmethod
+    def create(
+        cls: Type[AltModel],
+        special_node: SpecialNode,
+        core_nodes: List[Node],
+        core_trans: List[Transitions],
+        entry_distr: EntryDistr,
+    ) -> AltModel:
+
+        states: Dict[CData, MutableState[TState]] = {}
+
+        for node in core_nodes:
             for state in node.states():
-                self._states[state.imm_state] = state
+                states[state.imm_state] = state
 
         for state in special_node.states():
-            self._states[state.imm_state] = state
+            states[state.imm_state] = state
 
         hmm = HMM.create(special_node.S.alphabet)
         hmm.add_state(special_node.S, 0.0)
@@ -204,7 +236,6 @@ class AltModel(Generic[TState]):
         hmm.add_state(special_node.J)
         hmm.add_state(special_node.C)
         hmm.add_state(special_node.T)
-        self._hmm = hmm
 
         for node in core_nodes:
             hmm.add_state(node.M)
@@ -228,8 +259,41 @@ class AltModel(Generic[TState]):
         Mm = core_nodes[-1].M
         hmm.set_transition(Mm, special_node.E, core_trans[-1].MM)
 
-        self._set_entry_transitions(entry_distr, core_trans)
-        self._set_exit_transitions()
+        alt_model = cls(special_node, core_nodes, states, hmm)
+
+        alt_model._set_entry_transitions(entry_distr, core_trans)
+        alt_model._set_exit_transitions()
+
+        return alt_model
+
+    @classmethod
+    def create2(
+        cls: Type[AltModel],
+        special_node: SpecialNode,
+        core_nodes: List[Node],
+        hmm: HMM,
+        dp: DP,
+    ) -> AltModel:
+
+        states: Dict[CData, MutableState[TState]] = {}
+
+        for node in core_nodes:
+            for state in node.states():
+                states[state.imm_state] = state
+
+        for state in special_node.states():
+            states[state.imm_state] = state
+
+        alt_model = cls(special_node, core_nodes, states, hmm, dp)
+
+        # alt_model._set_entry_transitions(entry_distr, core_trans)
+        # alt_model._set_exit_transitions()
+
+        return alt_model
+
+    @property
+    def hmm(self) -> HMM:
+        return self._hmm
 
     def view(self, core_model_only=False):
         from graphviz import Digraph
@@ -393,6 +457,11 @@ class AltModel(Generic[TState]):
 
         self.set_transition(node.B, self._core_nodes[1].D, lprob_zero())
         self.set_transition(node.B, self._core_nodes[0].I, lprob_zero())
+
+    def __str__(self):
+        msg = f"{self._hmm}\n"
+        msg += f"DP: {self._dp}"
+        return msg
 
 
 def _calculate_occupancy(core_trans: List[Transitions]) -> Tuple[List[float], float]:

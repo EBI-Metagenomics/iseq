@@ -35,7 +35,7 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
         hmmer3_compat=False,
     ):
         R = NormalState.create(b"R", alphabet, null_log_odds)
-        null_model = StandardNullModel(R)
+        null_model = StandardNullModel.create(R)
 
         special_node = StandardSpecialNode(
             S=MuteState.create(b"S", alphabet),
@@ -47,7 +47,9 @@ class StandardProfile(Profile[TAlphabet, NormalState]):
             T=MuteState.create(b"T", alphabet),
         )
 
-        alt_model = StandardAltModel(special_node, core_nodes, core_trans, entry_distr)
+        alt_model = StandardAltModel.create(
+            special_node, core_nodes, core_trans, entry_distr
+        )
         super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
 
     def search(

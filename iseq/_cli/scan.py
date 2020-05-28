@@ -59,11 +59,6 @@ from .._model import EntryDistr
     default=False,
 )
 @click.option(
-    "--hmmer3-compat/--no-hmmer3-compat",
-    help="Enable full HMMER3 compatibility.",
-    default=False,
-)
-@click.option(
     "--entry-distr",
     type=click.Choice(["uniform", "occupancy"], case_sensitive=False),
     default="occupancy",
@@ -324,7 +319,14 @@ class FrameScanner(Scanner):
 
         self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
         base_alphabet = self._genetic_code.base_alphabet
+        # breakpoint()
         prof = create_frame_profile(profile_parser, base_alphabet, self._epsilon)
+        # print(prof.alt_model)
+        # TODO: remove it
+        # import sys
+
+        # sys.exit(1)
+        # breakpoint()
         self._scan_targets(prof, targets)
 
     def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
