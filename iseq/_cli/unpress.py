@@ -19,8 +19,7 @@ IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragm
 
 
 @click.command()
-@click.argument("alt_filepath", type=str)
-@click.argument("null_filepath", type=str)
+@click.argument("profile", type=str)
 @click.argument("target", type=click.File("r"))
 @click.option(
     "--epsilon", type=float, default=1e-2, help="Indel probability. Defaults to 1e-2."
@@ -58,8 +57,7 @@ IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragm
     default=False,
 )
 def unpress(
-    alt_filepath,
-    null_filepath,
+    profile,
     target,
     epsilon: float,
     output,
@@ -80,8 +78,6 @@ def unpress(
     profile and represents a potential homology. Expect many false positive
     associations as we are not filtering out by statistical significance.
     """
-    from tqdm import tqdm
-
     owriter = OutputWriter(output, epsilon, window)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
@@ -91,16 +87,9 @@ def unpress(
     else:
         stdout = click.get_text_stream("stdout")
 
-    # DNAAlphabet()
-    # gcode = GeneticCode(base_abc, CanonicalAminoAlphabet())
-
-    # Unpress
-    # alt: [-18.227717053999672]
-    # nul: -53.88088161268588
-
-    # Scan
-    # alt: [-18.227717053999672]
-    # nul: -53.88088161268588
+    alt_filepath = (profile + ".alt").encode()
+    null_filepath = (profile + ".null").encode()
+    meta_filepath = (profile + ".meta").encode()
 
     target_abc = _infer_target_alphabet(target)
     gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
@@ -108,57 +97,76 @@ def unpress(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    with Input.create(alt_filepath.encode()) as alt_file:
-        with Input.create(null_filepath.encode()) as null_file:
-            for alt, null in tqdm(zip(alt_file, null_file)):
-                special_node = wrap.special_node(alt.hmm)
-                core_nodes = wrap.core_nodes(alt.hmm)
-                alt_model = FrameAltModel.create2(
-                    special_node, core_nodes, alt.hmm, alt.dp
-                )
-                # print(alt_model)
+    from time import time
 
-                null_model = FrameNullModel.create2(null.hmm)
-                # print(null_model)
+    _ELAPSED = {"wrap": 0.0, "scan": 0.0}
 
-                abc = alt_model.hmm.alphabet
-                prof = FrameProfile.create2(abc, null_model, alt_model, hmmer3_compat)
+    with Input.create(alt_filepath) as afile:
+        with Input.create(null_filepath) as nfile:
+            with open(meta_filepath, "r") as mfile:
+                for alt, null, acc in zip(afile, nfile, mfile):
+                    owriter.profile = acc.strip()
+                    start = time()
+                    special_node = wrap.special_node(alt.hmm)
+                    core_nodes = wrap.core_nodes(alt.hmm)
+                    alt_model = FrameAltModel.create2(
+                        special_node, core_nodes, alt.hmm, alt.dp
+                    )
+                    # print(alt_model)
 
-                for target in targets:
-                    stdout.write(">" + target.defline + "\n")
-                    stdout.write(sequence_summary(target.sequence) + "\n")
+                    null_model = FrameNullModel.create2(null.hmm)
+                    # print(null_model)
 
-                    seq = Sequence.create(target.sequence.encode(), prof.alphabet)
-                    search_results = prof.search(seq, window)
-                    seqid = f"{target.defline.split()[0]}"
+                    abc = alt_model.hmm.alphabet
+                    prof = FrameProfile.create2(
+                        abc, null_model, alt_model, hmmer3_compat
+                    )
+                    _ELAPSED["wrap"] += time() - start
 
-                    waiting: List[IntFrag] = []
+                    for tgt in targets:
+                        stdout.write(">" + tgt.defline + "\n")
+                        stdout.write(sequence_summary(tgt.sequence) + "\n")
 
-                    for win, result in zip(
-                        search_results.windows, search_results.results
-                    ):
+                        seq = Sequence.create(tgt.sequence.encode(), prof.alphabet)
+                        start = time()
+                        search_results = prof.search(seq, window)
+                        _ELAPSED["scan"] += time() - start
+                        seqid = f"{tgt.defline.split()[0]}"
 
-                        _show_search_result(stdout, result, win)
-                        candidates: List[IntFrag] = []
+                        waiting: List[IntFrag] = []
 
-                        for i, frag in zip(result.intervals, result.fragments):
-                            if not frag.homologous:
-                                continue
+                        for win, result in zip(
+                            search_results.windows, search_results.results
+                        ):
 
-                            interval = Interval(win.start + i.start, win.start + i.stop)
-                            candidates.append(IntFrag(interval, frag))
+                            _show_search_result(stdout, result, win)
+                            candidates: List[IntFrag] = []
 
-                        ready, waiting = intersect_fragments(waiting, candidates)
+                            for i, frag in zip(result.intervals, result.fragments):
+                                if not frag.homologous:
+                                    continue
 
-                        _write_fragments(gcode, owriter, cwriter, awriter, seqid, ready)
+                                interval = Interval(
+                                    win.start + i.start, win.start + i.stop
+                                )
+                                candidates.append(IntFrag(interval, frag))
 
-                    _write_fragments(gcode, owriter, cwriter, awriter, seqid, waiting)
+                            ready, waiting = intersect_fragments(waiting, candidates)
 
-                    stdout.write("\n")
+                            _write_fragments(
+                                gcode, owriter, cwriter, awriter, seqid, ready
+                            )
+
+                        _write_fragments(
+                            gcode, owriter, cwriter, awriter, seqid, waiting
+                        )
+
+                        stdout.write("\n")
 
     finalize_stream(stdout, "output", output)
     finalize_stream(stdout, "ocodon", ocodon)
     finalize_stream(stdout, "oamino", oamino)
+    print(_ELAPSED)
 
 
 def sequence_summary(sequence: str):

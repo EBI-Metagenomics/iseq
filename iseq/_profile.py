@@ -27,6 +27,7 @@ class Profile(Generic[TAlphabet, TState], ABC):
         self._multiple_hits: bool = True
         self._special_trans = SpecialTransitions()
         self._hmmer3_compat = hmmer3_compat
+        self._set_target_length_model(1)
 
     @property
     def alphabet(self):

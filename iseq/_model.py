@@ -38,10 +38,6 @@ class EntryDistr(Enum):
     OCCUPANCY = 2
 
 
-# TODO: remove this
-_ELAPSED = []
-
-
 @dataclass
 class Transitions:
     MM: float = lprob_zero()
@@ -373,21 +369,10 @@ class AltModel(Generic[TState]):
         return len(self._core_nodes)
 
     def viterbi(self, seq: Sequence, window_length: int = 0) -> MutableResults[TState]:
-        from time import time
-
         if self._dp is None:
-            start = time()
             self._dp = self._hmm.create_dp(self.special_node.T)
-            elapsed = time() - start
-            print(f"self._hmm.create_dp: {elapsed}")
 
-        start = time()
-        r = self._dp.viterbi(seq, window_length)
-        elapsed = time() - start
-        print(f"self._dp.viterbi: {elapsed}")
-
-        _ELAPSED.append((self.core_length, elapsed))
-        return r
+        return self._dp.viterbi(seq, window_length)
 
     def set_fragment_length(self, special_trans: SpecialTransitions):
         raise RuntimeError("Fix this function to update dp.")
@@ -450,7 +435,6 @@ class AltModel(Generic[TState]):
                     self._dp.imm_dp, self._hmm.imm_hmm, a.imm_state, b.imm_state, lprob,
                 )
 
-            dp_set(node.S, node.B, t.NB)
             dp_set(node.S, node.B, t.NB)
             dp_set(node.S, node.N, t.NN)
             dp_set(node.N, node.N, t.NN)
