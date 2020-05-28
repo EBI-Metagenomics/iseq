@@ -5,6 +5,7 @@ from enum import Enum
 from math import log
 from typing import Dict, Generic, List, Optional, Tuple, Type
 
+import imm
 from imm import (
     DP,
     HMM,
@@ -357,7 +358,7 @@ class AltModel(Generic[TState]):
         return state not in self._special_node.states() or state in [B, E]
 
     def set_transition(self, a: State, b: State, lprob: float):
-        self._dp = None
+        # self._dp = None
         self._hmm.set_transition(a, b, lprob)
 
     def core_nodes(self) -> List[Node]:
@@ -375,16 +376,21 @@ class AltModel(Generic[TState]):
         from time import time
 
         if self._dp is None:
+            start = time()
             self._dp = self._hmm.create_dp(self.special_node.T)
+            elapsed = time() - start
+            print(f"self._hmm.create_dp: {elapsed}")
 
         start = time()
         r = self._dp.viterbi(seq, window_length)
         elapsed = time() - start
+        print(f"self._dp.viterbi: {elapsed}")
 
         _ELAPSED.append((self.core_length, elapsed))
         return r
 
     def set_fragment_length(self, special_trans: SpecialTransitions):
+        raise RuntimeError("Fix this function to update dp.")
         M = self.core_length
         if M == 0:
             return
@@ -433,30 +439,60 @@ class AltModel(Generic[TState]):
     ):
         t = special_trans
         node = self.special_node
-        self._dp = None
+        if self._dp is not None:
+            if hmmer3_compat:
+                t.NN = 0.0
+                t.CC = 0.0
+                t.JJ = 0.0
 
-        if hmmer3_compat:
-            t.NN = 0.0
-            t.CC = 0.0
-            t.JJ = 0.0
+            def dp_set(a, b, lprob):
+                imm.lib.imm_dp_change_trans(
+                    self._dp.imm_dp, self._hmm.imm_hmm, a.imm_state, b.imm_state, lprob,
+                )
 
-        self.set_transition(node.S, node.B, t.NB)
-        self.set_transition(node.S, node.N, t.NN)
-        self.set_transition(node.N, node.N, t.NN)
-        self.set_transition(node.N, node.B, t.NB)
+            dp_set(node.S, node.B, t.NB)
+            dp_set(node.S, node.B, t.NB)
+            dp_set(node.S, node.N, t.NN)
+            dp_set(node.N, node.N, t.NN)
+            dp_set(node.N, node.B, t.NB)
 
-        self.set_transition(node.E, node.T, t.EC + t.CT)
-        self.set_transition(node.E, node.C, t.EC + t.CC)
-        self.set_transition(node.C, node.C, t.CC)
-        self.set_transition(node.C, node.T, t.CT)
+            dp_set(node.E, node.T, t.EC + t.CT)
+            dp_set(node.E, node.C, t.EC + t.CC)
+            dp_set(node.C, node.C, t.CC)
+            dp_set(node.C, node.T, t.CT)
 
-        self.set_transition(node.E, node.B, t.EJ + t.JB)
-        self.set_transition(node.E, node.J, t.EJ + t.JJ)
-        self.set_transition(node.J, node.J, t.JJ)
-        self.set_transition(node.J, node.B, t.JB)
+            dp_set(node.E, node.B, t.EJ + t.JB)
+            dp_set(node.E, node.J, t.EJ + t.JJ)
+            dp_set(node.J, node.J, t.JJ)
+            dp_set(node.J, node.B, t.JB)
 
-        self.set_transition(node.B, self._core_nodes[1].D, lprob_zero())
-        self.set_transition(node.B, self._core_nodes[0].I, lprob_zero())
+            dp_set(node.B, self._core_nodes[1].D, lprob_zero())
+            dp_set(node.B, self._core_nodes[0].I, lprob_zero())
+        else:
+            self._dp = None
+
+            if hmmer3_compat:
+                t.NN = 0.0
+                t.CC = 0.0
+                t.JJ = 0.0
+
+            self.set_transition(node.S, node.B, t.NB)
+            self.set_transition(node.S, node.N, t.NN)
+            self.set_transition(node.N, node.N, t.NN)
+            self.set_transition(node.N, node.B, t.NB)
+
+            self.set_transition(node.E, node.T, t.EC + t.CT)
+            self.set_transition(node.E, node.C, t.EC + t.CC)
+            self.set_transition(node.C, node.C, t.CC)
+            self.set_transition(node.C, node.T, t.CT)
+
+            self.set_transition(node.E, node.B, t.EJ + t.JB)
+            self.set_transition(node.E, node.J, t.EJ + t.JJ)
+            self.set_transition(node.J, node.J, t.JJ)
+            self.set_transition(node.J, node.B, t.JB)
+
+            self.set_transition(node.B, self._core_nodes[1].D, lprob_zero())
+            self.set_transition(node.B, self._core_nodes[0].I, lprob_zero())
 
     def __str__(self):
         msg = f"{self._hmm}\n"

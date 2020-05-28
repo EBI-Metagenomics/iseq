@@ -10,6 +10,7 @@ from imm import (
     MuteState,
     Path,
     SequenceABC,
+    Sequence,
     lprob_normalize,
     lprob_zero,
     lprob_add,
@@ -111,7 +112,11 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
 
         for alt_result in alt_results:
             subseq = alt_result.sequence
-            score0 = self._null_model.likelihood(subseq)
+            # TODO: temporary fix for reading from binary file
+            # and consequently alt and null model having different alphabets
+            s = Sequence.create(bytes(subseq), self._null_model.hmm.alphabet)
+            score0 = self._null_model.likelihood(s)
+            # score0 = self._null_model.likelihood(subseq)
             score1 = alt_result.loglikelihood
             score = score1 - score0
             window = Interval(subseq.start, subseq.start + len(subseq))
