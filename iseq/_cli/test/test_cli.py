@@ -129,6 +129,9 @@ def test_cli_scan_window48(tmp_path, large_rna):
     assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
 
 
+@pytest.mark.skipif(
+    shutil.which("hmmsearch") is None, reason="requires HMMER3 software"
+)
 def test_cli_score(tmp_path):
     os.chdir(tmp_path)
     output1 = file_example("output1.gff")
