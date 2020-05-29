@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from time import time
 from math import log
 from typing import List, Type
 
@@ -40,6 +41,8 @@ from ._typing import (
 )
 
 __all__ = ["FrameProfile", "create_profile"]
+
+_ELAPSED = {"viterbi": 0.0}
 
 
 class FrameProfile(Profile[BaseAlphabet, FrameState]):
@@ -101,7 +104,11 @@ class FrameProfile(Profile[BaseAlphabet, FrameState]):
 
         # alt_results = self.alt_model.viterbi(sequence, window_length)
         self._set_target_length_model(len(sequence))
+        start = time()
+        if window_length == -1:
+            window_length = 2 * 3 * self._alt_model.core_length
         alt_results = self._alt_model.viterbi(sequence, window_length)
+        _ELAPSED["viterbi"] += time() - start
 
         def create_fragment(
             seq: SequenceABC[BaseAlphabet], path: Path[FrameStep], homologous: bool

@@ -97,9 +97,7 @@ def unpress(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    from time import time
-
-    _ELAPSED = {"wrap": 0.0, "scan": 0.0}
+    ELAPSED = {"wrap": 0.0, "scan": 0.0}
 
     with Input.create(alt_filepath) as afile:
         with Input.create(null_filepath) as nfile:
@@ -121,7 +119,7 @@ def unpress(
                     prof = FrameProfile.create2(
                         abc, null_model, alt_model, hmmer3_compat
                     )
-                    _ELAPSED["wrap"] += time() - start
+                    ELAPSED["wrap"] += time() - start
 
                     for tgt in targets:
                         stdout.write(">" + tgt.defline + "\n")
@@ -130,7 +128,7 @@ def unpress(
                         seq = Sequence.create(tgt.sequence.encode(), prof.alphabet)
                         start = time()
                         search_results = prof.search(seq, window)
-                        _ELAPSED["scan"] += time() - start
+                        ELAPSED["scan"] += time() - start
                         seqid = f"{tgt.defline.split()[0]}"
 
                         waiting: List[IntFrag] = []
@@ -166,6 +164,9 @@ def unpress(
     finalize_stream(stdout, "output", output)
     finalize_stream(stdout, "ocodon", ocodon)
     finalize_stream(stdout, "oamino", oamino)
+    print(ELAPSED)
+    from ..frame._profile import _ELAPSED
+
     print(_ELAPSED)
 
 

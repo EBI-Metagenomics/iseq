@@ -6,6 +6,7 @@ from .press import press
 from .scan import scan
 from .score import score
 from .unpress import unpress
+from .strip import strip
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
@@ -21,3 +22,4 @@ cli.add_command(score)
 cli.add_command(press)
 cli.add_command(unpress)
 cli.add_command(gff_dedup)
+cli.add_command(strip)
