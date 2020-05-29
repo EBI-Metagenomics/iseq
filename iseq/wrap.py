@@ -1,6 +1,6 @@
 from typing import List
 from imm import HMM
-from ._model import SpecialNode, Node, Transitions
+from ._model import Node, SpecialNode
 
 
 # def transitions(

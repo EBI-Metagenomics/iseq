@@ -1,19 +1,20 @@
 import os
 from time import time
+from typing import List, NamedTuple, Tuple
 
 import click
-
 from click.utils import LazyFile
-from typing import List, NamedTuple, Tuple
-from fasta_reader import FASTAItem, FASTAWriter, open_fasta
-from imm import Sequence, Interval
-from nmm import DNAAlphabet, Input, GeneticCode, CanonicalAminoAlphabet
-from .._result import SearchResult
+from fasta_reader import FASTAWriter, open_fasta
+
+from imm import Interval, Sequence
+from nmm import CanonicalAminoAlphabet, GeneticCode, Input
+
 from .. import wrap
+from .._result import SearchResult
 from ..frame import FrameFragment
-from ..frame._typing import FrameAltModel, FrameNullModel
 from ..frame._profile import FrameProfile
-from .scan import _infer_target_alphabet, OutputWriter
+from ..frame._typing import FrameAltModel, FrameNullModel
+from .scan import OutputWriter, _infer_target_alphabet
 
 IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragment)])
 

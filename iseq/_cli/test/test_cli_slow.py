@@ -1,11 +1,11 @@
-from filecmp import cmp
+# from filecmp import cmp
 
-import pytest
-from click.testing import CliRunner
+# import pytest
+# from click.testing import CliRunner
 
-from iseq import cli
-from .misc import diff
-from iseq._file import brotli_decompress
+# from iseq import cli
+# from .misc import diff
+# from iseq._file import brotli_decompress
 
 
 # @pytest.mark.slow
