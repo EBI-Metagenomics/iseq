@@ -1,11 +1,11 @@
 import click
 
 from .._version import __version__
+from .bscan import bscan
 from .gff import gff_dedup
 from .press import press
 from .scan import scan
 from .score import score
-from .unpress import unpress
 from .strip import strip
 
 
@@ -17,9 +17,9 @@ def cli():
     """
 
 
+cli.add_command(bscan)
+cli.add_command(gff_dedup)
+cli.add_command(press)
 cli.add_command(scan)
 cli.add_command(score)
-cli.add_command(press)
-cli.add_command(unpress)
-cli.add_command(gff_dedup)
 cli.add_command(strip)

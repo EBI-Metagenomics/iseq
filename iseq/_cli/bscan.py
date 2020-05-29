@@ -56,7 +56,7 @@ IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragm
     help="Enable full HMMER3 compatibility.",
     default=False,
 )
-def unpress(
+def bscan(
     profile,
     target,
     epsilon: float,

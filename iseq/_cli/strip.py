@@ -1,15 +1,7 @@
-import fileinput
-import os
-import re
-from collections import OrderedDict
-from typing import Dict, Mapping
-from iseq.gff import read as read_gff, GFFWriter
-
 import click
+from fasta_reader import FASTAWriter, open_fasta
 
-from .._file import tmp_cwd
-from fasta_reader import open_fasta, FASTAWriter
-from .._tblout import tblout_reader
+from iseq.gff import read as read_gff
 
 
 @click.command()

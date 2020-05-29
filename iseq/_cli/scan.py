@@ -55,12 +55,13 @@ from .._model import EntryDistr
 )
 @click.option(
     "--hmmer3-compat/--no-hmmer3-compat",
-    help="Enable full HMMER3 compatibility.",
+    help="Enable full HMMER3 compatibility. Defaults to False.",
     default=False,
 )
 @click.option(
     "--entry-distr",
     type=click.Choice(["uniform", "occupancy"], case_sensitive=False),
+    help="Set the entry distribution. Defaults to occupancy.",
     default="occupancy",
 )
 def scan(
