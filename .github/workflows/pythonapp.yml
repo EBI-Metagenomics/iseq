@@ -22,7 +22,6 @@ jobs:
         flake8 . --show-source --statistics
     - name: Test with pytest
       run: |
-        pip install "nmm>=0.0.6" -vvv
         pip install pytest --upgrade
         python setup.py test
     - name: Install it
