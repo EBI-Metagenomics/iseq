@@ -2,7 +2,6 @@ import os
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from subprocess import check_call
 
 __all__ = ["file_hash", "make_sure_dir_exist", "brotli_decompress", "tmp_cwd"]
 
@@ -30,11 +29,7 @@ def brotli_decompress(filepath: Path):
     """
     Decompress a brotli file.
     """
-    import shutil
-
-    cmd = shutil.which("brotli")
-    if cmd is None:
-        raise RuntimeError("Could not find the `brotli` command-line tool.")
+    from brotli import decompress
 
     if filepath.suffix != ".br":
         raise ValueError("File suffix must be `.br`.")
@@ -43,7 +38,9 @@ def brotli_decompress(filepath: Path):
     if output_filepath.exists():
         raise RuntimeError(f"`{output_filepath}` already exists.")
 
-    check_call([cmd, "-d", "-k", str(filepath), "-o", str(output_filepath)])
+    with open(filepath, "rb") as input:
+        with open(output_filepath, "wb") as output:
+            output.write(decompress(input.read()))
 
     return output_filepath
 
