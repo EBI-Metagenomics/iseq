@@ -26,6 +26,7 @@ jobs:
         python setup.py test
     - name: Install it
       run: |
+        pip install "nmm>=0.0.6" -vvv
         pip install .
     - name: Test installation
       run: |
