@@ -3,6 +3,7 @@ from ._cli import cli
 from ._example import file_example
 from ._hmmdata import HMMData
 from ._model import EntryDistr
+from ._testit import test
 from ._version import __version__
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "frame",
     "gff",
     "standard",
+    "test",
 ]
