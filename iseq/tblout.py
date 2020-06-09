@@ -30,7 +30,7 @@ TBLRow = NamedTuple(
 def tblout_reader(file) -> Generator[TBLRow, None, None]:
     import csv
 
-    reader = csv.reader(_decomment(file), delimiter=" ", skipinitialspace=True)
+    reader = csv.reader(decomment(file), delimiter=" ", skipinitialspace=True)
     for row in reader:
         full_sequence = TBLScore(e_value=row[4], score=row[5], bias=row[6])
         best_1_domain = TBLScore(e_value=row[7], score=row[8], bias=row[9])
@@ -53,7 +53,7 @@ def tblout_reader(file) -> Generator[TBLRow, None, None]:
         )
 
 
-def _decomment(rows):
+def decomment(rows):
     for row in rows:
         if row.startswith("#"):
             continue

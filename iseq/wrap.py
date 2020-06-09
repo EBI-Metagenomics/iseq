@@ -1,7 +1,10 @@
 from typing import List
-from imm import HMM
-from ._model import Node, SpecialNode
 
+from imm import HMM
+
+from .model import Node, SpecialNode
+
+__all__ = ["core_nodes", "special_node"]
 
 # def transitions(
 #     hmm: HMM, nodes: List[Node], special_node: SpecialNode

@@ -5,9 +5,9 @@ from hmmer_reader import HMMERModel
 from imm import lprob_zero
 from nmm import CanonicalAminoAlphabet
 
-from ._alphabet import infer_alphabet
-from ._model import Transitions
-from ._typing import HMMERAlphabet
+from .alphabet import infer_alphabet
+from .model import Transitions
+from .typing import HMMERAlphabet
 
 __all__ = ["HMMData"]
 

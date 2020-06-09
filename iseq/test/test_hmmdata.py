@@ -1,14 +1,15 @@
 from math import log
 
 from hmmer_reader import open_hmmer
-
 from imm.testing import assert_allclose
-from iseq import HMMData, file_example
 from nmm import CanonicalAminoAlphabet, DNAAlphabet
+
+from iseq.example import example_filepath
+from iseq.hmmdata import HMMData
 
 
 def test_hmmdata_amino():
-    filepath = file_example("PF03373.hmm")
+    filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
         hmm_data = HMMData(reader.read_model())
 
@@ -19,7 +20,7 @@ def test_hmmdata_amino():
 
 
 def test_hmmdata_dna():
-    filepath = file_example("ecori.hmm")
+    filepath = example_filepath("ecori.hmm")
     with open_hmmer(filepath) as reader:
         hmm_data = HMMData(reader.read_model())
 

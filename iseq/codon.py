@@ -4,8 +4,8 @@ from typing import List, Tuple
 from imm import MuteState, NormalState, Sequence, SequenceABC, lprob_zero
 from nmm import BaseAlphabet, Codon, CodonState, GeneticCode
 
-from ._fragment import Fragment
-from ._typing import AminoFragment, AminoPath, AminoStep
+from .fragment import Fragment
+from .typing import AminoFragment, AminoPath, AminoStep
 
 __all__ = ["CodonFragment"]
 
@@ -29,7 +29,7 @@ class CodonFragment(Fragment[BaseAlphabet, CodonState]):
                 subseq = self.sequence[start : start + step.seq_len]
                 name = step.state.name
 
-                amino, new_step = _create_step(genetic_code, subseq, name)
+                amino, new_step = create_step(genetic_code, subseq, name)
                 aminos.append(amino)
                 steps.append(new_step)
 
@@ -45,7 +45,7 @@ class CodonFragment(Fragment[BaseAlphabet, CodonState]):
         return f"<{self.__class__.__name__}:{str(self)}>"
 
 
-def _create_step(
+def create_step(
     gcode: GeneticCode, seq: SequenceABC[BaseAlphabet], state_name: bytes
 ) -> Tuple[bytes, AminoStep]:
     base_abc = seq.alphabet

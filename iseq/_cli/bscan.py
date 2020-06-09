@@ -1,22 +1,22 @@
 import os
 from time import time
-from typing import List, NamedTuple, Tuple
+from typing import IO, List, NamedTuple, Tuple
 
 import click
 from click.utils import LazyFile
 from fasta_reader import FASTAWriter, open_fasta
-
 from imm import Interval, Sequence
 from nmm import CanonicalAminoAlphabet, GeneticCode, Input
 
-from .. import wrap
-from .._result import SearchResult
-from ..frame import FrameFragment
-from ..frame._profile import FrameProfile
-from ..frame._typing import FrameAltModel, FrameNullModel
-from .scan import OutputWriter, _infer_target_alphabet
+from iseq import wrap
+from iseq.alphabet import infer_fasta_alphabet
+from iseq.protein import ProteinFragment, ProteinProfile
+from iseq.protein.typing import ProteinAltModel, ProteinNullModel
+from iseq.result import SearchResult
 
-IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", FrameFragment)])
+from .scanner import OutputWriter
+
+IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFragment)])
 
 
 @click.command()
@@ -108,16 +108,16 @@ def bscan(
                     start = time()
                     special_node = wrap.special_node(alt.hmm)
                     core_nodes = wrap.core_nodes(alt.hmm)
-                    alt_model = FrameAltModel.create2(
+                    alt_model = ProteinAltModel.create2(
                         special_node, core_nodes, alt.hmm, alt.dp
                     )
                     # print(alt_model)
 
-                    null_model = FrameNullModel.create2(null.hmm)
+                    null_model = ProteinNullModel.create2(null.hmm)
                     # print(null_model)
 
                     abc = alt_model.hmm.alphabet
-                    prof = FrameProfile.create2(
+                    prof = ProteinProfile.create2(
                         abc, null_model, alt_model, hmmer3_compat
                     )
                     ELAPSED["wrap"] += time() - start
@@ -165,10 +165,6 @@ def bscan(
     finalize_stream(stdout, "output", output)
     finalize_stream(stdout, "ocodon", ocodon)
     finalize_stream(stdout, "oamino", oamino)
-    print(ELAPSED)
-    from ..frame._profile import _ELAPSED
-
-    print(_ELAPSED)
 
 
 def sequence_summary(sequence: str):
@@ -287,3 +283,12 @@ def finalize_stream(stdout, name: str, stream: LazyFile):
         stdout.write(f"Writing {name} to <{stream.name}> file.\n")
 
     stream.close_intelligently()
+
+
+def _infer_target_alphabet(target: IO[str]):
+    fasta = open_fasta(target)
+    target_alphabet = infer_fasta_alphabet(fasta)
+    target.seek(0)
+    if target_alphabet is None:
+        raise click.UsageError("Could not infer alphabet from TARGET.")
+    return target_alphabet

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from appdirs import user_cache_dir
 
-from ._file import make_sure_dir_exist
+from .file import make_sure_dir_exist
 
 __all__ = ["ISEQ_CACHE_HOME"]
 

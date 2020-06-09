@@ -6,8 +6,8 @@ from typing import Dict, Mapping
 
 import click
 
-from .._file import tmp_cwd
-from .._tblout import tblout_reader
+from iseq.file import tmp_cwd
+from iseq.tblout import tblout_reader
 
 
 @click.command()

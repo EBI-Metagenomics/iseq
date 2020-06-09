@@ -5,21 +5,20 @@ from pathlib import Path
 import pytest
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
-
 from imm import Sequence
 from imm.testing import assert_allclose
-from iseq import file_example
-from iseq.standard import create_profile
 
-from .._hmmdata import HMMData
+from iseq.example import example_filepath
+from iseq.hmmdata import HMMData
+from iseq.hmmer3 import create_profile
 
 
 @pytest.mark.slow
 def test_hmmer3_viterbi_scores_compat(tmp_path):
     os.chdir(tmp_path)
-    db_filepath = file_example("Pfam-A.hmm")
-    target_filepath = file_example("A0ALD9.fasta")
-    iseq_scores = loadtxt(file_example("Pfam-A_iseq_viterbi_scores.txt"))
+    db_filepath = example_filepath("Pfam-A.hmm")
+    target_filepath = example_filepath("A0ALD9.fasta")
+    iseq_scores = loadtxt(example_filepath("Pfam-A_iseq_viterbi_scores.txt"))
 
     with open_fasta(target_filepath) as fasta:
         target = list(fasta)[0]
@@ -32,10 +31,10 @@ def test_hmmer3_viterbi_scores_compat(tmp_path):
         score = search_results.results[0].viterbi_score
         actual_scores.append(score)
 
-    iseq_scores = loadtxt(file_example("Pfam-A_iseq_viterbi_scores.txt"))
+    iseq_scores = loadtxt(example_filepath("Pfam-A_iseq_viterbi_scores.txt"))
     assert_allclose(actual_scores, iseq_scores)
 
-    hmmer3_scores = loadtxt(file_example("Pfam-A_hmmer3.3_viterbi_scores.txt"))
+    hmmer3_scores = loadtxt(example_filepath("Pfam-A_hmmer3.3_viterbi_scores.txt"))
     ok = [i for i, score in enumerate(hmmer3_scores) if isfinite(score)]
 
     actual_scores = [actual_scores[i] for i in ok]

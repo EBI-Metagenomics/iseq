@@ -1,11 +1,10 @@
 import os
 
 import click
-
 from hmmer_reader import open_hmmer
 from nmm import DNAAlphabet, Model, Output
 
-from ..frame import create_profile
+from iseq.protein import create_profile
 
 
 @click.command()

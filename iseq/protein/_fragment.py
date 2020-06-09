@@ -1,22 +1,23 @@
 from math import log
 from typing import List
 
-from nmm import BaseAlphabet, Codon, CodonState, FrameState, CodonProb
-from imm import Path, Sequence, SequenceABC, MuteState
+from imm import MuteState, Path, Sequence, SequenceABC
+from nmm import BaseAlphabet, Codon, CodonProb, CodonState, FrameState
 
-from .._codon import CodonFragment
-from .._fragment import Fragment
-from ._typing import FrameStep
-from .._typing import CodonPath, CodonStep
+from iseq.codon import CodonFragment
+from iseq.fragment import Fragment
+from iseq.typing import CodonPath, CodonStep
 
-__all__ = ["FrameFragment"]
+from .typing import ProteinStep
+
+__all__ = ["ProteinFragment"]
 
 
-class FrameFragment(Fragment[BaseAlphabet, FrameState]):
+class ProteinFragment(Fragment[BaseAlphabet, FrameState]):
     def __init__(
         self,
         sequence: SequenceABC[BaseAlphabet],
-        path: Path[FrameStep],
+        path: Path[ProteinStep],
         homologous: bool,
     ):
         super().__init__(sequence, path, homologous)

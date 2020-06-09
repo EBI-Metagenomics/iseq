@@ -9,7 +9,7 @@ from nmm import (
     RNAAlphabet,
 )
 
-from ._fragment import Fragment
+from .fragment import Fragment
 
 AminoStep = Step[Union[NormalState, MuteState]]
 AminoPath = Path[AminoStep]

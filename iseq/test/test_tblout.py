@@ -1,9 +1,9 @@
-from iseq import file_example
-from iseq._tblout import tblout_reader
+from iseq.example import example_filepath
+from iseq.tblout import tblout_reader
 
 
 def test_tblout():
-    with open(file_example("tblout.txt"), "r") as file:
+    with open(example_filepath("tblout.txt"), "r") as file:
         reader = tblout_reader(file)
 
         row = next(reader)

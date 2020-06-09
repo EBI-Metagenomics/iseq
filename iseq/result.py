@@ -2,18 +2,19 @@ from __future__ import annotations
 
 from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
 
-from imm import Alphabet, Interval, Path, SequenceABC, Step
+from imm import Alphabet, Interval, Path, SequenceABC, State, Step
 
-from ._fragment import Fragment
-from ._typing import MutablePath, TState
+from .fragment import Fragment
+from .typing import MutablePath
+
+__all__ = ["SearchResults", "SearchResult", "create_fragment_type"]
 
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
+TState = TypeVar("TState", bound=State)
 
 create_fragment_type = Callable[
     [SequenceABC[TAlphabet], MutablePath[TState], bool], Fragment[TAlphabet, TState]
 ]
-
-__all__ = ["SearchResults", "SearchResult", "create_fragment_type"]
 
 
 class SearchResults(Generic[TAlphabet, TState]):

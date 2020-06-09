@@ -15,21 +15,21 @@ from imm import (
     Sequence,
     State,
     Step,
+    lprob_add,
     lprob_is_zero,
     lprob_zero,
-    lprob_add,
 )
 
-from ._typing import MutableResults, MutableState, TState
+from .typing import MutableResults, MutableState, TState
 
 __all__ = [
     "AltModel",
+    "EntryDistr",
     "Node",
     "NullModel",
     "SpecialNode",
-    "Transitions",
-    "EntryDistr",
     "SpecialTransitions",
+    "Transitions",
 ]
 
 
@@ -258,8 +258,8 @@ class AltModel(Generic[TState]):
 
         alt_model = cls(special_node, core_nodes, states, hmm)
 
-        alt_model._set_entry_transitions(entry_distr, core_trans)
-        alt_model._set_exit_transitions()
+        alt_model.set_entry_transitions(entry_distr, core_trans)
+        alt_model.set_exit_transitions()
 
         return alt_model
 
@@ -283,8 +283,8 @@ class AltModel(Generic[TState]):
 
         alt_model = cls(special_node, core_nodes, states, hmm, dp)
 
-        # alt_model._set_entry_transitions(entry_distr, core_trans)
-        # alt_model._set_exit_transitions()
+        # alt_model.set_entry_transitions(entry_distr, core_trans)
+        # alt_model.set_exit_transitions()
 
         return alt_model
 
@@ -375,27 +375,28 @@ class AltModel(Generic[TState]):
         return self._dp.viterbi(seq, window_length)
 
     def set_fragment_length(self, special_trans: SpecialTransitions):
+        del special_trans
         raise RuntimeError("Fix this function to update dp.")
-        M = self.core_length
-        if M == 0:
-            return
+        # M = self.core_length
+        # if M == 0:
+        #     return
 
-        self._dp = None
-        B = self.special_node.B
-        E = self.special_node.E
+        # self._dp = None
+        # B = self.special_node.B
+        # E = self.special_node.E
 
-        # Uniform local alignment fragment length distribution
-        t = special_trans
-        t.BM = log(2) - log(M) - log(M + 1)
-        t.ME = 0.0
-        for node in self.core_nodes():
-            self.set_transition(B, node.M, t.BM)
-            self.set_transition(node.M, E, t.ME)
+        # # Uniform local alignment fragment length distribution
+        # t = special_trans
+        # t.BM = log(2) - log(M) - log(M + 1)
+        # t.ME = 0.0
+        # for node in self.core_nodes():
+        #     self.set_transition(B, node.M, t.BM)
+        #     self.set_transition(node.M, E, t.ME)
 
-        for node in self.core_nodes()[1:]:
-            self.set_transition(node.D, E, 0.0)
+        # for node in self.core_nodes()[1:]:
+        #     self.set_transition(node.D, E, 0.0)
 
-    def _set_entry_transitions(
+    def set_entry_transitions(
         self, entry_distr: EntryDistr, core_trans: List[Transitions]
     ):
         if entry_distr == EntryDistr.UNIFORM:
@@ -410,7 +411,7 @@ class AltModel(Generic[TState]):
         for cost, node in zip(costs, self.core_nodes()):
             self.set_transition(B, node.M, cost)
 
-    def _set_exit_transitions(self):
+    def set_exit_transitions(self):
         E = self.special_node.E
 
         for node in self.core_nodes():
