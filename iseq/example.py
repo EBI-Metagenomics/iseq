@@ -39,6 +39,16 @@ _filenames = {
     "problematic1.fasta": "8053144931f5d2fbce5cdf0eef4283ada5e2f715bd7bb75075dad31f6114316e",
     "problematic1.hmm": "0fe62f7306510f1f9226e0e26148567a0e1ac4732da7cc89e74d6e208adf955b",
     "tblout.txt": "b1d95803d13017e98e8431c3a926920979470b936706177c5cfbd788585833ff",
+    "PF00113.hmm": "3701257b5462049d46a8af0ef4655be3ba1507e41c7e5ceeb1e4251a0639cc1c",
+    "PF00113.hmm.br": "991b6badfc261c80e296c77cc73b7c9982e877bf27bfa4c7aa9303e5fd2a95ff",
+    "A0ALD9_dna_huge.fasta": "d20c21ff64e4a52bad11b8c0902f5d83195c6a25810d1308e34364438d640f69",
+    "A0ALD9_dna_huge.fasta.br": "0b99da9a5b85d8c9118d133a46e07bb45e5ba60b7bc4bec9036028c340b8fa22",
+    "PF00113_A0ALD9_dna_huge_output1776.gff": "4276b590cbf94df33d3c75ff091a910019a6dae6fdcb32f084a490bfb2a30901",
+    "PF00113_A0ALD9_dna_huge_output1776.gff.br": "c236cd4620d38ab7affdca14515e4c146d67d6e357a9fb9a6d2ee48701e523e0",
+    "PF00113_A0ALD9_dna_huge_codon1776.fasta": "53804506d7152139bfb4fb9eada69986fcdf7ded7df991dd47279a4d1a42206a",
+    "PF00113_A0ALD9_dna_huge_codon1776.fasta.br": "1939b4e25fb09aaab29f1dcce6027a3994e211b651957461c4e04f644b245721",
+    "PF00113_A0ALD9_dna_huge_amino1776.fasta": "f817d721ab19c588effdaf6986973cb35063a424bb509017c7d075df81fb5a5f",
+    "PF00113_A0ALD9_dna_huge_amino1776.fasta.br": "88e96aec425ca07a8dd6764b7ada9b606dda8a5f52b107f3faf7387c6ca531da",
 }
 
 
