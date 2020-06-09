@@ -1,3 +1,3 @@
-from ._gff import GFFItem, GFFWriter, GFF, read
+from ._gff import GFF, GFFItem, GFFWriter, read
 
 __all__ = ["GFFItem", "GFFWriter", "GFF", "read"]

@@ -40,8 +40,8 @@ ctg123 . exon            7000  9000  .  +  .  ID=exon00005;Parent=mrna0001
 from __future__ import annotations
 
 import pathlib
-from typing import IO, NamedTuple, Union, List
 from collections import OrderedDict
+from typing import IO, List, NamedTuple, Union
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
 
