@@ -34,7 +34,7 @@ jobs:
         isort --recursive --check-only iseq
     - name: Pip install nmm
       run: |
-        pip install "nmm>=0.0.7" -vv
+        pip install "imm>=0.0.2" -vv
     - name: Test
       run: |
         python setup.py test
