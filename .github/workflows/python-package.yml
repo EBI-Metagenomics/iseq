@@ -32,6 +32,10 @@ jobs:
         flake8 iseq
         black --check iseq
         isort --recursive --check-only iseq
+    - name: Pip install nmm
+      run: |
+        isort --recursive --check-only iseq
+        pip install "nmm>=0.0.7" -vvv
     - name: Test
       run: |
         python setup.py test
