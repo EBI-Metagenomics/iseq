@@ -4,12 +4,8 @@
 name: Python daily test
 
 on:
-  # schedule:
-  #   - cron:  '0 3,13 * * *'
-  push:
-    branches: [ master, develop ]
-  pull_request:
-    branches: [ master, develop ]
+  schedule:
+    - cron:  '0 3,13 * * *'
 
 jobs:
   build:
