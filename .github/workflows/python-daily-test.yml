@@ -39,4 +39,4 @@ jobs:
         isort --recursive --check-only iseq
     - name: Test
       run: |
-        python setup.py test --addopts "--runslow"
+        pytest --runslow
