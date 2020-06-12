@@ -5,7 +5,7 @@ from click.utils import LazyFile
 from fasta_reader import FASTAItem
 from hmmer_reader import HMMERParser
 from imm import Interval, Sequence
-from nmm import DNAAlphabet, RNAAlphabet, NTTranslator, NullTranslator, Translator
+from nmm import DNAAlphabet, NTTranslator, NullTranslator, RNAAlphabet, Translator
 
 from iseq.profile import Profile
 from iseq.protein import ProteinFragment

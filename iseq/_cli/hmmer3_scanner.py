@@ -7,8 +7,8 @@ from iseq.hmmdata import HMMData
 from iseq.hmmer3 import create_profile
 from iseq.model import EntryDistr
 
-from .scanner import IntFrag, OutputWriter, Scanner
 from .debug_writer import DebugWriter
+from .scanner import IntFrag, OutputWriter, Scanner
 
 
 class HMMER3Scanner(Scanner):

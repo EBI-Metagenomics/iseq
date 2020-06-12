@@ -1,6 +1,6 @@
+import filecmp
 import os
 from io import StringIO
-import filecmp
 
 import pandas as pd
 from click.testing import CliRunner

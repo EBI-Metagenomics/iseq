@@ -1,12 +1,10 @@
 import os
-import sys
-from typing import IO, Optional
+from typing import Optional
 
 import click
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
-from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.model import EntryDistr
 
 from .debug_writer import DebugWriter
