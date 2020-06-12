@@ -76,6 +76,7 @@ _filenames = {
     "iseq_2OG-FeII_Oxy_3_local.fasta.viterbi": "377048eb0617bf54f1412c915ae9ae2f8b69a09979016fe1b4579917792b8fde",
     "iseq_2OG-FeII_Oxy_3_uniglocal.fasta.viterbi": "83e2de881ae0d5a1ba66cf790d7b59314676001b9a992e3a2486fefd4b39b67f",
     "iseq_2OG-FeII_Oxy_3_unilocal.fasta.viterbi": "8595c542009117c33bd881ad9d77299709ff4bf6b7db2d68883674d9344151a1",
+    "2OG-FeII_Oxy_3-rna_unilocal.fasta": "8ef0ce57699412bacc6f697a15fba63b970e09f7989758fd6ab50a4c13bc99b3",
 }
 
 

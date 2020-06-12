@@ -81,13 +81,13 @@ def hscan(
     else:
         stdout = click.get_text_stream("stdout")
 
-    profile_abc = _infer_profile_alphabet(profile)
-    target_abc = _infer_target_alphabet(target)
+    # profile_abc = _infer_profile_alphabet(profile)
+    # target_abc = _infer_target_alphabet(target)
 
     scanner: Optional[HMMER3Scanner] = None
 
-    if profile_abc.symbols != target_abc.symbols:
-        raise click.UsageError("Alphabets mismatch.")
+    # if profile_abc.symbols != target_abc.symbols:
+    #     raise click.UsageError("Alphabets mismatch.")
 
     scanner = HMMER3Scanner(owriter, dwriter, window, stdout, hmmer3_compat, edistr)
 
@@ -102,19 +102,19 @@ def hscan(
     scanner.finalize_stream("odebug", odebug)
 
 
-def _infer_profile_alphabet(profile: IO[str]):
-    hmmer = open_hmmer(profile)
-    hmmer_alphabet = infer_hmmer_alphabet(hmmer)
-    profile.seek(0)
-    if hmmer_alphabet is None:
-        raise click.UsageError("Could not infer alphabet from PROFILE.")
-    return hmmer_alphabet
+# def _infer_profile_alphabet(profile: IO[str]):
+#     hmmer = open_hmmer(profile)
+#     hmmer_alphabet = infer_hmmer_alphabet(hmmer)
+#     profile.seek(0)
+#     if hmmer_alphabet is None:
+#         raise click.UsageError("Could not infer alphabet from PROFILE.")
+#     return hmmer_alphabet
 
 
-def _infer_target_alphabet(target: IO[str]):
-    fasta = open_fasta(target)
-    target_alphabet = infer_fasta_alphabet(fasta)
-    target.seek(0)
-    if target_alphabet is None:
-        raise click.UsageError("Could not infer alphabet from TARGET.")
-    return target_alphabet
+# def _infer_target_alphabet(target: IO[str]):
+#     fasta = open_fasta(target)
+#     target_alphabet = infer_fasta_alphabet(fasta)
+#     target.seek(0)
+#     if target_alphabet is None:
+#         raise click.UsageError("Could not infer alphabet from TARGET.")
+#     return target_alphabet

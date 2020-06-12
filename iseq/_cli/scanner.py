@@ -1,55 +1,20 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import IO, List, NamedTuple, Optional, Tuple, Union
+from typing import List, NamedTuple, Tuple
 
 from click.utils import LazyFile
 from fasta_reader import FASTAItem
 from hmmer_reader import HMMERParser
 from imm import Interval, Sequence
+from nmm import DNAAlphabet, RNAAlphabet, NTTranslator, NullTranslator, Translator
 
-from iseq.gff import GFFItem, GFFWriter
-from iseq.protein import ProteinFragment, ProteinProfile
+from iseq.profile import Profile
+from iseq.protein import ProteinFragment
 from iseq.result import SearchResult
 
 from .debug_writer import DebugWriter
+from .output_writer import OutputWriter
 
 IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFragment)])
-
-
-class OutputWriter:
-    def __init__(self, file: Union[str, Path, IO[str]], window: int):
-        self._gff = GFFWriter(file)
-        self._profile = "NOTSET"
-        self._window = window
-        self._item_idx = 1
-
-    @property
-    def profile(self) -> str:
-        return self._profile
-
-    @profile.setter
-    def profile(self, profile: str):
-        self._profile = profile
-
-    def write_item(self, seqid: str, start: int, end: int, att: Optional[dict] = None):
-        if att is None:
-            att = dict()
-
-        item_id = f"item{self._item_idx}"
-        atts = f"ID={item_id};Profile={self._profile};Window={self._window}"
-        for k in sorted(att.keys()):
-            atts += f";{k}={att[k]}"
-
-        item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", atts)
-        self._gff.write_item(item)
-        self._item_idx += 1
-        return item_id
-
-    def close(self):
-        """
-        Close the associated stream.
-        """
-        self._gff.close()
 
 
 class Scanner(ABC):
@@ -126,18 +91,24 @@ class Scanner(ABC):
             self._stdout.write("\t".join(matches) + "\n")
             j += 1
 
-    def _scan_targets(self, profile, targets: List[FASTAItem]):
+    def _scan_targets(self, profile: Profile, targets: List[FASTAItem]):
         self._show_header("Targets")
+        if isinstance(profile.alphabet, (DNAAlphabet, RNAAlphabet)):
+            translator = NTTranslator()
+        else:
+            translator = NullTranslator()
+
         for target in targets:
-            self._scan_target(profile, target)
+            self._scan_target(profile, target, translator)
             self._stdout.write("\n")
 
-    def _scan_target(self, profile: ProteinProfile, target: FASTAItem):
+    def _scan_target(self, profile: Profile, target: FASTAItem, translator: Translator):
 
         self._stdout.write(">" + target.defline + "\n")
         self._stdout.write(sequence_summary(target.sequence) + "\n")
 
-        seq = Sequence.create(target.sequence.encode(), profile.alphabet)
+        tmp = translator.translate(target.sequence.encode(), profile.alphabet)
+        seq = Sequence.create(tmp, profile.alphabet)
         search_results = profile.search(seq, self._window_length)
         seqid = f"{target.defline.split()[0]}"
 

@@ -1,5 +1,6 @@
 import os
 from io import StringIO
+import filecmp
 
 import pandas as pd
 from click.testing import CliRunner
@@ -167,3 +168,42 @@ def test_cli_hscan_window200(tmp_path):
     assert all(a == b for a, b in zip(actual["start"], desired["start"]))
     assert all(a == b for a, b in zip(actual["stop"], desired["stop"]))
     assert_allclose(actual["alt_viterbi_score"], desired["alt_viterbi_score"])
+
+
+def test_cli_hscan_dna_vs_rna(tmp_path):
+    os.chdir(tmp_path)
+
+    hmm_filepath = example_filepath("2OG-FeII_Oxy_3-nt.hmm")
+    fasta_dna_filepath = example_filepath("2OG-FeII_Oxy_3-nt_unilocal.fasta")
+    fasta_rna_filepath = example_filepath("2OG-FeII_Oxy_3-rna_unilocal.fasta")
+
+    invoke = CliRunner().invoke
+    r = invoke(
+        cli,
+        [
+            "hscan",
+            str(hmm_filepath),
+            str(fasta_dna_filepath),
+            "--output",
+            "output_dna.gff",
+            "--window",
+            200,
+        ],
+    )
+    assert r.exit_code == 0, r.output
+
+    r = invoke(
+        cli,
+        [
+            "hscan",
+            str(hmm_filepath),
+            str(fasta_rna_filepath),
+            "--output",
+            "output_rna.gff",
+            "--window",
+            200,
+        ],
+    )
+    assert r.exit_code == 0, r.output
+
+    assert filecmp.cmp("output_dna.gff", "output_rna.gff", shallow=False)
