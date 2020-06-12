@@ -117,12 +117,14 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
             # TODO: temporary fix for reading from binary file
             # and consequently alt and null model having different alphabets
             s = Sequence.create(bytes(subseq), self._null_model.hmm.alphabet)
-            score0 = self._null_model.likelihood(s)
-            # score0 = self._null_model.likelihood(subseq)
-            score1 = alt_result.loglikelihood
-            score = score1 - score0
+            viterbi_score0 = self._null_model.likelihood(s)
+            # viterbi_score0 = self._null_model.likelihood(subseq)
+            viterbi_score1 = alt_result.loglikelihood
+            score = viterbi_score1 - viterbi_score0
             window = Interval(subseq.start, subseq.start + len(subseq))
-            search_results.append(score, window, alt_result.path, score1)
+            search_results.append(
+                score, window, alt_result.path, viterbi_score1, viterbi_score0
+            )
 
         return search_results
 

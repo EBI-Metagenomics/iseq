@@ -6,6 +6,7 @@ from nmm import GeneticCode
 
 from iseq.protein import create_profile
 
+from .debug_writer import DebugWriter
 from .scanner import IntFrag, OutputWriter, Scanner
 
 
@@ -13,6 +14,7 @@ class ProteinScanner(Scanner):
     def __init__(
         self,
         output_writer: OutputWriter,
+        debug_writer: DebugWriter,
         codon_writer: FASTAWriter,
         amino_writer: FASTAWriter,
         genetic_code: GeneticCode,
@@ -20,7 +22,7 @@ class ProteinScanner(Scanner):
         window_length: int,
         stdout,
     ):
-        super().__init__(output_writer, window_length, stdout)
+        super().__init__(output_writer, debug_writer, window_length, stdout)
         self._codon_writer = codon_writer
         self._amino_writer = amino_writer
         self._genetic_code = genetic_code

@@ -11,6 +11,8 @@ from iseq.gff import GFFItem, GFFWriter
 from iseq.protein import ProteinFragment, ProteinProfile
 from iseq.result import SearchResult
 
+from .debug_writer import DebugWriter
+
 IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFragment)])
 
 
@@ -51,8 +53,15 @@ class OutputWriter:
 
 
 class Scanner(ABC):
-    def __init__(self, output_writer: OutputWriter, window_length: int, stdout):
+    def __init__(
+        self,
+        output_writer: OutputWriter,
+        debug_writer: DebugWriter,
+        window_length: int,
+        stdout,
+    ):
         self._output_writer = output_writer
+        self._debug_writer = debug_writer
         self._window_length = window_length
         self._stdout = stdout
 
@@ -129,14 +138,23 @@ class Scanner(ABC):
         self._stdout.write(sequence_summary(target.sequence) + "\n")
 
         seq = Sequence.create(target.sequence.encode(), profile.alphabet)
-        # breakpoint()
         search_results = profile.search(seq, self._window_length)
-        print("VITERBI: " + str(search_results.results[0].viterbi_score))
         seqid = f"{target.defline.split()[0]}"
 
         waiting: List[IntFrag] = []
 
-        for window, result in zip(search_results.windows, search_results.results):
+        windows = search_results.windows
+        results = search_results.results
+        for win_num, (window, result) in enumerate(zip(windows, results)):
+
+            self._debug_writer.write_row(
+                seqid,
+                win_num,
+                window.start + 1,
+                window.stop,
+                result.alt_viterbi_score,
+                result.null_viterbi_score,
+            )
 
             self._show_search_result(result, window)
             candidates: List[IntFrag] = []

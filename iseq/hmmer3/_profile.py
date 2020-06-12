@@ -70,13 +70,15 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
 
         for alt_result in alt_results:
             subseq = alt_result.sequence
-            score0 = self._null_model.likelihood(subseq)
-            score1 = alt_result.loglikelihood
-            score = score1 - score0
+            viterbi_score0 = self._null_model.likelihood(subseq)
+            viterbi_score1 = alt_result.loglikelihood
+            score = viterbi_score1 - viterbi_score0
             window = Interval(subseq.start, subseq.start + len(subseq))
             if self._hmmer3_compat:
-                score1 -= 3
-            search_results.append(score, window, alt_result.path, score1)
+                viterbi_score1 -= 3
+            search_results.append(
+                score, window, alt_result.path, viterbi_score1, viterbi_score0
+            )
 
         return search_results
 

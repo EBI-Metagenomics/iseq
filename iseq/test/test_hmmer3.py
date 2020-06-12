@@ -52,7 +52,7 @@ def test_hmmer3_profile_problematic1():
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
     r = prof.search(sequence)
     assert len(r.results) == 1
-    assert_allclose(r.results[0].viterbi_score, -5.103729125680717)
+    assert_allclose(r.results[0].alt_viterbi_score, -5.103729125680717)
 
 
 def test_hmmer3_profile_small_viterbi_score(tmp_path):
@@ -71,7 +71,7 @@ def test_hmmer3_profile_small_viterbi_score(tmp_path):
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
     r = prof.search(sequence)
     assert len(r.results) == 1
-    assert_allclose(r.results[0].viterbi_score, -18.424065160005625)
+    assert_allclose(r.results[0].alt_viterbi_score, -18.424065160005625)
 
 
 def test_hmmer3_profile_large_viterbi_score(tmp_path):
@@ -90,7 +90,7 @@ def test_hmmer3_profile_large_viterbi_score(tmp_path):
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
     r = prof.search(sequence)
     assert len(r.results) == 1
-    assert_allclose(r.results[0].viterbi_score, 3.480341268180834)
+    assert_allclose(r.results[0].alt_viterbi_score, 3.480341268180834)
 
 
 def test_hmmer3_profile_unihit_homologous_2():

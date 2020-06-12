@@ -8,6 +8,8 @@ from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 
+from .debug_writer import DebugWriter
+
 
 @click.command()
 @click.argument("profile", type=click.File("r"))
@@ -42,8 +44,14 @@ from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
     help="Window length. Defaults to zero, which means no window.",
     default=0,
 )
+@click.option(
+    "--odebug",
+    type=click.File("w"),
+    help="Save debug info into a tab-separated values file.",
+    default=os.devnull,
+)
 def pscan(
-    profile, target, epsilon: float, output, ocodon, oamino, quiet, window: int,
+    profile, target, epsilon: float, output, ocodon, oamino, quiet, window: int, odebug
 ):
     """
     Search nucleotide sequence(s) against a protein profiles database.
@@ -59,6 +67,7 @@ def pscan(
     owriter = OutputWriter(output, window)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
+    dwriter = DebugWriter(odebug)
 
     if quiet:
         stdout = click.open_file(os.devnull, "a")
@@ -76,7 +85,9 @@ def pscan(
 
     gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
 
-    scanner = ProteinScanner(owriter, cwriter, awriter, gcode, epsilon, window, stdout)
+    scanner = ProteinScanner(
+        owriter, dwriter, cwriter, awriter, gcode, epsilon, window, stdout
+    )
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
@@ -88,6 +99,7 @@ def pscan(
     scanner.finalize_stream("output", output)
     scanner.finalize_stream("ocodon", ocodon)
     scanner.finalize_stream("oamino", oamino)
+    scanner.finalize_stream("odebug", odebug)
 
 
 def _infer_profile_alphabet(profile: IO[str]):

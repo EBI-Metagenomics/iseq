@@ -8,12 +8,14 @@ from iseq.hmmer3 import create_profile
 from iseq.model import EntryDistr
 
 from .scanner import IntFrag, OutputWriter, Scanner
+from .debug_writer import DebugWriter
 
 
 class HMMER3Scanner(Scanner):
     def __init__(
         self,
         output_writer: OutputWriter,
+        debug_writer: DebugWriter,
         window_length: int,
         stdout,
         hmmer3_compat: bool,
@@ -21,13 +23,12 @@ class HMMER3Scanner(Scanner):
     ):
         self._hmmer3_compat = hmmer3_compat
         self._entry_distr = entry_distr
-        super().__init__(output_writer, window_length, stdout)
+        super().__init__(output_writer, debug_writer, window_length, stdout)
 
     def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
         mt = dict(profile_parser.metadata)
         self._output_writer.profile = mt.get("ACC", mt.get("NAME", "UNKNOWN"))
-        # breakpoint()
         hmmdata = HMMData(profile_parser)
         prof = create_profile(hmmdata, self._hmmer3_compat, self._entry_distr)
         self._scan_targets(prof, targets)

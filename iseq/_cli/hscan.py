@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import IO, Optional
 
 import click
@@ -7,6 +8,8 @@ from hmmer_reader import open_hmmer
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.model import EntryDistr
+
+from .debug_writer import DebugWriter
 
 
 @click.command()
@@ -38,8 +41,21 @@ from iseq.model import EntryDistr
     help="Set the entry distribution. Defaults to occupancy.",
     default="occupancy",
 )
+@click.option(
+    "--odebug",
+    type=click.File("w"),
+    help="Save debug info into a tab-separated values file.",
+    default=os.devnull,
+)
 def hscan(
-    profile, target, output, quiet, window: int, hmmer3_compat: bool, entry_distr: str,
+    profile,
+    target,
+    output,
+    quiet,
+    window: int,
+    hmmer3_compat: bool,
+    entry_distr: str,
+    odebug,
 ):
     """
     Search nucleotide sequence(s) against a profiles database.
@@ -53,6 +69,7 @@ def hscan(
     from .hmmer3_scanner import HMMER3Scanner
 
     owriter = OutputWriter(output, window)
+    dwriter = DebugWriter(odebug)
 
     if entry_distr == "occupancy":
         edistr = EntryDistr.OCCUPANCY
@@ -72,8 +89,7 @@ def hscan(
     if profile_abc.symbols != target_abc.symbols:
         raise click.UsageError("Alphabets mismatch.")
 
-    # breakpoint()
-    scanner = HMMER3Scanner(owriter, window, stdout, hmmer3_compat, edistr)
+    scanner = HMMER3Scanner(owriter, dwriter, window, stdout, hmmer3_compat, edistr)
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
@@ -83,6 +99,7 @@ def hscan(
         scanner.process_profile(hmmprof, targets)
 
     scanner.finalize_stream("output", output)
+    scanner.finalize_stream("odebug", odebug)
 
 
 def _infer_profile_alphabet(profile: IO[str]):
