@@ -56,7 +56,7 @@ def pscan(
     from .scanner import OutputWriter
     from .protein_scanner import ProteinScanner
 
-    owriter = OutputWriter(output, epsilon, window)
+    owriter = OutputWriter(output, window)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
 

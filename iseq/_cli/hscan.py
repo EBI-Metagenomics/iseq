@@ -2,7 +2,7 @@ import os
 from typing import IO, Optional
 
 import click
-from fasta_reader import FASTAWriter, open_fasta
+from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
@@ -13,24 +13,9 @@ from iseq.model import EntryDistr
 @click.argument("profile", type=click.File("r"))
 @click.argument("target", type=click.File("r"))
 @click.option(
-    "--epsilon", type=float, default=1e-2, help="Indel probability. Defaults to 1e-2."
-)
-@click.option(
     "--output",
     type=click.File("w"),
     help="Save results to OUTPUT (GFF format).",
-    default=os.devnull,
-)
-@click.option(
-    "--ocodon",
-    type=click.File("w"),
-    help="Save codon sequences to OCODON (FASTA format).",
-    default=os.devnull,
-)
-@click.option(
-    "--oamino",
-    type=click.File("w"),
-    help="Save amino acid sequences to OAMINO (FASTA format).",
     default=os.devnull,
 )
 @click.option(
@@ -54,19 +39,10 @@ from iseq.model import EntryDistr
     default="occupancy",
 )
 def hscan(
-    profile,
-    target,
-    epsilon: float,
-    output,
-    ocodon,
-    oamino,
-    quiet,
-    window: int,
-    hmmer3_compat: bool,
-    entry_distr: str,
+    profile, target, output, quiet, window: int, hmmer3_compat: bool, entry_distr: str,
 ):
     """
-    Search nucleotide sequence(s) against a protein profiles database.
+    Search nucleotide sequence(s) against a profiles database.
 
     An OUTPUT line determines an association between a TARGET subsequence and
     a PROFILE protein profile. An association maps a target subsequence to a
@@ -76,9 +52,7 @@ def hscan(
     from .scanner import OutputWriter
     from .hmmer3_scanner import HMMER3Scanner
 
-    owriter = OutputWriter(output, epsilon, window)
-    FASTAWriter(ocodon)
-    FASTAWriter(oamino)
+    owriter = OutputWriter(output, window)
 
     if entry_distr == "occupancy":
         edistr = EntryDistr.OCCUPANCY
@@ -98,6 +72,7 @@ def hscan(
     if profile_abc.symbols != target_abc.symbols:
         raise click.UsageError("Alphabets mismatch.")
 
+    # breakpoint()
     scanner = HMMER3Scanner(owriter, window, stdout, hmmer3_compat, edistr)
 
     with open_fasta(target) as fasta:
@@ -108,8 +83,6 @@ def hscan(
         scanner.process_profile(hmmprof, targets)
 
     scanner.finalize_stream("output", output)
-    scanner.finalize_stream("ocodon", ocodon)
-    scanner.finalize_stream("oamino", oamino)
 
 
 def _infer_profile_alphabet(profile: IO[str]):

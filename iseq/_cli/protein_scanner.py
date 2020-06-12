@@ -28,7 +28,8 @@ class ProteinScanner(Scanner):
 
     def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
-        self._output_writer.profile = dict(profile_parser.metadata)["ACC"]
+        mt = dict(profile_parser.metadata)
+        self._output_writer.profile = mt.get("ACC", mt.get("NAME", "UNKNOWN"))
         base_alphabet = self._genetic_code.base_alphabet
         # breakpoint()
         prof = create_profile(profile_parser, base_alphabet, self._epsilon)
@@ -44,7 +45,9 @@ class ProteinScanner(Scanner):
         for ifrag in ifragments:
             start = ifrag.interval.start
             stop = ifrag.interval.stop
-            item_id = self._output_writer.write_item(seqid, start, stop)
+            item_id = self._output_writer.write_item(
+                seqid, start, stop, {"Epsilon": self._epsilon}
+            )
 
             codon_result = ifrag.fragment.decode()
             self._codon_writer.write_item(item_id, str(codon_result.sequence))

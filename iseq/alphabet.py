@@ -62,7 +62,7 @@ def infer_fasta_alphabet(parser: FASTAParser) -> Optional[Alphabets]:
 def infer_hmmer_alphabet(parser: HMMERParser) -> Optional[Alphabets]:
 
     for prof in parser:
-        alph = dict(prof.metadata)["ALPH"]
+        alph = dict(prof.metadata)["ALPH"].lower()
         if alph == "amino":
             return CanonicalAminoAlphabet()
         if alph == "dna":

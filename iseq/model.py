@@ -476,6 +476,7 @@ class AltModel(Generic[TState]):
             self.set_transition(node.J, node.J, t.JJ)
             self.set_transition(node.J, node.B, t.JB)
 
+            # TODO: if fails for HMM having one core state
             self.set_transition(node.B, self._core_nodes[1].D, lprob_zero())
             self.set_transition(node.B, self._core_nodes[0].I, lprob_zero())
 

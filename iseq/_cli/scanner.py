@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, List, NamedTuple, Tuple, Union
+from typing import IO, List, NamedTuple, Tuple, Union, Optional
 
 from click.utils import LazyFile
 from fasta_reader import FASTAItem
@@ -15,10 +15,9 @@ IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFra
 
 
 class OutputWriter:
-    def __init__(self, file: Union[str, Path, IO[str]], epsilon: float, window: int):
+    def __init__(self, file: Union[str, Path, IO[str]], window: int):
         self._gff = GFFWriter(file)
         self._profile = "NOTSET"
-        self._epsilon = epsilon
         self._window = window
         self._item_idx = 1
 
@@ -30,10 +29,16 @@ class OutputWriter:
     def profile(self, profile: str):
         self._profile = profile
 
-    def write_item(self, seqid: str, start: int, end: int):
+    def write_item(self, seqid: str, start: int, end: int, att: Optional[dict] = None):
+        if att is None:
+            att = dict()
+
         item_id = f"item{self._item_idx}"
-        att = f"ID={item_id};Profile={self._profile};Epsilon={self._epsilon};Window={self._window}"
-        item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", att)
+        atts = f"ID={item_id};Profile={self._profile};Window={self._window}"
+        for k in sorted(att.keys()):
+            atts += f";{k}={att[k]}"
+
+        item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", atts)
         self._gff.write_item(item)
         self._item_idx += 1
         return item_id
@@ -74,7 +79,7 @@ class Scanner(ABC):
 
     def _show_profile(self, hmmprof: HMMERParser):
         name = dict(hmmprof.metadata)["NAME"]
-        acc = dict(hmmprof.metadata)["ACC"]
+        acc = dict(hmmprof.metadata).get("ACC", "UNKNOWN")
 
         self._stdout.write(f"Header       {hmmprof.header}\n")
         self._stdout.write(f"Alphabet     {hmmprof.alphabet}\n")
@@ -124,7 +129,9 @@ class Scanner(ABC):
         self._stdout.write(sequence_summary(target.sequence) + "\n")
 
         seq = Sequence.create(target.sequence.encode(), profile.alphabet)
+        # breakpoint()
         search_results = profile.search(seq, self._window_length)
+        print("VITERBI: " + str(search_results.results[0].viterbi_score))
         seqid = f"{target.defline.split()[0]}"
 
         waiting: List[IntFrag] = []
