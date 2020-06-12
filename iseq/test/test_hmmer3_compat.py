@@ -14,7 +14,7 @@ from iseq.hmmer3 import create_profile
 
 
 @pytest.mark.slow
-def test_hmmer3_viterbi_scores_compat(tmp_path):
+def test_hmmer3_pfam_viterbi_scores_compat(tmp_path):
     os.chdir(tmp_path)
     db_filepath = example_filepath("Pfam-A.hmm")
     target_filepath = example_filepath("A0ALD9.fasta")
@@ -41,6 +41,76 @@ def test_hmmer3_viterbi_scores_compat(tmp_path):
     hmmer3_scores = [hmmer3_scores[i] for i in ok]
 
     assert_allclose(actual_scores, hmmer3_scores, 3e-2)
+
+
+def test_hmmer3_viterbi_dna_scores_compat():
+    hmmfile = example_filepath("2OG-FeII_Oxy_3-nt.hmm")
+    hmmprof = open_hmmer(hmmfile).read_model()
+    prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
+    for align in ["local", "unilocal", "glocal", "uniglocal"]:
+
+        fastafile = f"2OG-FeII_Oxy_3-nt_{align}.fasta"
+        hmmer3_vitfile = f"hmmer3_2OG-FeII_Oxy_3-nt_{align}.fasta.viterbi"
+        iseq_vitfile = f"iseq_2OG-FeII_Oxy_3-nt_{align}.fasta.viterbi"
+
+        hmmer3_scores = loadtxt(example_filepath(hmmer3_vitfile))
+        iseq_scores = loadtxt(example_filepath(iseq_vitfile))
+
+        # HMMER3 viterbi filter has very low accuracy (2 bytes of integer arithmetic)
+        # while we use 8 bytes of floating point arithmetic. Therefore we have
+        # to allow for relatively high viterbi score differences.
+        ok = [i for i, s in enumerate(hmmer3_scores) if isfinite(s) and abs(s) > 1]
+
+        hmmer3_scores = [hmmer3_scores[i] for i in ok]
+        iseq_scores = [iseq_scores[i] for i in ok]
+
+        assert_allclose(iseq_scores, hmmer3_scores, rtol=7e-2)
+
+        actual_scores = []
+        with open_fasta(example_filepath(fastafile)) as fasta:
+            for target in fasta:
+                seq = Sequence.create(target.sequence.encode(), prof.alphabet)
+                search_results = prof.search(seq, 0)
+                score = search_results.results[0].viterbi_score
+                actual_scores.append(score)
+
+        iseq_scores = loadtxt(example_filepath(iseq_vitfile))
+        assert_allclose(actual_scores, iseq_scores)
+
+
+def test_hmmer3_viterbi_amino_scores_compat():
+    hmmfile = example_filepath("2OG-FeII_Oxy_3.hmm")
+    hmmprof = open_hmmer(hmmfile).read_model()
+    prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
+    for align in ["local", "unilocal", "glocal", "uniglocal"]:
+
+        fastafile = f"2OG-FeII_Oxy_3_{align}.fasta"
+        hmmer3_vitfile = f"hmmer3_2OG-FeII_Oxy_3_{align}.fasta.viterbi"
+        iseq_vitfile = f"iseq_2OG-FeII_Oxy_3_{align}.fasta.viterbi"
+
+        hmmer3_scores = loadtxt(example_filepath(hmmer3_vitfile))
+        iseq_scores = loadtxt(example_filepath(iseq_vitfile))
+
+        # HMMER3 viterbi filter has very low accuracy (2 bytes of integer arithmetic)
+        # while we use 8 bytes of floating point arithmetic. Therefore we have
+        # to allow for relatively high viterbi score differences.
+        ok = [i for i, s in enumerate(hmmer3_scores) if isfinite(s)]
+
+        hmmer3_scores = [hmmer3_scores[i] for i in ok]
+        iseq_scores = [iseq_scores[i] for i in ok]
+
+        assert_allclose(iseq_scores, hmmer3_scores, rtol=1e-2)
+
+        actual_scores = []
+        with open_fasta(example_filepath(fastafile)) as fasta:
+            for target in fasta:
+                seq = Sequence.create(target.sequence.encode(), prof.alphabet)
+                search_results = prof.search(seq, 0)
+                score = search_results.results[0].viterbi_score
+                actual_scores.append(score)
+
+        iseq_scores = loadtxt(example_filepath(iseq_vitfile))
+        assert_allclose(actual_scores, iseq_scores)
 
 
 def loadtxt(filepath: Path):
