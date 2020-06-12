@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, List, NamedTuple, Tuple, Union, Optional
+from typing import IO, List, NamedTuple, Optional, Tuple, Union
 
 from click.utils import LazyFile
 from fasta_reader import FASTAItem
