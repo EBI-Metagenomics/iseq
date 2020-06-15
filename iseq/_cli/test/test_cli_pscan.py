@@ -68,6 +68,7 @@ def test_cli_pscan_window0(tmp_path, large_rna):
             "amino.fasta",
             "--window",
             "0",
+            "--no-e-value",
         ],
     )
     assert r.exit_code == 0, r.output
@@ -98,6 +99,7 @@ def test_cli_pscan_window48(tmp_path, large_rna):
             "amino.fasta",
             "--window",
             "48",
+            "--no-e-value",
         ],
     )
     assert r.exit_code == 0, r.output

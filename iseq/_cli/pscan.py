@@ -60,8 +60,8 @@ from .debug_writer import DebugWriter
 )
 @click.option(
     "--e-value/--no-e-value",
-    help="Enable E-value computation. Defaults to False.",
-    default=False,
+    help="Enable E-value computation. Defaults to True.",
+    default=True,
 )
 def pscan(
     profile,
