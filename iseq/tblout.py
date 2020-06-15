@@ -1,6 +1,6 @@
-from typing import Generator, NamedTuple
+from typing import Dict, Generator, NamedTuple
 
-__all__ = ["TBLScore", "TBLRow", "tblout_reader"]
+__all__ = ["TBLScore", "TBLRow", "tblout_reader", "TBLData", "TBLIndex"]
 
 TBLScore = NamedTuple("TBLScore", [("e_value", str), ("score", str), ("bias", str)])
 
@@ -25,6 +25,50 @@ TBLRow = NamedTuple(
         ("description", str),
     ],
 )
+
+TBLIndex = NamedTuple(
+    "TBLIndex",
+    [
+        ("target_name", str),
+        ("target_accession", str),
+        ("query_name", str),
+        ("query_accession", str),
+    ],
+)
+
+
+class TBLData:
+    def __init__(self, file):
+        import csv
+
+        self.rows: Dict[TBLIndex, TBLRow] = {}
+
+        reader = csv.reader(decomment(file), delimiter=" ", skipinitialspace=True)
+        for line in reader:
+            full_sequence = TBLScore(e_value=line[4], score=line[5], bias=line[6])
+            best_1_domain = TBLScore(e_value=line[7], score=line[8], bias=line[9])
+            index = TBLIndex(line[0], line[1], line[2], line[3])
+            row = TBLRow(
+                target_name=line[0],
+                target_accession=line[1],
+                query_name=line[2],
+                query_accession=line[3],
+                full_sequence=full_sequence,
+                best_1_domain=best_1_domain,
+                exp=line[10],
+                reg=line[11],
+                clu=line[12],
+                ov=line[13],
+                env=line[14],
+                dom=line[15],
+                rep=line[16],
+                inc=line[17],
+                description=line[18],
+            )
+
+            if index in row:
+                raise RuntimeError("Duplicate tblout index.")
+            self.rows[index] = row
 
 
 def tblout_reader(file) -> Generator[TBLRow, None, None]:

@@ -31,7 +31,9 @@ class ProteinScanner(Scanner):
     def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
         mt = dict(profile_parser.metadata)
-        self._output_writer.profile = mt.get("ACC", mt.get("NAME", "UNKNOWN"))
+        self._output_writer.set_profile(
+            name=mt.get("NAME", "-"), acc=mt.get("ACC", "-")
+        )
         base_alphabet = self._genetic_code.base_alphabet
         # breakpoint()
         prof = create_profile(profile_parser, base_alphabet, self._epsilon)

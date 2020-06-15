@@ -29,6 +29,7 @@ def test_cli_hscan(tmp_path):
             "debug.tsv",
         ],
     )
+    # breakpoint()
     assert r.exit_code == 0, r.output
     df = pd.read_csv("debug.tsv", sep="\t", header=0)
 

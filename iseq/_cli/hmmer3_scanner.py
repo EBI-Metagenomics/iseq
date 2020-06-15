@@ -28,7 +28,9 @@ class HMMER3Scanner(Scanner):
     def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
 
         mt = dict(profile_parser.metadata)
-        self._output_writer.profile = mt.get("ACC", mt.get("NAME", "UNKNOWN"))
+        self._output_writer.set_profile(
+            name=mt.get("NAME", "-"), acc=mt.get("ACC", "-")
+        )
         hmmdata = HMMData(profile_parser)
         prof = create_profile(hmmdata, self._hmmer3_compat, self._entry_distr)
         self._scan_targets(prof, targets)

@@ -53,7 +53,7 @@ class Scanner(ABC):
 
     def _show_profile(self, hmmprof: HMMERParser):
         name = dict(hmmprof.metadata)["NAME"]
-        acc = dict(hmmprof.metadata).get("ACC", "UNKNOWN")
+        acc = dict(hmmprof.metadata).get("ACC", "-")
 
         self._stdout.write(f"Header       {hmmprof.header}\n")
         self._stdout.write(f"Alphabet     {hmmprof.alphabet}\n")

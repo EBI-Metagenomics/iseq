@@ -1,21 +1,26 @@
 import os
-from typing import Optional
+import re
+from collections import OrderedDict
+from pathlib import Path
+from typing import Mapping, Optional
 
 import click
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
+from iseq.hmmsearch import HMMSearch
 from iseq.model import EntryDistr
+from iseq.tblout import TBLData
 
 from .debug_writer import DebugWriter
 
 
 @click.command()
-@click.argument("profile", type=click.File("r"))
-@click.argument("target", type=click.File("r"))
+@click.argument("profile", type=click.Path(exists=True, dir_okay=False))
+@click.argument("target", type=click.Path(exists=True, dir_okay=False))
 @click.option(
     "--output",
-    type=click.File("w"),
+    type=click.Path(exists=False, writable=True, dir_okay=False),
     help="Save results to OUTPUT (GFF format).",
     default=os.devnull,
 )
@@ -45,15 +50,21 @@ from .debug_writer import DebugWriter
     help="Save debug info into a tab-separated values file.",
     default=os.devnull,
 )
+@click.option(
+    "--e-value/--no-e-value",
+    help="Enable E-value computation. Defaults to False.",
+    default=False,
+)
 def hscan(
-    profile,
-    target,
+    profile: str,
+    target: str,
     output,
     quiet,
     window: int,
     hmmer3_compat: bool,
     entry_distr: str,
     odebug,
+    e_value: bool,
 ):
     """
     Search nucleotide sequence(s) against a profiles database.
@@ -79,9 +90,6 @@ def hscan(
     else:
         stdout = click.get_text_stream("stdout")
 
-    # profile_abc = _infer_profile_alphabet(profile)
-    # target_abc = _infer_target_alphabet(target)
-
     scanner: Optional[HMMER3Scanner] = None
 
     # if profile_abc.symbols != target_abc.symbols:
@@ -96,23 +104,62 @@ def hscan(
         scanner.show_profile_parser(hmmprof)
         scanner.process_profile(hmmprof, targets)
 
-    scanner.finalize_stream("output", output)
+    # breakpoint()
+
+    # scanner.finalize_stream("output", output)
+    owriter.close()
+
+    # breakpoint()
+    if e_value:
+        hmmsearch = HMMSearch()
+        tbldata = hmmsearch.search(Path(profile), Path(target))
+        update_gff_file(output, tbldata)
+
     scanner.finalize_stream("odebug", odebug)
 
 
-# def _infer_profile_alphabet(profile: IO[str]):
-#     hmmer = open_hmmer(profile)
-#     hmmer_alphabet = infer_hmmer_alphabet(hmmer)
-#     profile.seek(0)
-#     if hmmer_alphabet is None:
-#         raise click.UsageError("Could not infer alphabet from PROFILE.")
-#     return hmmer_alphabet
+def update_gff_file(filepath, tbldata: TBLData):
+    import in_place
 
+    with in_place.InPlace(filepath, backup_ext=".bak") as file:
+        # for row in fileinput.input(filepath, inplace=True, backup=".bak"):
+        for row in file:
+            row = row.rstrip()
+            if row.startswith("#"):
+                file.write(row)
+                file.write("\n")
+                continue
 
-# def _infer_target_alphabet(target: IO[str]):
-#     fasta = open_fasta(target)
-#     target_alphabet = infer_fasta_alphabet(fasta)
-#     target.seek(0)
-#     if target_alphabet is None:
-#         raise click.UsageError("Could not infer alphabet from TARGET.")
-#     return target_alphabet
+            match = re.match(r"^(.+\t)([^\t]+)$", row)
+            if match is None:
+                file.write(row)
+                file.write("\n")
+                continue
+
+            left = match.group(1)
+            right = match.group(2)
+
+            if right == ".":
+                file.write(row)
+                file.write("\n")
+                continue
+
+            fields_list = []
+            for v in right.split(";"):
+                name, value = v.split("=", 1)
+                fields_list.append((name, value))
+
+            attr = OrderedDict(fields_list)
+            if "ID" not in attr:
+                file.write(row)
+                file.write("\n")
+                continue
+
+            if attr["ID"] not in scores:
+                if "E-value" in attr:
+                    del attr["E-value"]
+            else:
+                attr["E-value"] = str(scores[attr["ID"]])
+
+            file.write(left + ";".join(k + "=" + v for k, v in attr.items()))
+            file.write("\n")

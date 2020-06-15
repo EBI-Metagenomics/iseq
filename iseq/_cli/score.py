@@ -48,7 +48,7 @@ class HMMSearch:
         with tmp_cwd():
             cmd = [self._prog_path, "--tblout", "tblout", profile, target]
             subprocess.check_output(cmd)
-            scores: Dict[str, float] = {}
+            scores: Dict[str, str] = {}
             with open("tblout", "r") as file:
                 for row in tblout_reader(file):
                     scores[row.target_name] = row.full_sequence.e_value
