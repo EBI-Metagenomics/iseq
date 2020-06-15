@@ -1,4 +1,4 @@
-from typing import Dict, Generator, NamedTuple
+from typing import Dict, Generator, NamedTuple, Optional
 
 __all__ = ["TBLScore", "TBLRow", "tblout_reader", "TBLData", "TBLIndex"]
 
@@ -69,6 +69,16 @@ class TBLData:
             if index in row:
                 raise RuntimeError("Duplicate tblout index.")
             self.rows[index] = row
+
+    def find(
+        self,
+        target_name: str = "-",
+        target_acc: str = "-",
+        query_name: str = "-",
+        query_acc: str = "-",
+    ) -> Optional[TBLRow]:
+        i = TBLIndex(target_name, target_acc, query_name, query_acc)
+        return self.rows.get(i, None)
 
 
 def tblout_reader(file) -> Generator[TBLRow, None, None]:

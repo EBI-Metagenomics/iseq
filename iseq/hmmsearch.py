@@ -39,7 +39,6 @@ class HMMSearch:
             scores: Dict[str, str] = {}
             with open("tblout", "r") as file:
                 for row in tblout_reader(file):
-                    breakpoint()
                     scores[row.target_name] = row.full_sequence.e_value
 
         return scores

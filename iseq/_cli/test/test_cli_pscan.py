@@ -134,3 +134,30 @@ def test_cli_pscan_large_dataset_window():
     assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
     assert cmp(codon, "codon.fasta", shallow=False), diff(codon, "codon.fasta")
     assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
+
+
+def test_cli_pscan_window0_evalue(tmp_path):
+    os.chdir(tmp_path)
+    database1 = example_filepath("database1.hmm")
+    invoke = CliRunner().invoke
+    fasta = example_filepath("PF03373_rna_most_likely.fasta")
+    output = example_filepath("PF03373_rna_output.gff")
+    oamino = example_filepath("PF03373_rna_oamino.fasta")
+    r = invoke(
+        cli,
+        [
+            "pscan",
+            str(database1),
+            str(fasta),
+            "--output",
+            "output.gff",
+            "--oamino",
+            "amino.fasta",
+            "--window",
+            "0",
+            "--e-value",
+        ],
+    )
+    assert r.exit_code == 0, r.output
+    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
+    assert cmp(oamino, "amino.fasta", shallow=False), diff(oamino, "amino.fasta")
