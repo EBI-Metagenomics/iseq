@@ -88,6 +88,14 @@ _filenames = {
     "PF00113_GALNBKIG_00914_ont_01_plus_strand_oamino_window.fasta": "87b20a5c7469c0490a196a82845eb02eb5cf63220a6e241a4a1cc48547ed391a",
     "PF00113_GALNBKIG_00914_ont_01_plus_strand_ocodon_window.fasta": "1cee958cf4570a5be9f339a44e94963fba0f42a8ca712d0eb60eaea56e4aa305",
     "PF00113_GALNBKIG_00914_ont_01_plus_strand_output_window.gff": "63cd01d2af9459943bd384e058bb945525dd38d4a8c2ace89f9aeff252dab0b0",
+    "Pfam-A.33.1_small.hmm": "1b9b7b5902e7cd6ec446b402daab6ffd7246691a693273538f59ee915e8c9b70",
+    "Pfam-A.33.1_small.hmm.br": "f4444718f7647b4a95bd60a336e03bcc0ff4f33227f60097e02cd84bb402985b",
+    "pfam_small_GALNBKIG_00914_oamino.fasta": "4a73da58762153adefe28b4348affe9f9a18a2cec5af960cc4bc2a1b7fbd31e7",
+    "pfam_small_GALNBKIG_00914_oamino.fasta.br": "bf5453aa200ebfd7c2cba663f7084ab6ba03c615d607d7cbfcbe47a7557c5e2e",
+    "pfam_small_GALNBKIG_00914_ocodon.fasta": "caa4bde60a71567c495d27e3eb461df2157a929d2b89575a53c6dc3e0eb28374",
+    "pfam_small_GALNBKIG_00914_ocodon.fasta.br": "383814295bbff57b2fbb9e6416b99d6729026db3d25964398b69fd885ff972db",
+    "pfam_small_GALNBKIG_00914_output.gff": "44d2f2f900a962539f713b5d9e088524b36977cf2a8204012d49c63b775d989f",
+    "pfam_small_GALNBKIG_00914_output.gff.br": "16a3cf6764b3ef5109b5753362dab0b69ad7ef7af95ee3537414daed39f02187",
 }
 
 

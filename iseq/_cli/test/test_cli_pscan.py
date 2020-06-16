@@ -1,11 +1,28 @@
 import os
 from filecmp import cmp
 
+import pytest
 from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
 from iseq.file import diff
+
+
+@pytest.mark.slow
+def test_cli_pscan_GALNBKIG_pfam100(tmp_path):
+    os.chdir(tmp_path)
+    invoke = CliRunner().invoke
+    profile = example_filepath("Pfam-A.33.1_small.hmm")
+    fasta = example_filepath("GALNBKIG_00914_ont_01_plus_strand.fasta")
+    oamino = example_filepath("pfam_small_GALNBKIG_00914_oamino.fasta")
+    ocodon = example_filepath("pfam_small_GALNBKIG_00914_ocodon.fasta")
+    output = example_filepath("pfam_small_GALNBKIG_00914_output.gff")
+    r = invoke(cli, ["pscan", str(profile), str(fasta), "--quiet"])
+    assert r.exit_code == 0, r.output
+    assert cmp(oamino, "oamino.fasta", shallow=False), diff(oamino, "oamino.fasta")
+    assert cmp(ocodon, "ocodon.fasta", shallow=False), diff(ocodon, "ocodon.fasta")
+    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
 
 
 def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand(tmp_path):
