@@ -4,7 +4,7 @@ from fasta_reader import FASTAItem
 from hmmer_reader import HMMERParser
 
 from iseq.hmmdata import HMMData
-from iseq.hmmer3 import create_profile, HMMER3Profile
+from iseq.hmmer3 import HMMER3Profile, create_profile
 from iseq.model import EntryDistr
 
 from .debug_writer import DebugWriter

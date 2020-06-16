@@ -4,7 +4,7 @@ from fasta_reader import FASTAItem, FASTAWriter
 from hmmer_reader import HMMERParser
 from nmm import GeneticCode
 
-from iseq.protein import create_profile, ProteinProfile
+from iseq.protein import ProteinProfile, create_profile
 
 from .debug_writer import DebugWriter
 from .scanner import IntFrag, OutputWriter, Scanner

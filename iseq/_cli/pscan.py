@@ -1,8 +1,8 @@
 import os
-from typing import IO, Optional
-from collections import OrderedDict
 import re
+from collections import OrderedDict
 from pathlib import Path
+from typing import IO, Optional
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
@@ -10,8 +10,8 @@ from hmmer_reader import open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
-from iseq.tblout import TBLData
 from iseq.hmmsearch import HMMSearch
+from iseq.tblout import TBLData
 
 from .debug_writer import DebugWriter
 
