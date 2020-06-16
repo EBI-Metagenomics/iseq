@@ -5,8 +5,7 @@ from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
-
-from .misc import diff
+from iseq.file import diff
 
 
 def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand(tmp_path):

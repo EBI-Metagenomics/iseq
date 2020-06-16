@@ -53,6 +53,16 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
         )
         super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
 
+    @property
+    def window_length(self) -> int:
+        return super().window_length
+
+    @window_length.setter
+    def window_length(self, length: int):
+        if length == -1:
+            length = 2 * self._alt_model.core_length
+        super(HMMER3Profile, type(self)).window_length.fset(self, length)
+
     def search(self, sequence: SequenceABC[TAlphabet]) -> HMMER3SearchResults:
 
         self._set_target_length_model(len(sequence))

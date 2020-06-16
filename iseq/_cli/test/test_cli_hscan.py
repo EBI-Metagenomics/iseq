@@ -1,5 +1,5 @@
-import filecmp
 import os
+from filecmp import cmp
 from io import StringIO
 
 import pandas as pd
@@ -8,6 +8,7 @@ from imm.testing import assert_allclose
 
 from iseq import cli
 from iseq.example import example_filepath
+from iseq.file import diff
 
 
 def test_cli_hscan(tmp_path):
@@ -80,7 +81,8 @@ def test_cli_hscan(tmp_path):
     assert_allclose(df["null_viterbi_score"], null_viterbi_score)
 
 
-_desired_hscan_window200 = """defline	window	start	stop	alt_viterbi_score	null_viterbi_score
+_desired_hscan_window200 = """\
+defline	window	start	stop	alt_viterbi_score	null_viterbi_score
 2OG-FeII_Oxy_3-seed0	0	1	200	-15.527363477178557	-0.6003021143456335
 2OG-FeII_Oxy_3-seed0	1	101	300	-7.850984227099249	-0.6003021143456335
 2OG-FeII_Oxy_3-seed0	2	201	331	-7.850984227099249	-0.39215716012528823
@@ -170,6 +172,52 @@ def test_cli_hscan_window200(tmp_path):
     assert_allclose(actual["alt_viterbi_score"], desired["alt_viterbi_score"])
 
 
+_output_window_auto = """\
+##gff-version 3
+2OG-FeII_Oxy_3-seed0	nmm	.	252	288	0.0	+	.	ID=item1;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed1	nmm	.	91	162	0.0	+	.	ID=item2;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed2	nmm	.	228	272	0.0	+	.	ID=item3;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed3	nmm	.	240	277	0.0	+	.	ID=item4;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed4	nmm	.	591	716	0.0	+	.	ID=item5;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed5	nmm	.	423	441	0.0	+	.	ID=item6;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed6	nmm	.	312	336	0.0	+	.	ID=item7;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed7	nmm	.	383	448	0.0	+	.	ID=item8;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed7	nmm	.	945	989	0.0	+	.	ID=item9;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed8	nmm	.	495	523	0.0	+	.	ID=item10;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed9	nmm	.	60	132	0.0	+	.	ID=item11;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+"""
+
+
+def test_cli_hscan_window_auto(tmp_path):
+    os.chdir(tmp_path)
+
+    hmm_filepath = example_filepath("2OG-FeII_Oxy_3-nt.hmm")
+    fasta_filepath = example_filepath("2OG-FeII_Oxy_3-nt_unilocal.fasta")
+
+    invoke = CliRunner().invoke
+    r = invoke(
+        cli,
+        [
+            "hscan",
+            str(hmm_filepath),
+            str(fasta_filepath),
+            "--output",
+            "output.gff",
+            "--window",
+            -1,
+            "--quiet",
+        ],
+    )
+    assert r.exit_code == 0, r.output
+
+    with open("desired.gff", "w") as file:
+        file.write(_output_window_auto)
+
+    assert cmp("output.gff", "desired.gff", shallow=False), diff(
+        "output.gff", "desired.gff"
+    )
+
+
 def test_cli_hscan_dna_vs_rna(tmp_path):
     os.chdir(tmp_path)
 
@@ -206,4 +254,6 @@ def test_cli_hscan_dna_vs_rna(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert filecmp.cmp("output_dna.gff", "output_rna.gff", shallow=False)
+    assert cmp("output_dna.gff", "output_rna.gff", shallow=False), diff(
+        "output_dna.gff", "output_rna.gff"
+    )

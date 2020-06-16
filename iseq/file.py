@@ -3,7 +3,7 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-__all__ = ["file_hash", "make_sure_dir_exist", "brotli_decompress", "tmp_cwd"]
+__all__ = ["file_hash", "make_sure_dir_exist", "brotli_decompress", "tmp_cwd", "diff"]
 
 
 def file_hash(filepath: Path) -> str:
@@ -61,3 +61,18 @@ def tmp_cwd():
             yield
         finally:
             os.chdir(oldpwd)
+
+
+def diff(filepath_a, filepath_b):
+    """
+    Difference between two files.
+    """
+    from difflib import ndiff
+
+    with open(filepath_a, "r") as file_a:
+        a = file_a.readlines()
+
+    with open(filepath_b, "r") as file_b:
+        b = file_b.readlines()
+
+    return "".join([line.expandtabs(1) for line in ndiff(a, b)])
