@@ -53,13 +53,11 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
         )
         super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
 
-    def search(
-        self, sequence: SequenceABC[TAlphabet], window_length: int = 0
-    ) -> HMMER3SearchResults:
+    def search(self, sequence: SequenceABC[TAlphabet]) -> HMMER3SearchResults:
 
         self._set_target_length_model(len(sequence))
 
-        alt_results = self._alt_model.viterbi(sequence, window_length)
+        alt_results = self._alt_model.viterbi(sequence, self.window_length)
 
         def create_fragment(
             seq: SequenceABC[TAlphabet], path: Path[HMMER3Step], homologous: bool
@@ -87,6 +85,7 @@ def create_profile(
     hmm: HMMData,
     hmmer3_compat: bool = False,
     entry_distr: EntryDistr = EntryDistr.OCCUPANCY,
+    window_length: int = 0,
 ) -> HMMER3Profile:
     null_lprobs = hmm.null_lprobs
     null_log_odds = [0.0] * len(null_lprobs)
@@ -102,6 +101,8 @@ def create_profile(
 
     trans = hmm.transitions
 
-    return HMMER3Profile(
+    prof = HMMER3Profile(
         hmm.alphabet, null_log_odds, nodes, trans, entry_distr, hmmer3_compat
     )
+    prof.window_length = window_length
+    return prof

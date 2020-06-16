@@ -86,7 +86,7 @@ def pscan(
     from .scanner import OutputWriter
     from .protein_scanner import ProteinScanner
 
-    owriter = OutputWriter(output, window)
+    owriter = OutputWriter(output)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
     dwriter = DebugWriter(odebug)
@@ -108,16 +108,14 @@ def pscan(
 
     gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
 
-    scanner = ProteinScanner(
-        owriter, dwriter, cwriter, awriter, gcode, epsilon, window, stdout
-    )
+    scanner = ProteinScanner(owriter, dwriter, cwriter, awriter, gcode, epsilon, stdout)
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    for hmmprof in open_hmmer(profile):
-        scanner.show_profile_parser(hmmprof)
-        scanner.process_profile(hmmprof, targets)
+    for prof_parser in open_hmmer(profile):
+        scanner.show_profile_parser(prof_parser)
+        scanner.process_profile(prof_parser, targets, window)
 
     # scanner.finalize_stream("output", output)
     # scanner.finalize_stream("ocodon", ocodon)

@@ -85,6 +85,9 @@ _filenames = {
     "PF00113_GALNBKIG_00914_ont_01_plus_strand_oamino.fasta": "67e9be0f14f453f856cbdbbaabfd103e5fc753da895b2427dc361329173f48d8",
     "PF00113_GALNBKIG_00914_ont_01_plus_strand_ocodon.fasta": "679b5993f4f777cbc3ea715d65fe74e09a32d2bf7842b95247d8677634de655a",
     "PF00113_GALNBKIG_00914_ont_01_plus_strand_output.gff": "b254684614e7df2df8fe97d716eada812fa2c4b18825349a358cffeae4a46b39",
+    "PF00113_GALNBKIG_00914_ont_01_plus_strand_oamino_window.fasta": "87b20a5c7469c0490a196a82845eb02eb5cf63220a6e241a4a1cc48547ed391a",
+    "PF00113_GALNBKIG_00914_ont_01_plus_strand_ocodon_window.fasta": "1cee958cf4570a5be9f339a44e94963fba0f42a8ca712d0eb60eaea56e4aa305",
+    "PF00113_GALNBKIG_00914_ont_01_plus_strand_output_window.gff": "63cd01d2af9459943bd384e058bb945525dd38d4a8c2ace89f9aeff252dab0b0",
 }
 
 

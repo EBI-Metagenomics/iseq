@@ -227,11 +227,11 @@ def test_hmmer3_profile_window():
     with open_hmmer(filepath) as reader:
         hmmdata = HMMData(reader.read_model())
 
-    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
+    hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM, window_length=15)
 
     alphabet = hmmer.alphabet
     seq = Sequence.create(b"PPPPGKEDNNKDDDPGKEDNNKEEEE", alphabet)
-    r = hmmer.search(seq, 15)
+    r = hmmer.search(seq)
 
     assert_allclose(r.results[0].loglikelihood, 10.400476828620292)
     frags = r.results[0].fragments

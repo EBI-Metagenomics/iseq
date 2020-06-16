@@ -28,6 +28,15 @@ class Profile(Generic[TAlphabet, TState], ABC):
         self._special_trans = SpecialTransitions()
         self._hmmer3_compat = hmmer3_compat
         self._set_target_length_model(1)
+        self._window_length: int = 0
+
+    @property
+    def window_length(self) -> int:
+        return self._window_length
+
+    @window_length.setter
+    def window_length(self, length: int):
+        self._window_length = length
 
     @property
     def alphabet(self):
@@ -50,11 +59,8 @@ class Profile(Generic[TAlphabet, TState], ABC):
         self._multiple_hits = multiple_hits
 
     @abstractmethod
-    def search(
-        self, sequence: Sequence, window_length: int = 0
-    ) -> SearchResults[TAlphabet, TState]:
+    def search(self, sequence: Sequence) -> SearchResults[TAlphabet, TState]:
         del sequence
-        del window_length
         raise NotImplementedError()
 
     def _set_target_length_model(self, target_length: int):

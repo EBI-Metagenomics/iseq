@@ -15,9 +15,9 @@ from .debug_writer import DebugWriter
 @click.argument("target", type=click.File("r"))
 @click.option(
     "--output",
-    type=click.File("w"),
+    type=click.Path(exists=False, dir_okay=False, writable=True, resolve_path=True),
     help="Save results to OUTPUT (GFF format).",
-    default=os.devnull,
+    default="output.gff",
 )
 @click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
@@ -66,7 +66,7 @@ def hscan(
     from .scanner import OutputWriter
     from .hmmer3_scanner import HMMER3Scanner
 
-    owriter = OutputWriter(output, window)
+    owriter = OutputWriter(output)
     dwriter = DebugWriter(odebug)
 
     if entry_distr == "occupancy":
@@ -87,16 +87,17 @@ def hscan(
     # if profile_abc.symbols != target_abc.symbols:
     #     raise click.UsageError("Alphabets mismatch.")
 
-    scanner = HMMER3Scanner(owriter, dwriter, window, stdout, hmmer3_compat, edistr)
+    scanner = HMMER3Scanner(owriter, dwriter, stdout, hmmer3_compat, edistr)
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
     for hmmprof in open_hmmer(profile):
         scanner.show_profile_parser(hmmprof)
-        scanner.process_profile(hmmprof, targets)
+        scanner.process_profile(hmmprof, targets, window)
 
-    scanner.finalize_stream("output", output)
+    # scanner.finalize_stream("output", output)
+    owriter.close()
     scanner.finalize_stream("odebug", odebug)
 
 

@@ -27,7 +27,7 @@ def test_hmmer3_pfam_viterbi_scores_compat(tmp_path):
     for hmmprof in open_hmmer(db_filepath):
         prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
         seq = Sequence.create(target.sequence.encode(), prof.alphabet)
-        search_results = prof.search(seq, 0)
+        search_results = prof.search(seq)
         score = search_results.results[0].alt_viterbi_score
         actual_scores.append(score)
 
@@ -70,7 +70,7 @@ def test_hmmer3_viterbi_dna_scores_compat():
         with open_fasta(example_filepath(fastafile)) as fasta:
             for target in fasta:
                 seq = Sequence.create(target.sequence.encode(), prof.alphabet)
-                search_results = prof.search(seq, 0)
+                search_results = prof.search(seq)
                 score = search_results.results[0].alt_viterbi_score
                 actual_scores.append(score)
 
@@ -105,7 +105,7 @@ def test_hmmer3_viterbi_amino_scores_compat():
         with open_fasta(example_filepath(fastafile)) as fasta:
             for target in fasta:
                 seq = Sequence.create(target.sequence.encode(), prof.alphabet)
-                search_results = prof.search(seq, 0)
+                search_results = prof.search(seq)
                 score = search_results.results[0].alt_viterbi_score
                 actual_scores.append(score)
 

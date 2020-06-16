@@ -19,15 +19,10 @@ IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFra
 
 class Scanner(ABC):
     def __init__(
-        self,
-        output_writer: OutputWriter,
-        debug_writer: DebugWriter,
-        window_length: int,
-        stdout,
+        self, output_writer: OutputWriter, debug_writer: DebugWriter, stdout,
     ):
         self._output_writer = output_writer
         self._debug_writer = debug_writer
-        self._window_length = window_length
         self._stdout = stdout
 
     def finalize_stream(self, name: str, stream: LazyFile):
@@ -37,9 +32,12 @@ class Scanner(ABC):
         stream.close_intelligently()
 
     @abstractmethod
-    def process_profile(self, profile_parser: HMMERParser, targets: List[FASTAItem]):
+    def process_profile(
+        self, profile_parser: HMMERParser, targets: List[FASTAItem], window_length: int
+    ):
         del profile_parser
         del targets
+        del window_length
         raise NotImplementedError()
 
     def show_profile_parser(self, profile_parser: HMMERParser):
@@ -109,7 +107,7 @@ class Scanner(ABC):
 
         tmp = translator.translate(target.sequence.encode(), profile.alphabet)
         seq = Sequence.create(tmp, profile.alphabet)
-        search_results = profile.search(seq, self._window_length)
+        search_results = profile.search(seq)
         seqid = f"{target.defline.split()[0]}"
 
         waiting: List[IntFrag] = []
@@ -139,13 +137,16 @@ class Scanner(ABC):
 
             ready, waiting = intersect_fragments(waiting, candidates)
 
-            self._write_fragments(seqid, ready)
+            self._write_fragments(profile, target, ready)
 
-        self._write_fragments(seqid, waiting)
+        self._write_fragments(profile, target, waiting)
 
     @abstractmethod
-    def _write_fragments(self, seqid: str, ifragments: List[IntFrag]):
-        del seqid
+    def _write_fragments(
+        self, profile: Profile, target: FASTAItem, ifragments: List[IntFrag]
+    ):
+        del profile
+        del target
         del ifragments
         raise NotImplementedError()
 

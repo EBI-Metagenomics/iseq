@@ -84,6 +84,16 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         return cls(alphabet, null_model, alt_model, hmmer3_compat)
 
     @property
+    def window_length(self) -> int:
+        return super().window_length
+
+    @window_length.setter
+    def window_length(self, length: int):
+        if length == -1:
+            length = 2 * 3 * self._alt_model.core_length
+        super(ProteinProfile, type(self)).window_length.fset(self, length)
+
+    @property
     def null_model(self) -> ProteinNullModel:
         return self._null_model
 
@@ -91,9 +101,7 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
     def alt_model(self) -> ProteinAltModel:
         return self._alt_model
 
-    def search(
-        self, sequence: SequenceABC[BaseAlphabet], window_length: int = 0
-    ) -> ProteinSearchResults:
+    def search(self, sequence: SequenceABC[BaseAlphabet]) -> ProteinSearchResults:
 
         # special_trans = self._get_target_length_model(len(sequence))
         # self._alt_model.set_special_transitions(special_trans)
@@ -101,9 +109,7 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
 
         # alt_results = self.alt_model.viterbi(sequence, window_length)
         self._set_target_length_model(len(sequence))
-        if window_length == -1:
-            window_length = 2 * 3 * self._alt_model.core_length
-        alt_results = self._alt_model.viterbi(sequence, window_length)
+        alt_results = self._alt_model.viterbi(sequence, self.window_length)
 
         def create_fragment(
             seq: SequenceABC[BaseAlphabet], path: Path[ProteinStep], homologous: bool
@@ -130,7 +136,10 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
 
 
 def create_profile(
-    reader: HMMERModel, base_abc: BaseAlphabet, epsilon: float = 0.1
+    reader: HMMERModel,
+    base_abc: BaseAlphabet,
+    window_length: int = 0,
+    epsilon: float = 0.1,
 ) -> ProteinProfile:
 
     amino_abc = AminoAlphabet.create(reader.alphabet.encode(), b"X")
@@ -157,7 +166,9 @@ def create_profile(
         t.normalize()
         trans.append(t)
 
-    return ProteinProfile.create(factory, null_aminot, nodes, trans)
+    prof = ProteinProfile.create(factory, null_aminot, nodes, trans)
+    prof.window_length = window_length
+    return prof
 
 
 class ProteinStateFactory:
