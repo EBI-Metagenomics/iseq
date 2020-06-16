@@ -19,7 +19,7 @@ from .debug_writer import DebugWriter
 @click.command()
 @click.argument(
     "profile",
-    type=click.Path(exists=False, dir_okay=False, readable=True, resolve_path=True),
+    type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True),
 )
 @click.argument("target", type=click.File("r"))
 @click.option(
@@ -33,9 +33,9 @@ from .debug_writer import DebugWriter
 )
 @click.option(
     "--ocodon",
-    type=click.File("w"),
+    type=click.Path(exists=False, dir_okay=False, writable=True, resolve_path=True),
     help="Save codon sequences to OCODON (FASTA format).",
-    default=os.devnull,
+    default="ocodon.fasta",
 )
 @click.option(
     "--oamino",
@@ -120,9 +120,10 @@ def pscan(
         scanner.process_profile(hmmprof, targets)
 
     # scanner.finalize_stream("output", output)
-    owriter.close()
-    scanner.finalize_stream("ocodon", ocodon)
+    # scanner.finalize_stream("ocodon", ocodon)
     # scanner.finalize_stream("oamino", oamino)
+    owriter.close()
+    cwriter.close()
     awriter.close()
     scanner.finalize_stream("odebug", odebug)
 
@@ -154,7 +155,6 @@ def update_gff_file(filepath, tbldata: TBLData):
     import in_place
 
     with in_place.InPlace(filepath) as file:
-        # for row in fileinput.input(filepath, inplace=True, backup=".bak"):
         for row in file:
             row = row.rstrip()
             if row.startswith("#"):

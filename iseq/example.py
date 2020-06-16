@@ -80,6 +80,11 @@ _filenames = {
     "PF03373_rna_most_likely.fasta": "e10ce706a7ad7b8b437e4f04c0d6eaff8eb716249f80b6ebd40d6f722844ef73",
     "PF03373_rna_oamino.fasta": "e945d4af434477a8b7ccda1bfcce886c0964fc81e729b2f79f90275c7cbfe891",
     "PF03373_rna_output.gff": "ea0635f3dcbc94f924097a40b654c72b697b6567759a3b31fe311e2dec5a4f55",
+    "GALNBKIG_00914_ont_01_plus_strand.fasta": "8b674a97cfc0bef334076474c8133898a670adb4dc7350d7e803495daed18a71",
+    "GALNBKIG_00914_ont_01_plus_strand.fasta.br": "dfd11329e5e87362ba448628e0a4e1c7b5efd0acfd369b5267134c8471afe924",
+    "PF00113_GALNBKIG_00914_ont_01_plus_strand_oamino.fasta": "67e9be0f14f453f856cbdbbaabfd103e5fc753da895b2427dc361329173f48d8",
+    "PF00113_GALNBKIG_00914_ont_01_plus_strand_ocodon.fasta": "679b5993f4f777cbc3ea715d65fe74e09a32d2bf7842b95247d8677634de655a",
+    "PF00113_GALNBKIG_00914_ont_01_plus_strand_output.gff": "b254684614e7df2df8fe97d716eada812fa2c4b18825349a358cffeae4a46b39",
 }
 
 

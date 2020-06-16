@@ -9,6 +9,22 @@ from iseq.example import example_filepath
 from .misc import diff
 
 
+def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand(tmp_path):
+    # Related to https://iseq-py.s3.eu-west-2.amazonaws.com/Report+on+NMM+vs+tBLASTn.pdf
+    os.chdir(tmp_path)
+    invoke = CliRunner().invoke
+    profile = example_filepath("PF00113.hmm")
+    fasta = example_filepath("GALNBKIG_00914_ont_01_plus_strand.fasta")
+    oamino = example_filepath("PF00113_GALNBKIG_00914_ont_01_plus_strand_oamino.fasta")
+    ocodon = example_filepath("PF00113_GALNBKIG_00914_ont_01_plus_strand_ocodon.fasta")
+    output = example_filepath("PF00113_GALNBKIG_00914_ont_01_plus_strand_output.gff")
+    r = invoke(cli, ["pscan", str(profile), str(fasta)])
+    assert r.exit_code == 0, r.output
+    assert cmp(oamino, "oamino.fasta", shallow=False), diff(oamino, "oamino.fasta")
+    assert cmp(ocodon, "ocodon.fasta", shallow=False), diff(ocodon, "ocodon.fasta")
+    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
+
+
 def test_cli_pscan_nofile_output(tmp_path, GALNBKIG_cut):
     os.chdir(tmp_path)
     invoke = CliRunner().invoke
