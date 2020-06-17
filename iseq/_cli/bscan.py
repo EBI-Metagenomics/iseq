@@ -14,7 +14,7 @@ from iseq.protein import ProteinFragment, ProteinProfile
 from iseq.protein.typing import ProteinAltModel, ProteinNullModel
 from iseq.result import SearchResult
 
-from .scanner import OutputWriter
+from .output_writer import OutputWriter
 
 IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFragment)])
 

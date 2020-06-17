@@ -102,29 +102,20 @@ def pscan(
         profile_abc = _infer_profile_alphabet(file)
     target_abc = _infer_target_alphabet(target)
 
-    # scanner: Optional[ProteinScanner] = None
-
     assert isinstance(target_abc, BaseAlphabet) and isinstance(
         profile_abc, AminoAlphabet
     )
 
     gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
 
-    # scanner = ProteinScanner(owriter, dwriter, cwriter, awriter, gcode, epsilon, stdout)
-
     with open_fasta(target) as fasta:
         targets = list(fasta)
-
-    # for prof_parser in open_hmmer(profile):
-    #     scanner.show_profile_parser(prof_parser)
-    #     scanner.process_profile(prof_parser, targets, window)
 
     for prof_parser in open_hmmer(profile):
         mt = dict(prof_parser.metadata)
         profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
         hmmdata = HMMData(prof_parser)
         prof = create_profile(prof_parser, gcode.base_alphabet, window, epsilon)
-        # prof = create_profile(hmmdata, gcode.base_alphabet, window, epsilon)
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
