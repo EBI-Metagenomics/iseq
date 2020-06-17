@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import astuple, dataclass
 from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
 
 from imm import Alphabet, Interval, Path, SequenceABC, State, Step
@@ -9,33 +10,40 @@ from .typing import MutablePath
 
 __all__ = ["SearchResults", "SearchResult", "create_fragment_type"]
 
-TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
-TState = TypeVar("TState", bound=State)
+A = TypeVar("A", bound=Alphabet)
+S = TypeVar("S", bound=State)
 
-create_fragment_type = Callable[
-    [SequenceABC[TAlphabet], MutablePath[TState], bool], Fragment[TAlphabet, TState]
-]
+create_fragment_type = Callable[[SequenceABC[A], MutablePath[S], bool], Fragment[A, S]]
 
 
-class SearchResults(Generic[TAlphabet, TState]):
+@dataclass
+class IFragment(Generic[A, S]):
+    interval: Interval
+    fragment: Fragment[A, S]
+
+    def __iter__(self):
+        yield from astuple(self)
+
+
+class SearchResults(Generic[A, S]):
     def __init__(
-        self, sequence: SequenceABC[TAlphabet], create_fragment: create_fragment_type,
+        self, sequence: SequenceABC[A], create_fragment: create_fragment_type,
     ):
         self._sequence = sequence
         self._create_fragment = create_fragment
-        self._results: List[SearchResult[TAlphabet, TState]] = []
+        self._results: List[SearchResult[A, S]] = []
         self._windows: List[Interval] = []
 
     def append(
         self,
         loglik: float,
         window: Interval,
-        path: MutablePath[TState],
+        path: MutablePath[S],
         alt_viterbi_score: float,
         null_viterbi_score: float,
     ):
         subseq = self._sequence[window.start : window.stop]
-        r = SearchResult[TAlphabet, TState](
+        r = SearchResult[A, S](
             loglik,
             subseq,
             path,
@@ -47,16 +55,51 @@ class SearchResults(Generic[TAlphabet, TState]):
         self._windows.append(window)
 
     @property
-    def results(self):
+    def results(self) -> List[SearchResult[A, S]]:
         return self._results
 
     @property
-    def windows(self):
+    def windows(self) -> List[Interval]:
         return self._windows
 
     @property
     def length(self) -> int:
         return len(self._results)
+
+    def ifragments(self) -> Tuple[List[IFragment[A, S]], List]:
+        waiting: List[IFragment[A, S]] = []
+
+        windows = self.windows
+        results = self.results
+        ifragments: List[IFragment[A, S]] = []
+        debug_list = []
+        for win_num, (window, result) in enumerate(zip(windows, results)):
+
+            debug_list.append(
+                (
+                    win_num,
+                    window.start + 1,
+                    window.stop,
+                    result.alt_viterbi_score,
+                    result.null_viterbi_score,
+                )
+            )
+
+            candidates: List[IFragment[A, S]] = []
+
+            for i, frag in zip(result.intervals, result.fragments):
+                if not frag.homologous:
+                    continue
+
+                interval = Interval(window.start + i.start, window.start + i.stop)
+                candidates.append(IFragment(interval, frag))
+
+            ready, waiting = intersect_ifragments(waiting, candidates)
+            ifragments += ready
+
+        ifragments += waiting
+
+        return ifragments, debug_list
 
     def __str__(self) -> str:
         return f"{str(self._results)}"
@@ -65,18 +108,18 @@ class SearchResults(Generic[TAlphabet, TState]):
         return f"<{self.__class__.__name__}:{str(self)}>"
 
 
-class SearchResult(Generic[TAlphabet, TState]):
+class SearchResult(Generic[A, S]):
     def __init__(
         self,
         loglik: float,
-        sequence: SequenceABC[TAlphabet],
-        path: MutablePath[TState],
+        sequence: SequenceABC[A],
+        path: MutablePath[S],
         create_fragment: create_fragment_type,
         alt_viterbi_score: float,
         null_viterbi_score: float,
     ):
         self._loglik = loglik
-        self._fragments: List[Fragment[TAlphabet, TState]] = []
+        self._fragments: List[Fragment[A, S]] = []
         self._intervals: List[Interval] = []
         self._alt_viterbi_score = alt_viterbi_score
         self._null_viterbi_score = null_viterbi_score
@@ -100,7 +143,7 @@ class SearchResult(Generic[TAlphabet, TState]):
         return self._null_viterbi_score
 
     @property
-    def fragments(self) -> List[Fragment[TAlphabet, TState]]:
+    def fragments(self) -> List[Fragment[A, S]]:
         return self._fragments
 
     @property
@@ -141,3 +184,51 @@ def _create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
             homologous = not homologous
 
         frag_stop += step.seq_len
+
+
+def intersect_ifragments(
+    waiting: List[IFragment[A, S]], candidates: List[IFragment[A, S]]
+) -> Tuple[List[IFragment[A, S]], List[IFragment[A, S]]]:
+
+    ready: List[IFragment[A, S]] = []
+    new_waiting: List[IFragment[A, S]] = []
+
+    i = 0
+    j = 0
+
+    curr_stop = 0
+    while i < len(waiting) and j < len(candidates):
+
+        if waiting[i].interval.start < candidates[j].interval.start:
+            ready.append(waiting[i])
+            curr_stop = waiting[i].interval.stop
+            i += 1
+        elif waiting[i].interval.start == candidates[j].interval.start:
+            if waiting[i].interval.stop >= candidates[j].interval.stop:
+                ready.append(waiting[i])
+                curr_stop = waiting[i].interval.stop
+            else:
+                new_waiting.append(candidates[j])
+                curr_stop = candidates[j].interval.stop
+            i += 1
+            j += 1
+        else:
+            new_waiting.append(candidates[j])
+            curr_stop = candidates[j].interval.stop
+            j += 1
+
+        while i < len(waiting) and waiting[i].interval.stop <= curr_stop:
+            i += 1
+
+        while j < len(candidates) and candidates[j].interval.stop <= curr_stop:
+            j += 1
+
+    while i < len(waiting):
+        ready.append(waiting[i])
+        i += 1
+
+    while j < len(candidates):
+        new_waiting.append(candidates[j])
+        j += 1
+
+    return ready, new_waiting

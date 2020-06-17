@@ -9,7 +9,6 @@ from iseq.hmmer3 import create_profile
 from iseq.model import EntryDistr
 
 from .debug_writer import DebugWriter
-from .misc import consolidate
 from .output_writer import OutputWriter
 
 
@@ -88,7 +87,7 @@ def hscan(
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
-            intfrags, debug_list = consolidate(search_results)
+            intfrags, debug_list = search_results.ifragments()
             seqid = f"{tgt.defline.split()[0]}"
             for interval in [i.interval for i in intfrags]:
                 start = interval.start
