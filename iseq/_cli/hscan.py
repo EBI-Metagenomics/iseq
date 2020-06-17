@@ -93,9 +93,7 @@ def hscan(
             for interval in [i.interval for i in intfrags]:
                 start = interval.start
                 stop = interval.stop
-                owriter.write_item(
-                    seqid, model.model_id, start, stop, prof.window_length
-                )
+                owriter.write_item(seqid, prof.profid, start, stop, prof.window_length)
             for debug_item in debug_list:
                 dwriter.write_row(seqid, *debug_item)
 

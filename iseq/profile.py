@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from math import log
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, NamedTuple
 
 from imm import Alphabet, Sequence, State, lprob_zero
-from nmm import Translator
 
 from .model import AltModel, NullModel, SpecialTransitions
 from .result import SearchResults
@@ -11,17 +10,21 @@ from .result import SearchResults
 TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 TState = TypeVar("TState", bound=State)
 
-__all__ = ["Profile"]
+__all__ = ["Profile", "ProfileID"]
+
+ProfileID = NamedTuple("ProfileID", [("name", str), ("acc", str)])
 
 
 class Profile(Generic[TAlphabet, TState], ABC):
     def __init__(
         self,
+        profid: ProfileID,
         alphabet: Alphabet,
         null_model: NullModel,
         alt_model: AltModel,
         hmmer3_compat: bool,
     ):
+        self._profid = profid
         self._alphabet = alphabet
         self._null_model = null_model
         self._alt_model = alt_model
@@ -30,6 +33,10 @@ class Profile(Generic[TAlphabet, TState], ABC):
         self._hmmer3_compat = hmmer3_compat
         self._set_target_length_model(1)
         self._window_length: int = 0
+
+    @property
+    def profid(self) -> ProfileID:
+        return self._profid
 
     @property
     def window_length(self) -> int:

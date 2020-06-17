@@ -3,9 +3,9 @@ from typing import List, TypeVar
 from imm import Alphabet, Interval, MuteState, NormalState, Path, Sequence, SequenceABC
 from nmm import DNAAlphabet, NTTranslator, NullTranslator, RNAAlphabet
 
-from iseq.hmmer_model import HMMERModel
+from iseq.hmmer_model import HMMERModel, ModelID
 from iseq.model import EntryDistr, Node, Transitions
-from iseq.profile import Profile
+from iseq.profile import Profile, ProfileID
 
 from .typing import (
     HMMER3AltModel,
@@ -29,6 +29,7 @@ TAlphabet = TypeVar("TAlphabet", bound=Alphabet)
 class HMMER3Profile(Profile[TAlphabet, NormalState]):
     def __init__(
         self,
+        profid: ProfileID,
         alphabet: TAlphabet,
         null_log_odds: List[float],
         core_nodes: List[Node],
@@ -52,7 +53,7 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
         alt_model = HMMER3AltModel.create(
             special_node, core_nodes, core_trans, entry_distr
         )
-        super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
+        super().__init__(profid, alphabet, null_model, alt_model, hmmer3_compat)
 
         if isinstance(alphabet, (DNAAlphabet, RNAAlphabet)):
             self._translator = NTTranslator()
@@ -121,8 +122,9 @@ def create_profile(
 
     trans = hmm.transitions
 
+    profid = ProfileID(hmm.model_id.name, hmm.model_id.acc)
     prof = HMMER3Profile(
-        hmm.alphabet, null_log_odds, nodes, trans, entry_distr, hmmer3_compat
+        profid, hmm.alphabet, null_log_odds, nodes, trans, entry_distr, hmmer3_compat,
     )
     prof.window_length = window_length
     return prof

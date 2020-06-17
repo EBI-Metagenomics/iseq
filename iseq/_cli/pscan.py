@@ -124,7 +124,7 @@ def pscan(
                 stop = intfrag.interval.stop
                 item_id = owriter.write_item(
                     seqid,
-                    model.model_id,
+                    prof.profid,
                     start,
                     stop,
                     prof.window_length,

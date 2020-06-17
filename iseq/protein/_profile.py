@@ -3,7 +3,6 @@ from __future__ import annotations
 from math import log
 from typing import List, Type
 
-import hmmer_reader
 from imm import (
     Interval,
     MuteState,
@@ -15,7 +14,6 @@ from imm import (
     lprob_zero,
 )
 from nmm import (
-    AminoAlphabet,
     AminoTable,
     BaseAlphabet,
     BaseTable,
@@ -28,7 +26,7 @@ from nmm import (
 
 from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr, Transitions
-from iseq.profile import Profile
+from iseq.profile import Profile, ProfileID
 
 from ._fragment import ProteinFragment
 from .typing import (
@@ -47,6 +45,7 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
     @classmethod
     def create(
         cls: Type[ProteinProfile],
+        profid: ProfileID,
         factory: ProteinStateFactory,
         null_aminot: AminoTable,
         core_nodes: List[ProteinNode],
@@ -72,17 +71,18 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
             special_node, core_nodes, core_trans, EntryDistr.UNIFORM,
         )
         # alt_model.set_fragment_length(self._special_transitions)
-        return cls(base_alphabet, null_model, alt_model, False)
+        return cls(profid, base_alphabet, null_model, alt_model, False)
 
     @classmethod
     def create2(
         cls: Type[ProteinProfile],
+        profid: ProfileID,
         alphabet: BaseAlphabet,
         null_model: ProteinNullModel,
         alt_model: ProteinAltModel,
         hmmer3_compat: bool,
     ):
-        return cls(alphabet, null_model, alt_model, hmmer3_compat)
+        return cls(profid, alphabet, null_model, alt_model, hmmer3_compat)
 
     @property
     def window_length(self) -> int:
@@ -169,7 +169,8 @@ def create_profile(
         t.normalize()
         trans.append(t)
 
-    prof = ProteinProfile.create(factory, null_aminot, nodes, trans)
+    profid = ProfileID(hmm.model_id.name, hmm.model_id.acc)
+    prof = ProteinProfile.create(profid, factory, null_aminot, nodes, trans)
     prof.window_length = window_length
     return prof
 

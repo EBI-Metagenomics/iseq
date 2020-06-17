@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import IO, Optional, Union
 
 from iseq.gff import GFFItem, GFFWriter
-from iseq.hmmer_model import ModelID
+from iseq.profile import ProfileID
 
 __all__ = ["OutputWriter"]
 
@@ -15,7 +15,7 @@ class OutputWriter:
     def write_item(
         self,
         seqid: str,
-        modelid: ModelID,
+        profid: ProfileID,
         start: int,
         end: int,
         window_length: int,
@@ -25,8 +25,8 @@ class OutputWriter:
             att = dict()
 
         item_id = f"item{self._item_idx}"
-        atts = f"ID={item_id};Profile_name={modelid.name}"
-        atts += f";Profile_acc={modelid.acc}"
+        atts = f"ID={item_id};Profile_name={profid.name}"
+        atts += f";Profile_acc={profid.acc}"
         atts += f";Window={window_length}"
         for k in sorted(att.keys()):
             atts += f";{k}={att[k]}"
