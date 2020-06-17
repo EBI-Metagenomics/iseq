@@ -17,7 +17,7 @@ from iseq.tblout import TBLData
 
 from .debug_writer import DebugWriter
 from .misc import consolidate
-from .output_writer import OutputWriter, ProfileID
+from .output_writer import OutputWriter
 
 
 @click.command()
@@ -111,11 +111,9 @@ def pscan(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    for prof_parser in open_hmmer(profile):
-        mt = dict(prof_parser.metadata)
-        profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
-        hmmdata = HMMERModel(prof_parser)
-        prof = create_profile(prof_parser, gcode.base_alphabet, window, epsilon)
+    for plain_model in open_hmmer(profile):
+        model = HMMERModel(plain_model)
+        prof = create_profile(plain_model, gcode.base_alphabet, window, epsilon)
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
@@ -125,7 +123,12 @@ def pscan(
                 start = intfrag.interval.start
                 stop = intfrag.interval.stop
                 item_id = owriter.write_item(
-                    seqid, profid, start, stop, prof.window_length, {"Epsilon": epsilon}
+                    seqid,
+                    model.model_id,
+                    start,
+                    stop,
+                    prof.window_length,
+                    {"Epsilon": epsilon},
                 )
                 codon_result = intfrag.fragment.decode()
                 cwriter.write_item(item_id, str(codon_result.sequence))

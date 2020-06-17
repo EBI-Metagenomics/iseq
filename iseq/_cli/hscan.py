@@ -10,7 +10,7 @@ from iseq.model import EntryDistr
 
 from .debug_writer import DebugWriter
 from .misc import consolidate
-from .output_writer import OutputWriter, ProfileID
+from .output_writer import OutputWriter
 
 
 @click.command()
@@ -82,11 +82,9 @@ def hscan(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    for prof_parser in open_hmmer(profile):
-        mt = dict(prof_parser.metadata)
-        profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
-        hmmdata = HMMERModel(prof_parser)
-        prof = create_profile(hmmdata, hmmer3_compat, edistr, window)
+    for plain_model in open_hmmer(profile):
+        model = HMMERModel(plain_model)
+        prof = create_profile(model, hmmer3_compat, edistr, window)
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
@@ -95,7 +93,9 @@ def hscan(
             for interval in [i.interval for i in intfrags]:
                 start = interval.start
                 stop = interval.stop
-                owriter.write_item(seqid, profid, start, stop, prof.window_length)
+                owriter.write_item(
+                    seqid, model.model_id, start, stop, prof.window_length
+                )
             for debug_item in debug_list:
                 dwriter.write_row(seqid, *debug_item)
 

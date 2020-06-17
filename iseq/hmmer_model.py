@@ -1,5 +1,5 @@
 from math import log
-from typing import List, Mapping
+from typing import List, Mapping, NamedTuple
 
 import hmmer_reader
 from imm import lprob_zero
@@ -9,16 +9,23 @@ from .alphabet import infer_alphabet
 from .model import Transitions
 from .typing import HMMERAlphabet
 
-__all__ = ["HMMERModel"]
+__all__ = ["HMMERModel", "ModelID"]
+
+ModelID = NamedTuple("ModelID", [("name", str), ("acc", str)])
 
 
 class HMMERModel:
     """
     HMMER model.
+
+    Parameters
+    ----------
+    hmmer_model
+        HMMER model.
     """
 
-    def __init__(self, hmmer: hmmer_reader.HMMERModel):
-        self._original_symbols: str = hmmer.alphabet
+    def __init__(self, hmmer_model: hmmer_reader.HMMERModel):
+        self._original_symbols: str = hmmer_model.alphabet
         alphabet = infer_alphabet(self._original_symbols.encode())
 
         if alphabet is None:
@@ -31,16 +38,25 @@ class HMMERModel:
             k = alphabet.length
             self._null_lprobs = [log(1 / k)] * k
 
-        self._match_lprobs = [self._sort(hmmer.match(i)) for i in range(1, hmmer.M + 1)]
-        self._insert_lprobs = [
-            self._sort(hmmer.insert(i)) for i in range(1, hmmer.M + 1)
+        self._match_lprobs = [
+            self._sort(hmmer_model.match(i)) for i in range(1, hmmer_model.M + 1)
         ]
-        self._model_length = hmmer.M
+        self._insert_lprobs = [
+            self._sort(hmmer_model.insert(i)) for i in range(1, hmmer_model.M + 1)
+        ]
+        self._model_length = hmmer_model.M
 
         self._transitions: List[Transitions] = []
-        for m in range(0, hmmer.M + 1):
-            t = Transitions(**hmmer.trans(m))
+        for m in range(0, hmmer_model.M + 1):
+            t = Transitions(**hmmer_model.trans(m))
             self._transitions.append(t)
+
+        mt = dict(hmmer_model.metadata)
+        self._model_id = ModelID(mt.get("NAME", "-"), mt.get("ACC", "-"))
+
+    @property
+    def model_id(self) -> ModelID:
+        return self._model_id
 
     @property
     def transitions(self) -> List[Transitions]:

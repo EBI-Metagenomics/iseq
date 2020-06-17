@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import IO, NamedTuple, Optional, Union
+from typing import IO, Optional, Union
 
 from iseq.gff import GFFItem, GFFWriter
+from iseq.hmmer_model import ModelID
 
-__all__ = ["ProfileID", "OutputWriter"]
-
-ProfileID = NamedTuple("ProfileID", [("name", str), ("acc", str)])
+__all__ = ["OutputWriter"]
 
 
 class OutputWriter:
@@ -16,7 +15,7 @@ class OutputWriter:
     def write_item(
         self,
         seqid: str,
-        profid: ProfileID,
+        modelid: ModelID,
         start: int,
         end: int,
         window_length: int,
@@ -26,8 +25,8 @@ class OutputWriter:
             att = dict()
 
         item_id = f"item{self._item_idx}"
-        atts = f"ID={item_id};Profile_name={profid.name}"
-        atts += f";Profile_acc={profid.acc}"
+        atts = f"ID={item_id};Profile_name={modelid.name}"
+        atts += f";Profile_acc={modelid.acc}"
         atts += f";Window={window_length}"
         for k in sorted(att.keys()):
             atts += f";{k}={att[k]}"
