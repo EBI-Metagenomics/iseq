@@ -5,12 +5,14 @@ from nmm import CanonicalAminoAlphabet, GeneticCode, RNAAlphabet
 
 from iseq.example import example_filepath
 from iseq.protein import create_profile
+from iseq.hmmer_model import HMMERModel
 
 
 def test_protein_profile_frame1():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet())
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet())
 
     rna_abc = hmmer.alphabet
     most_likely_rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA".replace(b" ", b"")
@@ -30,7 +32,8 @@ def test_protein_profile_frame1():
 def test_protein_profile_frame2():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"AAA AAA AAA CCU GGU AAA GAA GAU AAU AAC AAA"
@@ -50,7 +53,8 @@ def test_protein_profile_frame2():
 def test_protein_profile_frame3():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.0)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCU GGU AAA GAA GAU AAU AAC AAA"
@@ -67,7 +71,8 @@ def test_protein_profile_frame3():
 def test_protein_profile_frame4():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.0)
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.0)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA"
@@ -82,7 +87,8 @@ def test_protein_profile_frame4():
 def test_protein_profile_frame5():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.00001)
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.00001)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA"
@@ -99,7 +105,8 @@ def test_protein_profile_frame5():
 def test_protein_profile_frame6():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.00001)
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.00001)
 
     rna_abc = hmmer.alphabet
     rna_seq = b"CCUU GGU AAA GAA GAU AAU AAC AAA GAA GAA CCU GGU AAA GAA GAU AAU AAC AAA GAA GAA GA"
@@ -134,7 +141,8 @@ def test_protein_profile_frame6():
 def test_protein_profile_codons():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmer = create_profile(reader.read_model(), RNAAlphabet(), epsilon=0.1)
+        plain_model = reader.read_model()
+        hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
     amino_abc = CanonicalAminoAlphabet()

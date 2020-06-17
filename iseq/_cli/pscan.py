@@ -113,7 +113,7 @@ def pscan(
 
     for plain_model in open_hmmer(profile):
         model = HMMERModel(plain_model)
-        prof = create_profile(plain_model, gcode.base_alphabet, window, epsilon)
+        prof = create_profile(model, gcode.base_alphabet, window, epsilon)
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)

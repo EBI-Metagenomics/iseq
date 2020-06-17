@@ -26,6 +26,7 @@ from nmm import (
     codon_iter,
 )
 
+from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr, Transitions
 from iseq.profile import Profile
 
@@ -139,24 +140,24 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
 
 
 def create_profile(
-    reader: hmmer_reader.HMMERModel,
+    hmm: HMMERModel,
     base_abc: BaseAlphabet,
     window_length: int = 0,
     epsilon: float = 0.1,
 ) -> ProteinProfile:
 
-    amino_abc = AminoAlphabet.create(reader.alphabet.encode(), b"X")
+    amino_abc = hmm.alphabet
 
-    lprobs = lprob_normalize(list(reader.insert(0).values())).tolist()
+    lprobs = lprob_normalize(hmm.insert_lprobs(0))
     null_aminot = AminoTable.create(amino_abc, lprobs)
     factory = ProteinStateFactory(GeneticCode(base_abc, amino_abc), epsilon)
 
     nodes: List[ProteinNode] = []
-    for m in range(1, reader.M + 1):
-        lprobs = lprob_normalize(list(reader.match(m).values())).tolist()
+    for m in range(1, hmm.model_length + 1):
+        lprobs = lprob_normalize(hmm.match_lprobs(m))
         M = factory.create(f"M{m}".encode(), AminoTable.create(amino_abc, lprobs))
 
-        lprobs = lprob_normalize(list(reader.insert(m).values())).tolist()
+        lprobs = lprob_normalize(hmm.insert_lprobs(m))
         I = factory.create(f"I{m}".encode(), AminoTable.create(amino_abc, lprobs))
 
         D = MuteState.create(f"D{m}".encode(), base_abc)
@@ -164,8 +165,7 @@ def create_profile(
         nodes.append(ProteinNode(M, I, D))
 
     trans: List[Transitions] = []
-    for m in range(0, reader.M + 1):
-        t = Transitions(**reader.trans(m))
+    for t in hmm.transitions:
         t.normalize()
         trans.append(t)
 
