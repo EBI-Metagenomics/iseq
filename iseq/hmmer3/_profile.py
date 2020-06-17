@@ -3,7 +3,7 @@ from typing import List, TypeVar
 from imm import Alphabet, Interval, MuteState, NormalState, Path, Sequence, SequenceABC
 from nmm import DNAAlphabet, NTTranslator, NullTranslator, RNAAlphabet
 
-from iseq.hmmer_model import HMMERModel, ModelID
+from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr, Node, Transitions
 from iseq.profile import Profile, ProfileID
 
@@ -65,10 +65,13 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
         return super().window_length
 
     @window_length.setter
-    def window_length(self, length: int):
+    def window_length(self, length: int) -> None:
+        if length < -1:
+            raise ValueError("Length must be greater than or equal to -1.")
+
         if length == -1:
             length = 2 * self._alt_model.core_length
-        super(HMMER3Profile, type(self)).window_length.fset(self, length)
+        self._window_length = length
 
     def create_sequence(self, sequence: bytes) -> Sequence:
         seq = self._translator.translate(sequence, self.alphabet)

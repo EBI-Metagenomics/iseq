@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import astuple, dataclass
-from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
+from typing import Callable, Generic, Iterable, List, Tuple, TypeVar, NamedTuple
 
 from imm import Alphabet, Interval, Path, SequenceABC, State, Step
 
 from .fragment import Fragment
-from .typing import MutablePath
 
 __all__ = ["SearchResults", "SearchResult", "create_fragment_type"]
 
 A = TypeVar("A", bound=Alphabet)
 S = TypeVar("S", bound=State)
 
-create_fragment_type = Callable[[SequenceABC[A], MutablePath[S], bool], Fragment[A, S]]
+create_fragment_type = Callable[[SequenceABC[A], S, bool], Fragment[A, S]]
 
 
 @dataclass
@@ -23,6 +22,17 @@ class IFragment(Generic[A, S]):
 
     def __iter__(self):
         yield from astuple(self)
+
+
+DebugRow = NamedTuple(
+    "DebugRow",
+    [
+        ("window_number", int),
+        ("window", Interval),
+        ("alt_viterbi_score", float),
+        ("null_viterbi_score", float),
+    ],
+)
 
 
 class SearchResults(Generic[A, S]):
@@ -38,7 +48,7 @@ class SearchResults(Generic[A, S]):
         self,
         loglik: float,
         window: Interval,
-        path: MutablePath[S],
+        path: S,
         alt_viterbi_score: float,
         null_viterbi_score: float,
     ):
@@ -66,24 +76,30 @@ class SearchResults(Generic[A, S]):
     def length(self) -> int:
         return len(self._results)
 
-    def ifragments(self) -> Tuple[List[IFragment[A, S]], List]:
+    def debug_table(self) -> List[DebugRow]:
+        windows = self.windows
+        results = self.results
+        rows: List[DebugRow] = []
+        for win_num, (window, result) in enumerate(zip(windows, results)):
+
+            rows.append(
+                DebugRow(
+                    win_num,
+                    window,
+                    result.alt_viterbi_score,
+                    result.null_viterbi_score,
+                )
+            )
+
+        return rows
+
+    def ifragments(self) -> List[IFragment[A, S]]:
         waiting: List[IFragment[A, S]] = []
 
         windows = self.windows
         results = self.results
         ifragments: List[IFragment[A, S]] = []
-        debug_list = []
-        for win_num, (window, result) in enumerate(zip(windows, results)):
-
-            debug_list.append(
-                (
-                    win_num,
-                    window.start + 1,
-                    window.stop,
-                    result.alt_viterbi_score,
-                    result.null_viterbi_score,
-                )
-            )
+        for window, result in zip(windows, results):
 
             candidates: List[IFragment[A, S]] = []
 
@@ -95,11 +111,11 @@ class SearchResults(Generic[A, S]):
                 candidates.append(IFragment(interval, frag))
 
             ready, waiting = intersect_ifragments(waiting, candidates)
-            ifragments += ready
+            ifragments.extend(ready)
 
-        ifragments += waiting
+        ifragments.extend(waiting)
 
-        return ifragments, debug_list
+        return ifragments
 
     def __str__(self) -> str:
         return f"{str(self._results)}"
@@ -113,7 +129,7 @@ class SearchResult(Generic[A, S]):
         self,
         loglik: float,
         sequence: SequenceABC[A],
-        path: MutablePath[S],
+        path: Path[S],
         create_fragment: create_fragment_type,
         alt_viterbi_score: float,
         null_viterbi_score: float,
@@ -125,7 +141,7 @@ class SearchResult(Generic[A, S]):
         self._null_viterbi_score = null_viterbi_score
 
         steps = list(path)
-        for fragi, stepi, homologous in _create_fragments(path):
+        for fragi, stepi, homologous in create_fragments(path):
             substeps = steps[stepi.start : stepi.stop]
             new_steps = [Step.create(s.state, s.seq_len) for s in substeps]
             new_path = Path.create(new_steps)
@@ -161,7 +177,7 @@ class SearchResult(Generic[A, S]):
         return f"<{self.__class__.__name__}:{str(self)}>"
 
 
-def _create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
+def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
 
     frag_start = frag_stop = 0
     step_start = step_stop = 0

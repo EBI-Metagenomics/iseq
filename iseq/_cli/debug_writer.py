@@ -1,5 +1,7 @@
 from typing import IO
 
+from iseq.result import DebugRow
+
 
 class DebugWriter:
     def __init__(self, file: IO[str]):
@@ -10,20 +12,17 @@ class DebugWriter:
         )
 
     def write_row(
-        self,
-        defline: str,
-        window: int,
-        start: int,
-        stop: int,
-        alt_viterbi_score: float,
-        null_viterbi_score: float,
+        self, defline: str, debug_row: DebugRow,
     ):
         """
         Write item.
         """
-        self._file.write(
-            f"{defline}\t{window}\t{start}\t{stop}\t{alt_viterbi_score}\t{null_viterbi_score}\n"
-        )
+        wnum = debug_row.window_number
+        start = debug_row.window.start + 1
+        stop = debug_row.window.stop
+        alt_vit = debug_row.alt_viterbi_score
+        null_vit = debug_row.null_viterbi_score
+        self._file.write(f"{defline}\t{wnum}\t{start}\t{stop}\t{alt_vit}\t{null_vit}\n")
 
     def close(self):
         """

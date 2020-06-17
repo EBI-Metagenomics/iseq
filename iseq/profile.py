@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from math import log
-from typing import Generic, TypeVar, NamedTuple
+from typing import Generic, NamedTuple, TypeVar
 
 from imm import Alphabet, Sequence, State, lprob_zero
 
@@ -43,7 +43,7 @@ class Profile(Generic[TAlphabet, TState], ABC):
         return self._window_length
 
     @window_length.setter
-    def window_length(self, length: int):
+    def window_length(self, length: int) -> None:
         self._window_length = length
 
     @property

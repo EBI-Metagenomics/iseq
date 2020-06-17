@@ -89,10 +89,13 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         return super().window_length
 
     @window_length.setter
-    def window_length(self, length: int):
+    def window_length(self, length: int) -> None:
+        if length < -1:
+            raise ValueError("Length must be greater than or equal to -1.")
+
         if length == -1:
             length = 2 * 3 * self._alt_model.core_length
-        super(ProteinProfile, type(self)).window_length.fset(self, length)
+        self._window_length = length
 
     def create_sequence(self, sequence: bytes) -> Sequence:
         return Sequence.create(sequence, self.alphabet)

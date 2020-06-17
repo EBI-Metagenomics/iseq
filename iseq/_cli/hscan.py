@@ -87,14 +87,16 @@ def hscan(
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
-            intfrags, debug_list = search_results.ifragments()
+            ifragments = search_results.ifragments()
             seqid = f"{tgt.defline.split()[0]}"
-            for interval in [i.interval for i in intfrags]:
+            for interval in [i.interval for i in ifragments]:
                 start = interval.start
                 stop = interval.stop
                 owriter.write_item(seqid, prof.profid, start, stop, prof.window_length)
-            for debug_item in debug_list:
-                dwriter.write_row(seqid, *debug_item)
+
+            if odebug is not os.devnull:
+                for i in search_results.debug_table():
+                    dwriter.write_row(seqid, i)
 
     owriter.close()
     odebug.close_intelligently()

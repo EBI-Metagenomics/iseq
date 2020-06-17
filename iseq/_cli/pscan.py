@@ -116,11 +116,11 @@ def pscan(
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
-            intfrags, debug_list = search_results.ifragments()
+            ifragments = search_results.ifragments()
             seqid = f"{tgt.defline.split()[0]}"
-            for intfrag in intfrags:
-                start = intfrag.interval.start
-                stop = intfrag.interval.stop
+            for ifrag in ifragments:
+                start = ifrag.interval.start
+                stop = ifrag.interval.stop
                 item_id = owriter.write_item(
                     seqid,
                     prof.profid,
@@ -129,12 +129,14 @@ def pscan(
                     prof.window_length,
                     {"Epsilon": epsilon},
                 )
-                codon_result = intfrag.fragment.decode()
-                cwriter.write_item(item_id, str(codon_result.sequence))
-                amino_result = codon_result.decode(gcode)
-                awriter.write_item(item_id, str(amino_result.sequence))
-            for debug_item in debug_list:
-                dwriter.write_row(seqid, *debug_item)
+                codon_frag = ifrag.fragment.decode()
+                cwriter.write_item(item_id, str(codon_frag.sequence))
+                amino_frag = codon_frag.decode(gcode)
+                awriter.write_item(item_id, str(amino_frag.sequence))
+
+            if odebug is not os.devnull:
+                for i in search_results.debug_table():
+                    dwriter.write_row(seqid, i)
 
     owriter.close()
     cwriter.close()
