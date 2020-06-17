@@ -1,10 +1,11 @@
 from typing import List, TypeVar
 
-from imm import Alphabet, Interval, MuteState, NormalState, Path, SequenceABC
+from imm import Alphabet, Interval, MuteState, NormalState, Path, SequenceABC, Sequence
 
 from iseq.hmmdata import HMMData
 from iseq.model import EntryDistr, Node, Transitions
 from iseq.profile import Profile
+from nmm import NTTranslator, NullTranslator, DNAAlphabet, RNAAlphabet
 
 from .typing import (
     HMMER3AltModel,
@@ -53,6 +54,11 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
         )
         super().__init__(alphabet, null_model, alt_model, hmmer3_compat)
 
+        if isinstance(alphabet, (DNAAlphabet, RNAAlphabet)):
+            self._translator = NTTranslator()
+        else:
+            self._translator = NullTranslator()
+
     @property
     def window_length(self) -> int:
         return super().window_length
@@ -62,6 +68,10 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
         if length == -1:
             length = 2 * self._alt_model.core_length
         super(HMMER3Profile, type(self)).window_length.fset(self, length)
+
+    def create_sequence(self, sequence: bytes) -> Sequence:
+        seq = self._translator.translate(sequence, self.alphabet)
+        return Sequence.create(seq, self.alphabet)
 
     def search(self, sequence: SequenceABC[TAlphabet]) -> HMMER3SearchResults:
 

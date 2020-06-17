@@ -2,7 +2,7 @@ import os
 import re
 from collections import OrderedDict
 from pathlib import Path
-from typing import IO, Optional
+from typing import IO
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
@@ -12,8 +12,12 @@ from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.hmmsearch import HMMSearch
 from iseq.tblout import TBLData
+from iseq.hmmdata import HMMData
+from iseq.protein import create_profile
+from .misc import consolidate
 
 from .debug_writer import DebugWriter
+from .output_writer import OutputWriter, ProfileID
 
 
 @click.command()
@@ -83,8 +87,6 @@ def pscan(
     profile and represents a potential homology. Expect many false positive
     associations as we are not filtering out by statistical significance.
     """
-    from .scanner import OutputWriter
-    from .protein_scanner import ProteinScanner
 
     owriter = OutputWriter(output)
     cwriter = FASTAWriter(ocodon)
@@ -92,15 +94,15 @@ def pscan(
     dwriter = DebugWriter(odebug)
 
     if quiet:
-        stdout = click.open_file(os.devnull, "a")
+        click.open_file(os.devnull, "a")
     else:
-        stdout = click.get_text_stream("stdout")
+        click.get_text_stream("stdout")
 
     with open(profile, "r") as file:
         profile_abc = _infer_profile_alphabet(file)
     target_abc = _infer_target_alphabet(target)
 
-    scanner: Optional[ProteinScanner] = None
+    # scanner: Optional[ProteinScanner] = None
 
     assert isinstance(target_abc, BaseAlphabet) and isinstance(
         profile_abc, AminoAlphabet
@@ -108,22 +110,43 @@ def pscan(
 
     gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
 
-    scanner = ProteinScanner(owriter, dwriter, cwriter, awriter, gcode, epsilon, stdout)
+    # scanner = ProteinScanner(owriter, dwriter, cwriter, awriter, gcode, epsilon, stdout)
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    for prof_parser in open_hmmer(profile):
-        scanner.show_profile_parser(prof_parser)
-        scanner.process_profile(prof_parser, targets, window)
+    # for prof_parser in open_hmmer(profile):
+    #     scanner.show_profile_parser(prof_parser)
+    #     scanner.process_profile(prof_parser, targets, window)
 
-    # scanner.finalize_stream("output", output)
-    # scanner.finalize_stream("ocodon", ocodon)
-    # scanner.finalize_stream("oamino", oamino)
+    for prof_parser in open_hmmer(profile):
+        mt = dict(prof_parser.metadata)
+        profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
+        hmmdata = HMMData(prof_parser)
+        prof = create_profile(prof_parser, gcode.base_alphabet, window, epsilon)
+        # prof = create_profile(hmmdata, gcode.base_alphabet, window, epsilon)
+        for tgt in targets:
+            seq = prof.create_sequence(tgt.sequence.encode())
+            search_results = prof.search(seq)
+            intfrags, debug_list = consolidate(search_results)
+            seqid = f"{tgt.defline.split()[0]}"
+            for intfrag in intfrags:
+                start = intfrag.interval.start
+                stop = intfrag.interval.stop
+                item_id = owriter.write_item(
+                    seqid, profid, start, stop, prof.window_length, {"Epsilon": epsilon}
+                )
+                codon_result = intfrag.fragment.decode()
+                cwriter.write_item(item_id, str(codon_result.sequence))
+                amino_result = codon_result.decode(gcode)
+                awriter.write_item(item_id, str(amino_result.sequence))
+            for debug_item in debug_list:
+                dwriter.write_row(seqid, *debug_item)
+
     owriter.close()
     cwriter.close()
     awriter.close()
-    scanner.finalize_stream("odebug", odebug)
+    odebug.close_intelligently()
 
     if e_value:
         hmmsearch = HMMSearch()

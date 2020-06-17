@@ -1,23 +1,22 @@
 from pathlib import Path
-from typing import IO, Optional, Union
+from typing import IO, NamedTuple, Optional, Union
 
 from iseq.gff import GFFItem, GFFWriter
+
+__all__ = ["ProfileID", "OutputWriter"]
+
+ProfileID = NamedTuple("ProfileID", [("name", str), ("acc", str)])
 
 
 class OutputWriter:
     def __init__(self, file: Union[str, Path, IO[str]]):
         self._gff = GFFWriter(file)
-        self._profile_name = "-"
-        self._profile_acc = "-"
         self._item_idx = 1
-
-    def set_profile(self, name: str = "-", acc: str = "-"):
-        self._profile_name = name
-        self._profile_acc = acc
 
     def write_item(
         self,
         seqid: str,
+        profid: ProfileID,
         start: int,
         end: int,
         window_length: int,
@@ -27,8 +26,8 @@ class OutputWriter:
             att = dict()
 
         item_id = f"item{self._item_idx}"
-        atts = f"ID={item_id};Profile_name={self._profile_name}"
-        atts += f";Profile_acc={self._profile_acc}"
+        atts = f"ID={item_id};Profile_name={profid.name}"
+        atts += f";Profile_acc={profid.acc}"
         atts += f";Window={window_length}"
         for k in sorted(att.keys()):
             atts += f";{k}={att[k]}"
@@ -43,3 +42,9 @@ class OutputWriter:
         Close the associated stream.
         """
         self._gff.close()
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        del exception_type
+        del exception_value
+        del traceback
+        self.close()

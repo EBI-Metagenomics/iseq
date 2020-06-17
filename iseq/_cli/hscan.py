@@ -1,13 +1,16 @@
 import os
-from typing import Optional
 
 import click
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
+from iseq.hmmdata import HMMData
+from iseq.hmmer3 import create_profile
 from iseq.model import EntryDistr
 
 from .debug_writer import DebugWriter
+from .misc import consolidate
+from .output_writer import OutputWriter, ProfileID
 
 
 @click.command()
@@ -63,9 +66,6 @@ def hscan(
     profile and represents a potential homology. Expect many false positive
     associations as we are not filtering out by statistical significance.
     """
-    from .scanner import OutputWriter
-    from .hmmer3_scanner import HMMER3Scanner
-
     owriter = OutputWriter(output)
     dwriter = DebugWriter(odebug)
 
@@ -75,45 +75,29 @@ def hscan(
         edistr = EntryDistr.UNIFORM
 
     if quiet:
-        stdout = click.open_file(os.devnull, "a")
+        click.open_file(os.devnull, "a")
     else:
-        stdout = click.get_text_stream("stdout")
-
-    # profile_abc = _infer_profile_alphabet(profile)
-    # target_abc = _infer_target_alphabet(target)
-
-    scanner: Optional[HMMER3Scanner] = None
-
-    # if profile_abc.symbols != target_abc.symbols:
-    #     raise click.UsageError("Alphabets mismatch.")
-
-    scanner = HMMER3Scanner(owriter, dwriter, stdout, hmmer3_compat, edistr)
+        click.get_text_stream("stdout")
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    for hmmprof in open_hmmer(profile):
-        scanner.show_profile_parser(hmmprof)
-        scanner.process_profile(hmmprof, targets, window)
+    for prof_parser in open_hmmer(profile):
+        mt = dict(prof_parser.metadata)
+        profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
+        hmmdata = HMMData(prof_parser)
+        prof = create_profile(hmmdata, hmmer3_compat, edistr, window)
+        for tgt in targets:
+            seq = prof.create_sequence(tgt.sequence.encode())
+            search_results = prof.search(seq)
+            intfrags, debug_list = consolidate(search_results)
+            seqid = f"{tgt.defline.split()[0]}"
+            for interval in [i.interval for i in intfrags]:
+                start = interval.start
+                stop = interval.stop
+                owriter.write_item(seqid, profid, start, stop, prof.window_length)
+            for debug_item in debug_list:
+                dwriter.write_row(seqid, *debug_item)
 
-    # scanner.finalize_stream("output", output)
     owriter.close()
-    scanner.finalize_stream("odebug", odebug)
-
-
-# def _infer_profile_alphabet(profile: IO[str]):
-#     hmmer = open_hmmer(profile)
-#     hmmer_alphabet = infer_hmmer_alphabet(hmmer)
-#     profile.seek(0)
-#     if hmmer_alphabet is None:
-#         raise click.UsageError("Could not infer alphabet from PROFILE.")
-#     return hmmer_alphabet
-
-
-# def _infer_target_alphabet(target: IO[str]):
-#     fasta = open_fasta(target)
-#     target_alphabet = infer_fasta_alphabet(fasta)
-#     target.seek(0)
-#     if target_alphabet is None:
-#         raise click.UsageError("Could not infer alphabet from TARGET.")
-#     return target_alphabet
+    odebug.close_intelligently()

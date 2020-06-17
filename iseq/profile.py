@@ -3,6 +3,7 @@ from math import log
 from typing import Generic, TypeVar
 
 from imm import Alphabet, Sequence, State, lprob_zero
+from nmm import Translator
 
 from .model import AltModel, NullModel, SpecialTransitions
 from .result import SearchResults
@@ -41,6 +42,11 @@ class Profile(Generic[TAlphabet, TState], ABC):
     @property
     def alphabet(self):
         return self._alphabet
+
+    @abstractmethod
+    def create_sequence(self, sequence: bytes) -> Sequence:
+        del sequence
+        raise NotImplementedError()
 
     @property
     def null_model(self) -> NullModel:

@@ -93,6 +93,9 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
             length = 2 * 3 * self._alt_model.core_length
         super(ProteinProfile, type(self)).window_length.fset(self, length)
 
+    def create_sequence(self, sequence: bytes) -> Sequence:
+        return Sequence.create(sequence, self.alphabet)
+
     @property
     def null_model(self) -> ProteinNullModel:
         return self._null_model

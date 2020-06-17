@@ -79,7 +79,7 @@ def bscan(
     profile and represents a potential homology. Expect many false positive
     associations as we are not filtering out by statistical significance.
     """
-    owriter = OutputWriter(output, epsilon, window)
+    owriter = OutputWriter(output)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
 
@@ -120,6 +120,7 @@ def bscan(
                     prof = ProteinProfile.create2(
                         abc, null_model, alt_model, hmmer3_compat
                     )
+                    prof.window_length = window
                     ELAPSED["wrap"] += time() - start
 
                     for tgt in targets:
@@ -128,7 +129,7 @@ def bscan(
 
                         seq = Sequence.create(tgt.sequence.encode(), prof.alphabet)
                         start = time()
-                        search_results = prof.search(seq, window)
+                        search_results = prof.search(seq)
                         ELAPSED["scan"] += time() - start
                         seqid = f"{tgt.defline.split()[0]}"
 
@@ -153,11 +154,11 @@ def bscan(
                             ready, waiting = intersect_fragments(waiting, candidates)
 
                             _write_fragments(
-                                gcode, owriter, cwriter, awriter, seqid, ready
+                                gcode, owriter, cwriter, awriter, seqid, ready, window
                             )
 
                         _write_fragments(
-                            gcode, owriter, cwriter, awriter, seqid, waiting
+                            gcode, owriter, cwriter, awriter, seqid, waiting, window
                         )
 
                         stdout.write("\n")
@@ -265,11 +266,12 @@ def _write_fragments(
     amino_writer,
     seqid: str,
     ifragments: List[IntFrag],
+    window_length: int,
 ):
     for ifrag in ifragments:
         start = ifrag.interval.start
         stop = ifrag.interval.stop
-        item_id = output_writer.write_item(seqid, start, stop)
+        item_id = output_writer.write_item(seqid, start, stop, window_length)
 
         codon_result = ifrag.fragment.decode()
         codon_writer.write_item(item_id, str(codon_result.sequence))
