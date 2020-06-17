@@ -5,13 +5,13 @@ from imm.testing import assert_allclose
 from nmm import CanonicalAminoAlphabet, DNAAlphabet
 
 from iseq.example import example_filepath
-from iseq.hmmdata import HMMData
+from iseq.hmmer_model import HMMERModel
 
 
 def test_hmmdata_amino():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmm_data = HMMData(reader.read_model())
+        hmm_data = HMMERModel(reader.read_model())
 
     assert isinstance(hmm_data.alphabet, CanonicalAminoAlphabet)
     assert_allclose(hmm_data.null_lprobs[3], -2.7056061901315998)
@@ -22,7 +22,7 @@ def test_hmmdata_amino():
 def test_hmmdata_dna():
     filepath = example_filepath("ecori.hmm")
     with open_hmmer(filepath) as reader:
-        hmm_data = HMMData(reader.read_model())
+        hmm_data = HMMERModel(reader.read_model())
 
     assert isinstance(hmm_data.alphabet, DNAAlphabet)
     assert_allclose(hmm_data.null_lprobs[3], log(1 / 4))

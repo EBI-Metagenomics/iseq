@@ -1,7 +1,7 @@
 from math import log
 from typing import List, Mapping
 
-from hmmer_reader import HMMERModel
+import hmmer_reader
 from imm import lprob_zero
 from nmm import CanonicalAminoAlphabet
 
@@ -9,11 +9,15 @@ from .alphabet import infer_alphabet
 from .model import Transitions
 from .typing import HMMERAlphabet
 
-__all__ = ["HMMData"]
+__all__ = ["HMMERModel"]
 
 
-class HMMData:
-    def __init__(self, hmmer: HMMERModel):
+class HMMERModel:
+    """
+    HMMER model.
+    """
+
+    def __init__(self, hmmer: hmmer_reader.HMMERModel):
         self._original_symbols: str = hmmer.alphabet
         alphabet = infer_alphabet(self._original_symbols.encode())
 

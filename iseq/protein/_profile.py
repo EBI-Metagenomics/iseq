@@ -3,7 +3,7 @@ from __future__ import annotations
 from math import log
 from typing import List, Type
 
-from hmmer_reader import HMMERModel
+import hmmer_reader
 from imm import (
     Interval,
     MuteState,
@@ -139,7 +139,7 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
 
 
 def create_profile(
-    reader: HMMERModel,
+    reader: hmmer_reader.HMMERModel,
     base_abc: BaseAlphabet,
     window_length: int = 0,
     epsilon: float = 0.1,

@@ -10,13 +10,13 @@ from hmmer_reader import open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
+from iseq.hmmer_model import HMMERModel
 from iseq.hmmsearch import HMMSearch
-from iseq.tblout import TBLData
-from iseq.hmmdata import HMMData
 from iseq.protein import create_profile
-from .misc import consolidate
+from iseq.tblout import TBLData
 
 from .debug_writer import DebugWriter
+from .misc import consolidate
 from .output_writer import OutputWriter, ProfileID
 
 
@@ -114,7 +114,7 @@ def pscan(
     for prof_parser in open_hmmer(profile):
         mt = dict(prof_parser.metadata)
         profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
-        hmmdata = HMMData(prof_parser)
+        hmmdata = HMMERModel(prof_parser)
         prof = create_profile(prof_parser, gcode.base_alphabet, window, epsilon)
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())

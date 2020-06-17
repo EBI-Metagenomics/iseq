@@ -9,8 +9,8 @@ from imm import Sequence
 from imm.testing import assert_allclose
 
 from iseq.example import example_filepath
-from iseq.hmmdata import HMMData
 from iseq.hmmer3 import create_profile
+from iseq.hmmer_model import HMMERModel
 
 
 @pytest.mark.slow
@@ -25,7 +25,7 @@ def test_hmmer3_pfam_viterbi_scores_compat(tmp_path):
 
     actual_scores = []
     for hmmprof in open_hmmer(db_filepath):
-        prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
+        prof = create_profile(HMMERModel(hmmprof), hmmer3_compat=True)
         seq = Sequence.create(target.sequence.encode(), prof.alphabet)
         search_results = prof.search(seq)
         score = search_results.results[0].alt_viterbi_score
@@ -46,7 +46,7 @@ def test_hmmer3_pfam_viterbi_scores_compat(tmp_path):
 def test_hmmer3_viterbi_dna_scores_compat():
     hmmfile = example_filepath("2OG-FeII_Oxy_3-nt.hmm")
     hmmprof = open_hmmer(hmmfile).read_model()
-    prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
+    prof = create_profile(HMMERModel(hmmprof), hmmer3_compat=True)
     for align in ["local", "unilocal", "glocal", "uniglocal"]:
 
         fastafile = f"2OG-FeII_Oxy_3-nt_{align}.fasta"
@@ -81,7 +81,7 @@ def test_hmmer3_viterbi_dna_scores_compat():
 def test_hmmer3_viterbi_amino_scores_compat():
     hmmfile = example_filepath("2OG-FeII_Oxy_3.hmm")
     hmmprof = open_hmmer(hmmfile).read_model()
-    prof = create_profile(HMMData(hmmprof), hmmer3_compat=True)
+    prof = create_profile(HMMERModel(hmmprof), hmmer3_compat=True)
     for align in ["local", "unilocal", "glocal", "uniglocal"]:
 
         fastafile = f"2OG-FeII_Oxy_3_{align}.fasta"

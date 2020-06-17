@@ -7,15 +7,15 @@ from imm.testing import assert_allclose
 from numpy.testing import assert_equal
 
 from iseq.example import example_filepath
-from iseq.hmmdata import HMMData
 from iseq.hmmer3 import create_profile
+from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr
 
 
 def test_hmmer3_profile_unihit_homologous_1():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
@@ -42,7 +42,7 @@ def test_hmmer3_profile_unihit_homologous_1():
 
 def test_hmmer3_profile_problematic1():
     with open_hmmer(example_filepath("problematic1.hmm")) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     prof = create_profile(hmmdata, True)
 
@@ -61,7 +61,7 @@ def test_hmmer3_profile_small_viterbi_score(tmp_path):
     fasta = example_filepath("A0ALD9.fasta")
 
     with open_hmmer(profile) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     prof = create_profile(hmmdata, True)
 
@@ -80,7 +80,7 @@ def test_hmmer3_profile_large_viterbi_score(tmp_path):
     fasta = example_filepath("A0ALD9.fasta")
 
     with open_hmmer(profile) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     prof = create_profile(hmmdata, True)
 
@@ -96,7 +96,7 @@ def test_hmmer3_profile_large_viterbi_score(tmp_path):
 def test_hmmer3_profile_unihit_homologous_2():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
@@ -115,7 +115,7 @@ def test_hmmer3_profile_unihit_homologous_2():
 def test_hmmer3_profile_unihit_homologous_3():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
@@ -133,7 +133,7 @@ def test_hmmer3_profile_unihit_homologous_3():
 def test_hmmer3_profile_nonhomo_and_homologous():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM)
 
@@ -164,7 +164,7 @@ def test_hmmer3_profile_nonhomo_and_homologous():
 def test_hmmer3_profile_multihit_homologous1():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     hmmer = create_profile(hmmdata, entry_distr=EntryDistr.OCCUPANCY)
 
@@ -225,7 +225,7 @@ def test_hmmer3_profile_multihit_homologous1():
 def test_hmmer3_profile_window():
     filepath = example_filepath("PF03373.hmm")
     with open_hmmer(filepath) as reader:
-        hmmdata = HMMData(reader.read_model())
+        hmmdata = HMMERModel(reader.read_model())
 
     hmmer = create_profile(hmmdata, entry_distr=EntryDistr.UNIFORM, window_length=15)
 

@@ -1,11 +1,11 @@
 from typing import List, TypeVar
 
-from imm import Alphabet, Interval, MuteState, NormalState, Path, SequenceABC, Sequence
+from imm import Alphabet, Interval, MuteState, NormalState, Path, Sequence, SequenceABC
+from nmm import DNAAlphabet, NTTranslator, NullTranslator, RNAAlphabet
 
-from iseq.hmmdata import HMMData
+from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr, Node, Transitions
 from iseq.profile import Profile
-from nmm import NTTranslator, NullTranslator, DNAAlphabet, RNAAlphabet
 
 from .typing import (
     HMMER3AltModel,
@@ -102,7 +102,7 @@ class HMMER3Profile(Profile[TAlphabet, NormalState]):
 
 
 def create_profile(
-    hmm: HMMData,
+    hmm: HMMERModel,
     hmmer3_compat: bool = False,
     entry_distr: EntryDistr = EntryDistr.OCCUPANCY,
     window_length: int = 0,

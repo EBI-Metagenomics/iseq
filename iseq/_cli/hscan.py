@@ -4,7 +4,7 @@ import click
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
-from iseq.hmmdata import HMMData
+from iseq.hmmer_model import HMMERModel
 from iseq.hmmer3 import create_profile
 from iseq.model import EntryDistr
 
@@ -85,7 +85,7 @@ def hscan(
     for prof_parser in open_hmmer(profile):
         mt = dict(prof_parser.metadata)
         profid = ProfileID(mt.get("NAME", "-"), mt.get("ACC", "-"))
-        hmmdata = HMMData(prof_parser)
+        hmmdata = HMMERModel(prof_parser)
         prof = create_profile(hmmdata, hmmer3_compat, edistr, window)
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
