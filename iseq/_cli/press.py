@@ -5,6 +5,7 @@ from hmmer_reader import open_hmmer
 from nmm import DNAAlphabet, Model, Output
 
 from iseq.protein import create_profile
+from iseq.hmmer_model import HMMERModel
 
 
 @click.command()
@@ -45,17 +46,18 @@ def press(
     with Output.create(alt_filepath) as afile:
         with Output.create(null_filepath) as nfile:
             with open(meta_filepath, "w") as mfile:
-                for hmmprof in tqdm(open_hmmer(profile)):
-                    prof = create_profile(hmmprof, base_abc, epsilon)
+                for plain_model in tqdm(open_hmmer(profile)):
+                    model = HMMERModel(plain_model)
+                    prof = create_profile(model, base_abc, 0, epsilon)
 
                     hmm = prof.alt_model.hmm
                     dp = hmm.create_dp(prof.alt_model.special_node.T)
-                    model = Model.create(hmm, dp)
-                    afile.write(model)
+                    afile.write(Model.create(hmm, dp))
 
                     hmm = prof.null_model.hmm
                     dp = hmm.create_dp(prof.null_model.state)
-                    model = Model.create(hmm, dp)
-                    nfile.write(model)
+                    nfile.write(Model.create(hmm, dp))
 
-                    mfile.write(dict(hmmprof.metadata)["ACC"] + "\n")
+                    name = model.model_id.name
+                    acc = model.model_id.acc
+                    mfile.write(f"{name}\t{acc}\n")

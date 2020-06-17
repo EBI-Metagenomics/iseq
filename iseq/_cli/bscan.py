@@ -1,5 +1,4 @@
 import os
-from time import time
 from typing import IO, List, NamedTuple, Tuple
 
 import click
@@ -10,6 +9,7 @@ from nmm import CanonicalAminoAlphabet, GeneticCode, Input
 
 from iseq import wrap
 from iseq.alphabet import infer_fasta_alphabet
+from iseq.profile import ProfileID
 from iseq.protein import ProteinFragment, ProteinProfile
 from iseq.protein.typing import ProteinAltModel, ProteinNullModel
 from iseq.result import SearchResult
@@ -98,39 +98,32 @@ def bscan(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    ELAPSED = {"wrap": 0.0, "scan": 0.0}
-
     with Input.create(alt_filepath) as afile:
         with Input.create(null_filepath) as nfile:
             with open(meta_filepath, "r") as mfile:
-                for alt, null, acc in zip(afile, nfile, mfile):
-                    owriter.profile = acc.strip()
-                    start = time()
+                for alt, null, line in zip(afile, nfile, mfile):
+                    name, acc = line.strip().split("\t")
                     special_node = wrap.special_node(alt.hmm)
                     core_nodes = wrap.core_nodes(alt.hmm)
                     alt_model = ProteinAltModel.create2(
                         special_node, core_nodes, alt.hmm, alt.dp
                     )
-                    # print(alt_model)
 
                     null_model = ProteinNullModel.create2(null.hmm)
-                    # print(null_model)
 
                     abc = alt_model.hmm.alphabet
+                    profid = ProfileID(name, acc)
                     prof = ProteinProfile.create2(
-                        abc, null_model, alt_model, hmmer3_compat
+                        profid, abc, null_model, alt_model, hmmer3_compat
                     )
                     prof.window_length = window
-                    ELAPSED["wrap"] += time() - start
 
                     for tgt in targets:
-                        stdout.write(">" + tgt.defline + "\n")
-                        stdout.write(sequence_summary(tgt.sequence) + "\n")
+                        # stdout.write(">" + tgt.defline + "\n")
+                        # stdout.write(sequence_summary(tgt.sequence) + "\n")
 
                         seq = Sequence.create(tgt.sequence.encode(), prof.alphabet)
-                        start = time()
                         search_results = prof.search(seq)
-                        ELAPSED["scan"] += time() - start
                         seqid = f"{tgt.defline.split()[0]}"
 
                         waiting: List[IntFrag] = []
@@ -139,7 +132,7 @@ def bscan(
                             search_results.windows, search_results.results
                         ):
 
-                            _show_search_result(stdout, result, win)
+                            # _show_search_result(stdout, result, win)
                             candidates: List[IntFrag] = []
 
                             for i, frag in zip(result.intervals, result.fragments):
@@ -154,14 +147,28 @@ def bscan(
                             ready, waiting = intersect_fragments(waiting, candidates)
 
                             _write_fragments(
-                                gcode, owriter, cwriter, awriter, seqid, ready, window
+                                profid,
+                                gcode,
+                                owriter,
+                                cwriter,
+                                awriter,
+                                seqid,
+                                ready,
+                                window,
                             )
 
                         _write_fragments(
-                            gcode, owriter, cwriter, awriter, seqid, waiting, window
+                            profid,
+                            gcode,
+                            owriter,
+                            cwriter,
+                            awriter,
+                            seqid,
+                            waiting,
+                            window,
                         )
 
-                        stdout.write("\n")
+                        # stdout.write("\n")
 
     finalize_stream(stdout, "output", output)
     finalize_stream(stdout, "ocodon", ocodon)
@@ -260,6 +267,7 @@ def intersect_fragments(
 
 
 def _write_fragments(
+    profid,
     genetic_code,
     output_writer,
     codon_writer,
@@ -271,7 +279,7 @@ def _write_fragments(
     for ifrag in ifragments:
         start = ifrag.interval.start
         stop = ifrag.interval.stop
-        item_id = output_writer.write_item(seqid, start, stop, window_length)
+        item_id = output_writer.write_item(seqid, profid, start, stop, window_length)
 
         codon_result = ifrag.fragment.decode()
         codon_writer.write_item(item_id, str(codon_result.sequence))
