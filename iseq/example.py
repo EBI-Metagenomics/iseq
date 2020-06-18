@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from .environment import ISEQ_CACHE_HOME
-from .file import brotli_decompress, file_hash
+from .file import fetch_file
 
 __all__ = ["example_filepath"]
 
@@ -102,40 +101,6 @@ _filenames = {
 
 
 def example_filepath(filename: str) -> Path:
-    import requests
-
-    url = "https://iseq-py.s3.amazonaws.com"
-    test_data_folder = ISEQ_CACHE_HOME / "test_data"
-    filepath = test_data_folder / filename
-
-    if filename + ".br" in _filenames:
-        zipped = example_filepath(filename + ".br")
-        cleanup_invalid_filepath(filepath)
-        if not filepath.exists():
-            brotli_decompress(zipped)
-    else:
-        if filename not in _filenames:
-            raise ValueError(f"Unknown filename {filename}.")
-
-        cleanup_invalid_filepath(filepath)
-
-    if not filepath.exists():
-        r = requests.get(f"{url}/{filename}")
-        r.raise_for_status()
-        with open(filepath, "wb") as f:
-            f.write(r.content)
-
-        if file_hash(filepath) != _filenames[filename]:
-            msg = (
-                f"Hash mismatch:\n"
-                f"  ACTUAL : {file_hash(filepath)}\n"
-                f"  DESIRED: {_filenames[filename]}"
-            )
-            raise RuntimeError(msg)
-
-    return filepath
-
-
-def cleanup_invalid_filepath(filepath: Path):
-    if filepath.exists() and file_hash(filepath) != _filenames[filepath.name]:
-        filepath.unlink()
+    return fetch_file(
+        filename, "test_data", "https://iseq-py.s3.amazonaws.com", _filenames
+    )

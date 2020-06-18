@@ -15,3 +15,4 @@ ISEQ_CACHE_HOME = Path(
 
 make_sure_dir_exist(ISEQ_CACHE_HOME)
 make_sure_dir_exist(ISEQ_CACHE_HOME / "test_data")
+make_sure_dir_exist(ISEQ_CACHE_HOME / "bin")

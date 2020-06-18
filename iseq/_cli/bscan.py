@@ -1,20 +1,18 @@
 import os
+from pathlib import Path
 from typing import IO, List, NamedTuple, Tuple
 
 import click
 from click.utils import LazyFile
 from fasta_reader import FASTAWriter, open_fasta
-from imm import Interval, Sequence
+from imm import Interval
 from nmm import CanonicalAminoAlphabet, GeneticCode, Input
 
-from iseq import wrap
 from iseq.alphabet import infer_fasta_alphabet
 from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
 from iseq.protein import ProteinFragment, ProteinProfile
-from iseq.protein.typing import ProteinAltModel, ProteinNullModel
 from iseq.result import SearchResult
-from pathlib import Path
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -80,9 +78,9 @@ def bscan(
     dwriter = DebugWriter(odebug)
 
     if quiet:
-        stdout = click.open_file(os.devnull, "a")
+        click.open_file(os.devnull, "a")
     else:
-        stdout = click.get_text_stream("stdout")
+        click.get_text_stream("stdout")
 
     alt_filepath = (profile + ".alt").encode()
     null_filepath = (profile + ".null").encode()
@@ -98,18 +96,9 @@ def bscan(
         with Input.create(null_filepath) as nfile:
             with open(meta_filepath, "r") as mfile:
                 for alt, null, line in zip(afile, nfile, mfile):
-                    name, acc = line.strip().split("\t")
-                    special_node = wrap.special_node(alt.hmm)
-                    core_nodes = wrap.core_nodes(alt.hmm)
-                    alt_model = ProteinAltModel.create2(
-                        special_node, core_nodes, alt.hmm, alt.dp
-                    )
-
-                    null_model = ProteinNullModel.create2(null.hmm)
-
-                    abc = alt_model.hmm.alphabet
-                    profid = ProfileID(name, acc)
-                    prof = ProteinProfile.create2(profid, abc, null_model, alt_model)
+                    profid = ProfileID(*line.strip().split("\t"))
+                    prof = ProteinProfile.create_from_binary(profid, null, alt)
+                    epsilon = prof.epsilon
                     prof.window_length = window
 
                     for tgt in targets:
@@ -127,7 +116,7 @@ def bscan(
                                 start,
                                 stop,
                                 prof.window_length,
-                                {"Epsilon": 0.01},
+                                {"Epsilon": epsilon},
                             )
                             codon_frag = ifrag.fragment.decode()
                             cwriter.write_item(item_id, str(codon_frag.sequence))

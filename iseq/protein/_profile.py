@@ -3,6 +3,7 @@ from __future__ import annotations
 from math import log
 from typing import List, Type
 
+import nmm
 from imm import (
     Interval,
     MuteState,
@@ -24,6 +25,7 @@ from nmm import (
     codon_iter,
 )
 
+from iseq import wrap
 from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr, Transitions
 from iseq.profile import Profile, ProfileID
@@ -73,15 +75,25 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         # alt_model.set_fragment_length(self._special_transitions)
         return cls(profid, base_alphabet, null_model, alt_model, False)
 
+    @property
+    def epsilon(self) -> float:
+        nodes = self._alt_model.core_nodes()
+        return nodes[0].M.epsilon
+
     @classmethod
-    def create2(
+    def create_from_binary(
         cls: Type[ProteinProfile],
         profid: ProfileID,
-        alphabet: BaseAlphabet,
-        null_model: ProteinNullModel,
-        alt_model: ProteinAltModel,
+        null_model: nmm.Model,
+        alt_model: nmm.Model,
     ):
-        return cls(profid, alphabet, null_model, alt_model, False)
+        special_node = wrap.special_node(alt_model.hmm)
+        core_nodes = wrap.core_nodes(alt_model.hmm)
+        alt = ProteinAltModel.create_from_hmm(
+            special_node, core_nodes, alt_model.hmm, alt_model.dp
+        )
+        null = ProteinNullModel.create_from_hmm(null_model.hmm)
+        return cls(profid, alt_model.hmm.alphabet, null, alt, False)
 
     @property
     def window_length(self) -> int:

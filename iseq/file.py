@@ -1,9 +1,19 @@
 import os
+import stat
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Mapping
 
-__all__ = ["file_hash", "make_sure_dir_exist", "brotli_decompress", "tmp_cwd", "diff"]
+__all__ = [
+    "file_hash",
+    "make_sure_dir_exist",
+    "brotli_decompress",
+    "tmp_cwd",
+    "diff",
+    "fetch_file",
+    "make_executable",
+]
 
 
 def file_hash(filepath: Path) -> str:
@@ -76,3 +86,49 @@ def diff(filepath_a, filepath_b):
         b = file_b.readlines()
 
     return "".join([line.expandtabs(1) for line in ndiff(a, b)])
+
+
+def make_executable(filepath):
+    st = os.stat(filepath)
+    os.chmod(filepath, st.st_mode | stat.S_IEXEC)
+
+
+def fetch_file(
+    filename: str, cache_subdir: str, url_base: str, filemap: Mapping[str, str]
+) -> Path:
+    import requests
+    from .environment import ISEQ_CACHE_HOME
+
+    filepath = ISEQ_CACHE_HOME / cache_subdir / filename
+
+    if filename + ".br" in filemap:
+        zipped = fetch_file(filename + ".br", cache_subdir, url_base, filemap)
+        cleanup_invalid_filepath(filepath, filemap)
+        if not filepath.exists():
+            brotli_decompress(zipped)
+    else:
+        if filename not in filemap:
+            raise ValueError(f"Unknown filename {filename}.")
+
+        cleanup_invalid_filepath(filepath, filemap)
+
+    if not filepath.exists():
+        r = requests.get(f"{url_base}/{filename}")
+        r.raise_for_status()
+        with open(filepath, "wb") as f:
+            f.write(r.content)
+
+        if file_hash(filepath) != filemap[filename]:
+            msg = (
+                f"Hash mismatch:\n"
+                f"  ACTUAL : {file_hash(filepath)}\n"
+                f"  DESIRED: {filemap[filename]}"
+            )
+            raise RuntimeError(msg)
+
+    return filepath
+
+
+def cleanup_invalid_filepath(filepath: Path, filemap: Mapping[str, str]):
+    if filepath.exists() and file_hash(filepath) != filemap[filepath.name]:
+        filepath.unlink()

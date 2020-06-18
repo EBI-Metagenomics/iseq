@@ -163,7 +163,7 @@ class NullModel(Generic[TState]):
         return cls(hmm, state)
 
     @classmethod
-    def create2(cls: Type[NullModel], hmm: HMM) -> NullModel:
+    def create_from_hmm(cls: Type[NullModel], hmm: HMM) -> NullModel:
         states = hmm.states()
         if len(states) != 1:
             raise ValueError("Null HMM must have only one state.")
@@ -264,7 +264,7 @@ class AltModel(Generic[TState]):
         return alt_model
 
     @classmethod
-    def create2(
+    def create_from_hmm(
         cls: Type[AltModel],
         special_node: SpecialNode,
         core_nodes: List[Node],
