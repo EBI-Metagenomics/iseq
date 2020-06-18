@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from iseq.file import fetch_file, tmp_cwd, make_executable
+from iseq.file import fetch_file, make_executable, tmp_cwd
 from iseq.tblout import TBLData
 
 __all__ = ["HMMSearch"]

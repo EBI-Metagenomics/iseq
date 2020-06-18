@@ -4,8 +4,8 @@ import click
 from hmmer_reader import open_hmmer
 from nmm import DNAAlphabet, Model, Output
 
-from iseq.protein import create_profile
 from iseq.hmmer_model import HMMERModel
+from iseq.protein import create_profile
 
 
 @click.command()

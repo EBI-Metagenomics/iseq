@@ -4,8 +4,8 @@ from imm.testing import assert_allclose
 from nmm import CanonicalAminoAlphabet, GeneticCode, RNAAlphabet
 
 from iseq.example import example_filepath
-from iseq.protein import create_profile
 from iseq.hmmer_model import HMMERModel
+from iseq.protein import create_profile
 
 
 def test_protein_profile_frame1():

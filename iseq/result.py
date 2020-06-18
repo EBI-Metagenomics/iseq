@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import astuple, dataclass
-from typing import Callable, Generic, Iterable, List, Tuple, TypeVar, NamedTuple
+from typing import Callable, Generic, Iterable, List, NamedTuple, Tuple, TypeVar
 
 from imm import Alphabet, Interval, Path, SequenceABC, State, Step
 

@@ -4,8 +4,8 @@ import click
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
-from iseq.hmmer_model import HMMERModel
 from iseq.hmmer3 import create_profile
+from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr
 
 from .debug_writer import DebugWriter
