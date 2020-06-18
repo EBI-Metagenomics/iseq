@@ -80,9 +80,8 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         alphabet: BaseAlphabet,
         null_model: ProteinNullModel,
         alt_model: ProteinAltModel,
-        hmmer3_compat: bool,
     ):
-        return cls(profid, alphabet, null_model, alt_model, hmmer3_compat)
+        return cls(profid, alphabet, null_model, alt_model, False)
 
     @property
     def window_length(self) -> int:

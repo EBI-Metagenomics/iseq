@@ -113,11 +113,13 @@ def pscan(
     for plain_model in open_hmmer(profile):
         model = HMMERModel(plain_model)
         prof = create_profile(model, gcode.base_alphabet, window, epsilon)
+
         for tgt in targets:
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()
             seqid = f"{tgt.defline.split()[0]}"
+
             for ifrag in ifragments:
                 start = ifrag.interval.start
                 stop = ifrag.interval.stop

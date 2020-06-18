@@ -96,6 +96,8 @@ _filenames = {
     "pfam_small_GALNBKIG_00914_ocodon.fasta.br": "383814295bbff57b2fbb9e6416b99d6729026db3d25964398b69fd885ff972db",
     "pfam_small_GALNBKIG_00914_output.gff": "44d2f2f900a962539f713b5d9e088524b36977cf2a8204012d49c63b775d989f",
     "pfam_small_GALNBKIG_00914_output.gff.br": "16a3cf6764b3ef5109b5753362dab0b69ad7ef7af95ee3537414daed39f02187",
+    "Pfam-A.33.1_10.hmm": "4dc51ef7c7bf5f0ae4a422e5210df77f0b5072b4685845cc14242952f8fa854b",
+    "Pfam-A.33.1_10.hmm.br": "38094bf30fbd166989ca8745a99722f6ce189bee8155c361edb202648de67266",
 }
 
 

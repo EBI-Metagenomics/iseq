@@ -9,39 +9,43 @@ from nmm import CanonicalAminoAlphabet, GeneticCode, Input
 
 from iseq import wrap
 from iseq.alphabet import infer_fasta_alphabet
+from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
 from iseq.protein import ProteinFragment, ProteinProfile
 from iseq.protein.typing import ProteinAltModel, ProteinNullModel
 from iseq.result import SearchResult
+from pathlib import Path
 
+from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
+from .pscan import update_gff_file
 
 IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFragment)])
 
 
 @click.command()
-@click.argument("profile", type=str)
+@click.argument(
+    "profile",
+    type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True),
+)
 @click.argument("target", type=click.File("r"))
 @click.option(
-    "--epsilon", type=float, default=1e-2, help="Indel probability. Defaults to 1e-2."
-)
-@click.option(
     "--output",
-    type=click.File("w"),
+    type=click.Path(exists=False, dir_okay=False, writable=True, resolve_path=True),
     help="Save results to OUTPUT (GFF format).",
-    default=os.devnull,
+    default="output.gff",
 )
 @click.option(
     "--ocodon",
-    type=click.File("w"),
+    type=click.Path(exists=False, dir_okay=False, writable=True, resolve_path=True),
     help="Save codon sequences to OCODON (FASTA format).",
-    default=os.devnull,
+    default="ocodon.fasta",
 )
 @click.option(
     "--oamino",
-    type=click.File("w"),
+    type=click.Path(exists=False, dir_okay=False, writable=True, resolve_path=True),
     help="Save amino acid sequences to OAMINO (FASTA format).",
-    default=os.devnull,
+    default="oamino.fasta",
 )
 @click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
@@ -53,35 +57,27 @@ IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFra
     default=0,
 )
 @click.option(
-    "--hmmer3-compat/--no-hmmer3-compat",
-    help="Enable full HMMER3 compatibility.",
-    default=False,
+    "--odebug",
+    type=click.File("w"),
+    help="Save debug info into a tab-separated values file.",
+    default=os.devnull,
+)
+@click.option(
+    "--e-value/--no-e-value",
+    help="Enable E-value computation. Defaults to True.",
+    default=True,
 )
 def bscan(
-    profile,
-    target,
-    epsilon: float,
-    output,
-    ocodon,
-    oamino,
-    quiet,
-    window: int,
-    hmmer3_compat: bool,
+    profile, target, output, ocodon, oamino, quiet, window: int, odebug, e_value: bool,
 ):
     """
-    Press.
-
-    TODO: fix this doc.
-    Search nucleotide sequence(s) against a protein profiles database.
-
-    An OUTPUT line determines an association between a TARGET subsequence and
-    a PROFILE protein profile. An association maps a target subsequence to a
-    profile and represents a potential homology. Expect many false positive
-    associations as we are not filtering out by statistical significance.
+    Binary scan.
     """
+
     owriter = OutputWriter(output)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
+    dwriter = DebugWriter(odebug)
 
     if quiet:
         stdout = click.open_file(os.devnull, "a")
@@ -113,66 +109,44 @@ def bscan(
 
                     abc = alt_model.hmm.alphabet
                     profid = ProfileID(name, acc)
-                    prof = ProteinProfile.create2(
-                        profid, abc, null_model, alt_model, hmmer3_compat
-                    )
+                    prof = ProteinProfile.create2(profid, abc, null_model, alt_model)
                     prof.window_length = window
 
                     for tgt in targets:
-                        # stdout.write(">" + tgt.defline + "\n")
-                        # stdout.write(sequence_summary(tgt.sequence) + "\n")
-
-                        seq = Sequence.create(tgt.sequence.encode(), prof.alphabet)
+                        seq = prof.create_sequence(tgt.sequence.encode())
                         search_results = prof.search(seq)
+                        ifragments = search_results.ifragments()
                         seqid = f"{tgt.defline.split()[0]}"
 
-                        waiting: List[IntFrag] = []
-
-                        for win, result in zip(
-                            search_results.windows, search_results.results
-                        ):
-
-                            # _show_search_result(stdout, result, win)
-                            candidates: List[IntFrag] = []
-
-                            for i, frag in zip(result.intervals, result.fragments):
-                                if not frag.homologous:
-                                    continue
-
-                                interval = Interval(
-                                    win.start + i.start, win.start + i.stop
-                                )
-                                candidates.append(IntFrag(interval, frag))
-
-                            ready, waiting = intersect_fragments(waiting, candidates)
-
-                            _write_fragments(
-                                profid,
-                                gcode,
-                                owriter,
-                                cwriter,
-                                awriter,
+                        for ifrag in ifragments:
+                            start = ifrag.interval.start
+                            stop = ifrag.interval.stop
+                            item_id = owriter.write_item(
                                 seqid,
-                                ready,
-                                window,
+                                prof.profid,
+                                start,
+                                stop,
+                                prof.window_length,
+                                {"Epsilon": 0.01},
                             )
+                            codon_frag = ifrag.fragment.decode()
+                            cwriter.write_item(item_id, str(codon_frag.sequence))
+                            amino_frag = codon_frag.decode(gcode)
+                            awriter.write_item(item_id, str(amino_frag.sequence))
 
-                        _write_fragments(
-                            profid,
-                            gcode,
-                            owriter,
-                            cwriter,
-                            awriter,
-                            seqid,
-                            waiting,
-                            window,
-                        )
+                        if odebug is not os.devnull:
+                            for i in search_results.debug_table():
+                                dwriter.write_row(seqid, i)
 
-                        # stdout.write("\n")
+    owriter.close()
+    cwriter.close()
+    awriter.close()
+    odebug.close_intelligently()
 
-    finalize_stream(stdout, "output", output)
-    finalize_stream(stdout, "ocodon", ocodon)
-    finalize_stream(stdout, "oamino", oamino)
+    if e_value:
+        hmmsearch = HMMSearch()
+        tbldata = hmmsearch.search(Path(profile), Path(oamino))
+        update_gff_file(output, tbldata)
 
 
 def sequence_summary(sequence: str):
