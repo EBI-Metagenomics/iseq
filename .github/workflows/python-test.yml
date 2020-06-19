@@ -34,4 +34,5 @@ jobs:
         isort --recursive --check-only iseq
     - name: Test
       run: |
-        python setup.py test
+        pip install -e .
+        pytest iseq --runslow
