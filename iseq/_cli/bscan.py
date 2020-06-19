@@ -3,23 +3,99 @@ from pathlib import Path
 from typing import IO, List, NamedTuple, Tuple
 
 import click
+import ray
 from click.utils import LazyFile
 from fasta_reader import FASTAWriter, open_fasta
-from imm import Interval
-from nmm import CanonicalAminoAlphabet, GeneticCode, Input
+from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Input, RNAAlphabet
 from tqdm import tqdm
 
 from iseq.alphabet import infer_fasta_alphabet
 from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
-from iseq.protein import ProteinFragment, ProteinProfile
-from iseq.result import SearchResult
+from iseq.protein import ProteinProfile
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
 from .pscan import update_gff_file
 
-IntFrag = NamedTuple("IntFrag", [("interval", Interval), ("fragment", ProteinFragment)])
+
+@ray.remote
+class Worker:
+    def __init__(self, alt_filepath, null_filepath, target_abc_name: str, debug: bool):
+        self._afile = Input.create(alt_filepath)
+        self._nfile = Input.create(null_filepath)
+        if target_abc_name == "dna":
+            target_abc = DNAAlphabet()
+        elif target_abc_name == "rna":
+            target_abc = RNAAlphabet()
+        else:
+            raise RuntimeError()
+        self._gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
+        self._output_items = []
+        self._codon_seqs = []
+        self._amino_seqs = []
+        self._debug = debug
+        self._debug_table = []
+        self._seqids = []
+
+    def set_offset(self, alt_offset, null_offset):
+        self._afile.fseek(alt_offset)
+        self._nfile.fseek(null_offset)
+
+    def search(self, profids, targets, window):
+
+        for profid in (ProfileID(*i.split("\t")) for i in profids):
+            alt = self._afile.read()
+            null = self._nfile.read()
+            prof = ProteinProfile.create_from_binary(profid, null, alt)
+            epsilon = prof.epsilon
+            prof.window_length = window
+
+            for tgt in targets:
+                seq = prof.create_sequence(tgt.sequence.encode())
+                search_results = prof.search(seq)
+                ifragments = search_results.ifragments()
+                seqid = f"{tgt.defline.split()[0]}"
+
+                for ifrag in ifragments:
+                    start = ifrag.interval.start
+                    stop = ifrag.interval.stop
+                    self._output_items.append(
+                        (
+                            seqid,
+                            prof.profid,
+                            start,
+                            stop,
+                            prof.window_length,
+                            {"Epsilon": epsilon},
+                        )
+                    )
+                    codon_frag = ifrag.fragment.decode()
+                    self._codon_seqs.append(str(codon_frag.sequence))
+                    amino_frag = codon_frag.decode(self._gcode)
+                    self._amino_seqs.append(str(amino_frag.sequence))
+
+                if self._debug:
+                    self._debug_table += search_results.debug_table()
+                self._seqids.append(seqid)
+
+        self._afile.close()
+        self._nfile.close()
+
+    def output_items(self):
+        return self._output_items
+
+    def codon_seqs(self):
+        return self._codon_seqs
+
+    def amino_seqs(self):
+        return self._amino_seqs
+
+    def debug_table(self):
+        return self._debug_table
+
+    def seqids(self):
+        return self._seqids
 
 
 @click.command()
@@ -73,6 +149,8 @@ def bscan(
     Binary scan.
     """
 
+    num_cpus = 4
+    ray.init(num_cpus=num_cpus)
     owriter = OutputWriter(output)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
@@ -87,50 +165,48 @@ def bscan(
     null_filepath = (profile + ".null").encode()
     meta_filepath = (profile + ".meta").encode()
 
+    alt_offsets = [int(line.strip()) for line in open(profile + ".alt.idx", "r")]
+    null_offsets = [int(line.strip()) for line in open(profile + ".null.idx", "r")]
+    profids_list = list(
+        split([line.strip() for line in open(meta_filepath, "r")], num_cpus)
+    )
+    alt_offsets = [i[0] for i in split(alt_offsets, num_cpus)]
+    null_offsets = [i[0] for i in split(null_offsets, num_cpus)]
+
     target_abc = _infer_target_alphabet(target)
-    gcode = GeneticCode(target_abc, CanonicalAminoAlphabet())
+    if isinstance(target_abc, DNAAlphabet):
+        tgt_abc_id = "dna"
+    elif isinstance(target_abc, RNAAlphabet):
+        tgt_abc_id = "rna"
+    else:
+        raise RuntimeError()
 
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    afile = Input.create(alt_filepath)
-    nfile = Input.create(null_filepath)
-    mfile = open(meta_filepath, "r")
-    for alt, null, line in tqdm(zip(afile, nfile, mfile)):
-        profid = ProfileID(*line.strip().split("\t"))
-        prof = ProteinProfile.create_from_binary(profid, null, alt)
-        epsilon = prof.epsilon
-        prof.window_length = window
+    workers = []
+    for aoffset, noffset, profids in zip(alt_offsets, null_offsets, profids_list):
+        debug = odebug is not os.devnull
+        w = Worker.remote(alt_filepath, null_filepath, tgt_abc_id, debug)
+        w.set_offset.remote(aoffset, noffset)
+        w.search.remote(profids, targets, window)
+        workers.append(w)
 
-        for tgt in targets:
-            seq = prof.create_sequence(tgt.sequence.encode())
-            search_results = prof.search(seq)
-            ifragments = search_results.ifragments()
-            seqid = f"{tgt.defline.split()[0]}"
+    for w in workers:
+        output_items = ray.get(w.output_items.remote())
+        codon_seqs = ray.get(w.codon_seqs.remote())
+        amino_seqs = ray.get(w.amino_seqs.remote())
+        for item, cseq, aseq in zip(output_items, codon_seqs, amino_seqs):
+            item_id = owriter.write_item(*item)
+            cwriter.write_item(item_id, cseq)
+            awriter.write_item(item_id, aseq)
 
-            for ifrag in ifragments:
-                start = ifrag.interval.start
-                stop = ifrag.interval.stop
-                item_id = owriter.write_item(
-                    seqid,
-                    prof.profid,
-                    start,
-                    stop,
-                    prof.window_length,
-                    {"Epsilon": epsilon},
-                )
-                codon_frag = ifrag.fragment.decode()
-                cwriter.write_item(item_id, str(codon_frag.sequence))
-                amino_frag = codon_frag.decode(gcode)
-                awriter.write_item(item_id, str(amino_frag.sequence))
-
-            if odebug is not os.devnull:
-                for i in search_results.debug_table():
-                    dwriter.write_row(seqid, i)
-
-    afile.close()
-    nfile.close()
-    mfile.close()
+    if odebug is not os.devnull:
+        for w in workers:
+            seqids = ray.get(w.seqids.remote())
+            debug_table = ray.get(w.debug_table.remote())
+            for seqid, debug_row in zip(seqids, debug_table):
+                dwriter.write_row(seqid, debug_row)
 
     owriter.close()
     cwriter.close()
@@ -143,124 +219,16 @@ def bscan(
         update_gff_file(output, tbldata)
 
 
-def sequence_summary(sequence: str):
-    max_nchars = 79
-    if len(sequence) <= max_nchars:
-        return sequence
-
-    middle = " ... "
-
-    begin_nchars = (max_nchars - len(middle)) // 2
-    end_nchars = begin_nchars + (max_nchars - len(middle)) % 2
-
-    return sequence[:begin_nchars] + middle + sequence[-end_nchars:]
-
-
-def _show_search_result(stdout, result: SearchResult, window: Interval):
-
-    stdout.write("\n")
-
-    start = window.start
-    stop = window.stop
-    n = sum(frag.homologous for frag in result.fragments)
-    msg = f"Found {n} homologous fragment(s) within the range [{start+1}, {stop}]."
-    stdout.write(msg + "\n")
-
-    j = 0
-    for interval, frag in zip(result.intervals, result.fragments):
-        if not frag.homologous:
-            continue
-
-        start = window.start + interval.start
-        stop = window.start + interval.stop
-        msg = f"Fragment={j + 1}; Position=[{start + 1}, {stop}]\n"
-        stdout.write(msg)
-        states = []
-        matches = []
-        for frag_step in iter(frag):
-            states.append(frag_step.step.state.name.decode())
-            matches.append(str(frag_step.sequence))
-
-        stdout.write("\t".join(states) + "\n")
-        stdout.write("\t".join(matches) + "\n")
-        j += 1
-
-
-def intersect_fragments(
-    waiting: List[IntFrag], candidates: List[IntFrag]
-) -> Tuple[List[IntFrag], List[IntFrag]]:
-
-    ready: List[IntFrag] = []
-    new_waiting: List[IntFrag] = []
-
-    i = 0
-    j = 0
-
-    curr_stop = 0
-    while i < len(waiting) and j < len(candidates):
-
-        if waiting[i].interval.start < candidates[j].interval.start:
-            ready.append(waiting[i])
-            curr_stop = waiting[i].interval.stop
-            i += 1
-        elif waiting[i].interval.start == candidates[j].interval.start:
-            if waiting[i].interval.stop >= candidates[j].interval.stop:
-                ready.append(waiting[i])
-                curr_stop = waiting[i].interval.stop
-            else:
-                new_waiting.append(candidates[j])
-                curr_stop = candidates[j].interval.stop
-            i += 1
-            j += 1
-        else:
-            new_waiting.append(candidates[j])
-            curr_stop = candidates[j].interval.stop
-            j += 1
-
-        while i < len(waiting) and waiting[i].interval.stop <= curr_stop:
-            i += 1
-
-        while j < len(candidates) and candidates[j].interval.stop <= curr_stop:
-            j += 1
-
-    while i < len(waiting):
-        ready.append(waiting[i])
-        i += 1
-
-    while j < len(candidates):
-        new_waiting.append(candidates[j])
-        j += 1
-
-    return ready, new_waiting
-
-
-def _write_fragments(
-    profid,
-    genetic_code,
-    output_writer,
-    codon_writer,
-    amino_writer,
-    seqid: str,
-    ifragments: List[IntFrag],
-    window_length: int,
-):
-    for ifrag in ifragments:
-        start = ifrag.interval.start
-        stop = ifrag.interval.stop
-        item_id = output_writer.write_item(seqid, profid, start, stop, window_length)
-
-        codon_result = ifrag.fragment.decode()
-        codon_writer.write_item(item_id, str(codon_result.sequence))
-
-        amino_result = codon_result.decode(genetic_code)
-        amino_writer.write_item(item_id, str(amino_result.sequence))
-
-
 def finalize_stream(stdout, name: str, stream: LazyFile):
     if stream.name != "-":
         stdout.write(f"Writing {name} to <{stream.name}> file.\n")
 
     stream.close_intelligently()
+
+
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
 def _infer_target_alphabet(target: IO[str]):
