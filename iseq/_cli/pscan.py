@@ -3,10 +3,11 @@ import re
 from collections import OrderedDict
 from pathlib import Path
 from typing import IO
+from tqdm import tqdm
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
-from hmmer_reader import open_hmmer
+from hmmer_reader import open_hmmer, num_models
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
@@ -92,14 +93,9 @@ def pscan(
     awriter = FASTAWriter(oamino)
     dwriter = DebugWriter(odebug)
 
-    if quiet:
-        click.open_file(os.devnull, "a")
-    else:
-        click.get_text_stream("stdout")
-
     with open(profile, "r") as file:
         profile_abc = _infer_profile_alphabet(file)
-    target_abc = _infer_target_alphabet(target)
+    target_abc = infer_target_alphabet(target)
 
     assert isinstance(target_abc, BaseAlphabet) and isinstance(
         profile_abc, AminoAlphabet
@@ -110,7 +106,8 @@ def pscan(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    for plain_model in open_hmmer(profile):
+    total = num_models(profile)
+    for plain_model in tqdm(open_hmmer(profile), total=total, disable=quiet):
         model = HMMERModel(plain_model)
         prof = create_profile(model, gcode.base_alphabet, window, epsilon)
 
@@ -160,7 +157,7 @@ def _infer_profile_alphabet(profile: IO[str]):
     return hmmer_alphabet
 
 
-def _infer_target_alphabet(target: IO[str]):
+def infer_target_alphabet(target: IO[str]):
     fasta = open_fasta(target)
     target_alphabet = infer_fasta_alphabet(fasta)
     target.seek(0)

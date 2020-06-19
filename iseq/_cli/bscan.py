@@ -1,22 +1,18 @@
 import os
 from pathlib import Path
-from typing import IO, List, NamedTuple, Tuple
 
 import click
 import ray
-from click.utils import LazyFile
 from fasta_reader import FASTAWriter, open_fasta
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Input, RNAAlphabet
-from tqdm import tqdm
 
-from iseq.alphabet import infer_fasta_alphabet
 from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
 from iseq.protein import ProteinProfile
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
-from .pscan import update_gff_file
+from .pscan import update_gff_file, infer_target_alphabet
 
 
 @ray.remote
@@ -142,38 +138,61 @@ class Worker:
     help="Enable E-value computation. Defaults to True.",
     default=True,
 )
+@click.option(
+    "--ncpus",
+    help="Number of CPUs the user wishes to assign to each worker. Defaults to auto.",
+    default="auto",
+    type=str,
+)
 def bscan(
-    profile, target, output, ocodon, oamino, quiet, window: int, odebug, e_value: bool,
+    profile,
+    target,
+    output,
+    ocodon,
+    oamino,
+    quiet,
+    window: int,
+    odebug,
+    e_value: bool,
+    ncpus: str,
 ):
     """
     Binary scan.
     """
 
-    num_cpus = 4
-    ray.init(num_cpus=num_cpus)
+    if ncpus == "auto":
+        num_cpus = os.cpu_count()
+    else:
+        num_cpus = int(ncpus)
+
+    alt_offsets = [int(line.strip()) for line in open(profile + ".alt.idx", "r")]
+    null_offsets = [int(line.strip()) for line in open(profile + ".null.idx", "r")]
+
+    num_cpus = min(num_cpus, len(alt_offsets))
+
+    ray.init(
+        include_webui=False,
+        include_java=False,
+        ignore_reinit_error=True,
+        num_cpus=num_cpus,
+    )
+
     owriter = OutputWriter(output)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
     dwriter = DebugWriter(odebug)
 
-    if quiet:
-        click.open_file(os.devnull, "a")
-    else:
-        click.get_text_stream("stdout")
-
     alt_filepath = (profile + ".alt").encode()
     null_filepath = (profile + ".null").encode()
     meta_filepath = (profile + ".meta").encode()
 
-    alt_offsets = [int(line.strip()) for line in open(profile + ".alt.idx", "r")]
-    null_offsets = [int(line.strip()) for line in open(profile + ".null.idx", "r")]
     profids_list = list(
         split([line.strip() for line in open(meta_filepath, "r")], num_cpus)
     )
     alt_offsets = [i[0] for i in split(alt_offsets, num_cpus)]
     null_offsets = [i[0] for i in split(null_offsets, num_cpus)]
 
-    target_abc = _infer_target_alphabet(target)
+    target_abc = infer_target_alphabet(target)
     if isinstance(target_abc, DNAAlphabet):
         tgt_abc_id = "dna"
     elif isinstance(target_abc, RNAAlphabet):
@@ -218,23 +237,9 @@ def bscan(
         tbldata = hmmsearch.search(Path(profile), Path(oamino))
         update_gff_file(output, tbldata)
 
-
-def finalize_stream(stdout, name: str, stream: LazyFile):
-    if stream.name != "-":
-        stdout.write(f"Writing {name} to <{stream.name}> file.\n")
-
-    stream.close_intelligently()
+    ray.shutdown()
 
 
 def split(a, n):
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
-
-
-def _infer_target_alphabet(target: IO[str]):
-    fasta = open_fasta(target)
-    target_alphabet = infer_fasta_alphabet(fasta)
-    target.seek(0)
-    if target_alphabet is None:
-        raise click.UsageError("Could not infer alphabet from TARGET.")
-    return target_alphabet
