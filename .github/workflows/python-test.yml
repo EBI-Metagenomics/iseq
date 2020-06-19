@@ -35,4 +35,4 @@ jobs:
     - name: Test
       run: |
         pip install -e .
-        pytest iseq --runslow
+        pytest iseq
