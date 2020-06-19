@@ -3,12 +3,12 @@ import re
 from collections import OrderedDict
 from pathlib import Path
 from typing import IO
-from tqdm import tqdm
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
-from hmmer_reader import open_hmmer, num_models
+from hmmer_reader import num_models, open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
+from tqdm import tqdm
 
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.hmmer_model import HMMERModel

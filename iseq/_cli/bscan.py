@@ -12,7 +12,7 @@ from iseq.protein import ProteinProfile
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
-from .pscan import update_gff_file, infer_target_alphabet
+from .pscan import infer_target_alphabet, update_gff_file
 
 
 @ray.remote
