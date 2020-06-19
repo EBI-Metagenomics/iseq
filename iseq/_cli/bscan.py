@@ -7,6 +7,7 @@ from click.utils import LazyFile
 from fasta_reader import FASTAWriter, open_fasta
 from imm import Interval
 from nmm import CanonicalAminoAlphabet, GeneticCode, Input
+from tqdm import tqdm
 
 from iseq.alphabet import infer_fasta_alphabet
 from iseq.hmmsearch import HMMSearch
@@ -92,40 +93,44 @@ def bscan(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    with Input.create(alt_filepath) as afile:
-        with Input.create(null_filepath) as nfile:
-            with open(meta_filepath, "r") as mfile:
-                for alt, null, line in zip(afile, nfile, mfile):
-                    profid = ProfileID(*line.strip().split("\t"))
-                    prof = ProteinProfile.create_from_binary(profid, null, alt)
-                    epsilon = prof.epsilon
-                    prof.window_length = window
+    afile = Input.create(alt_filepath)
+    nfile = Input.create(null_filepath)
+    mfile = open(meta_filepath, "r")
+    for alt, null, line in tqdm(zip(afile, nfile, mfile)):
+        profid = ProfileID(*line.strip().split("\t"))
+        prof = ProteinProfile.create_from_binary(profid, null, alt)
+        epsilon = prof.epsilon
+        prof.window_length = window
 
-                    for tgt in targets:
-                        seq = prof.create_sequence(tgt.sequence.encode())
-                        search_results = prof.search(seq)
-                        ifragments = search_results.ifragments()
-                        seqid = f"{tgt.defline.split()[0]}"
+        for tgt in targets:
+            seq = prof.create_sequence(tgt.sequence.encode())
+            search_results = prof.search(seq)
+            ifragments = search_results.ifragments()
+            seqid = f"{tgt.defline.split()[0]}"
 
-                        for ifrag in ifragments:
-                            start = ifrag.interval.start
-                            stop = ifrag.interval.stop
-                            item_id = owriter.write_item(
-                                seqid,
-                                prof.profid,
-                                start,
-                                stop,
-                                prof.window_length,
-                                {"Epsilon": epsilon},
-                            )
-                            codon_frag = ifrag.fragment.decode()
-                            cwriter.write_item(item_id, str(codon_frag.sequence))
-                            amino_frag = codon_frag.decode(gcode)
-                            awriter.write_item(item_id, str(amino_frag.sequence))
+            for ifrag in ifragments:
+                start = ifrag.interval.start
+                stop = ifrag.interval.stop
+                item_id = owriter.write_item(
+                    seqid,
+                    prof.profid,
+                    start,
+                    stop,
+                    prof.window_length,
+                    {"Epsilon": epsilon},
+                )
+                codon_frag = ifrag.fragment.decode()
+                cwriter.write_item(item_id, str(codon_frag.sequence))
+                amino_frag = codon_frag.decode(gcode)
+                awriter.write_item(item_id, str(amino_frag.sequence))
 
-                        if odebug is not os.devnull:
-                            for i in search_results.debug_table():
-                                dwriter.write_row(seqid, i)
+            if odebug is not os.devnull:
+                for i in search_results.debug_table():
+                    dwriter.write_row(seqid, i)
+
+    afile.close()
+    nfile.close()
+    mfile.close()
 
     owriter.close()
     cwriter.close()
