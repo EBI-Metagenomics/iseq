@@ -9,7 +9,10 @@ from iseq.protein import create_profile
 
 
 @click.command()
-@click.argument("profile", type=click.File("r"))
+@click.argument(
+    "profile",
+    type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True),
+)
 @click.option(
     "--epsilon", type=float, default=1e-2, help="Indel probability. Defaults to 1e-2."
 )
