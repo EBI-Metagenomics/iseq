@@ -1,7 +1,7 @@
 import os
 
 import click
-from hmmer_reader import open_hmmer
+from hmmer_reader import open_hmmer, num_models
 from nmm import DNAAlphabet, Model, Output
 
 from iseq.hmmer_model import HMMERModel
@@ -43,10 +43,17 @@ def press(
 
     base_abc = DNAAlphabet()
 
+    if quiet:
+        total = 0
+    else:
+        total = num_models(profile)
+
     with Output.create(alt_filepath) as afile:
         with Output.create(null_filepath) as nfile:
             with open(meta_filepath, "w") as mfile:
-                for plain_model in tqdm(open_hmmer(profile)):
+                for plain_model in tqdm(
+                    open_hmmer(profile), total=total, disable=quiet
+                ):
                     model = HMMERModel(plain_model)
                     prof = create_profile(model, base_abc, 0, epsilon)
 
