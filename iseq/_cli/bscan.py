@@ -5,6 +5,7 @@ import click
 import ray
 from fasta_reader import FASTAWriter, open_fasta
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Input, RNAAlphabet
+from tqdm import tqdm
 
 from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
@@ -17,7 +18,9 @@ from .pscan import infer_target_alphabet, update_gff_file
 
 @ray.remote
 class Worker:
-    def __init__(self, alt_filepath, null_filepath, target_abc_name: str, debug: bool):
+    def __init__(
+        self, alt_filepath, null_filepath, target_abc_name: str, debug: bool, name: str
+    ):
         self._afile = Input.create(alt_filepath)
         self._nfile = Input.create(null_filepath)
         if target_abc_name == "dna":
@@ -33,14 +36,18 @@ class Worker:
         self._debug = debug
         self._debug_table = []
         self._seqids = []
+        self._name = name
 
     def set_offset(self, alt_offset, null_offset):
         self._afile.fseek(alt_offset)
         self._nfile.fseek(null_offset)
 
     def search(self, profids, targets, window):
-
-        for profid in (ProfileID(*i.split("\t")) for i in profids):
+        for profid in tqdm(
+            [ProfileID(*i.split("\t")) for i in profids],
+            mininterval=10,
+            desc=self._name,
+        ):
             alt = self._afile.read()
             null = self._nfile.read()
             prof = ProteinProfile.create_from_binary(profid, null, alt)
@@ -204,12 +211,15 @@ def bscan(
         targets = list(fasta)
 
     workers = []
+    i = 0
     for aoffset, noffset, profids in zip(alt_offsets, null_offsets, profids_list):
         debug = odebug is not os.devnull
-        w = Worker.remote(alt_filepath, null_filepath, tgt_abc_id, debug)
+        name = f"Worker{i}"
+        w = Worker.remote(alt_filepath, null_filepath, tgt_abc_id, debug, name)
         w.set_offset.remote(aoffset, noffset)
         w.search.remote(profids, targets, window)
         workers.append(w)
+        i += 1
 
     for w in workers:
         output_items = ray.get(w.output_items.remote())
