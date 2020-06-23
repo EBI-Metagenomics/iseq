@@ -41,7 +41,7 @@ from __future__ import annotations
 
 import pathlib
 from collections import OrderedDict
-from typing import IO, List, NamedTuple, Union
+from typing import IO, List, NamedTuple, Optional, Union
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
 
@@ -115,6 +115,23 @@ class GFF:
     def append(self, item: GFFItem):
         self._items.append(item)
 
+    def filter(self, max_e_value: Optional[float] = None):
+        gff = GFF(self._header)
+
+        for item in self.items():
+            attrs = explode_attributes(item)
+
+            if max_e_value is not None:
+                if "E-value" not in attrs:
+                    continue
+                e_value = float(attrs["E-value"])
+                if e_value > max_e_value:
+                    continue
+
+            gff.append(item)
+
+        return gff
+
     def _to_dataframe(self):
         from pandas import DataFrame
 
@@ -144,7 +161,7 @@ class GFF:
         self._from_dataframe(df)
 
     def write_file(self, file: Union[str, pathlib.Path, IO[str]]):
-        gff_writer = GFFWriter(file)
+        gff_writer = GFFWriter(file, self._header)
         for item in self.items():
             gff_writer.write_item(item)
         gff_writer.close()
@@ -160,7 +177,9 @@ class GFF:
 
 
 class GFFWriter:
-    def __init__(self, file: Union[str, pathlib.Path, IO[str]]):
+    def __init__(
+        self, file: Union[str, pathlib.Path, IO[str]], header: Optional[str] = None
+    ):
 
         if isinstance(file, str):
             file = pathlib.Path(file)
@@ -169,7 +188,10 @@ class GFFWriter:
             file = open(file, "w")
 
         self._file = file
-        self._file.write("##gff-version 3\n")
+        if header is None:
+            self._file.write("##gff-version 3\n")
+        else:
+            self._file.write(f"{header}\n")
 
     def write_item(self, item: GFFItem):
         cols = [
@@ -191,6 +213,14 @@ class GFFWriter:
         Close the associated stream.
         """
         self._file.close()
+
+
+def explode_attributes(item: GFFItem):
+    attrs = {}
+    for v in item.attributes.split(";"):
+        name, value = v.split("=")
+        attrs[name] = value
+    return attrs
 
 
 def _explode_attributes(df):
