@@ -35,28 +35,25 @@ def press(
     """
     from tqdm import tqdm
 
-    if quiet:
-        click.open_file(os.devnull, "a")
-    else:
-        click.get_text_stream("stdout")
-
-    alt_filepath = (profile.name + ".alt").encode()
-    null_filepath = (profile.name + ".null").encode()
-    meta_filepath = (profile.name + ".meta").encode()
+    alt_filepath = (profile + ".alt").encode()
+    null_filepath = (profile + ".null").encode()
+    meta_filepath = (profile + ".meta").encode()
 
     base_abc = DNAAlphabet()
 
     if quiet:
         total = 0
     else:
+        click.echo("Estimating the number of models... ", nl=False)
         total = num_models(profile)
+        click.echo("done.")
 
     with Output.create(alt_filepath) as afile:
         with Output.create(null_filepath) as nfile:
             with open(meta_filepath, "w") as mfile:
-                for plain_model in tqdm(
-                    open_hmmer(profile), total=total, disable=quiet
-                ):
+                parser = open_hmmer(profile)
+                desc = "Pressing"
+                for plain_model in tqdm(parser, total=total, desc=desc, disable=quiet):
                     model = HMMERModel(plain_model)
                     prof = create_profile(model, base_abc, 0, epsilon)
 
