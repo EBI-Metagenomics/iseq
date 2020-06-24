@@ -1,6 +1,8 @@
 import os
+from math import exp
 from pathlib import Path
 
+import time
 import humanfriendly
 import click
 import ray
@@ -18,10 +20,30 @@ from .pscan import infer_target_alphabet, update_gff_file
 
 
 @ray.remote
+class Counter:
+    def __init__(self):
+        self._count = 0
+
+    def increment(self):
+        self._count += 1
+
+    def get_and_reset(self):
+        count = self._count
+        self._count = 0
+        return count
+
+
+@ray.remote
 class Worker:
     def __init__(
-        self, alt_filepath, null_filepath, target_abc_name: str, debug: bool, name: str
+        self,
+        counter: Counter,
+        alt_filepath,
+        null_filepath,
+        target_abc_name: str,
+        debug: bool,
     ):
+        self._counter = counter
         self._afile = Input.create(alt_filepath)
         self._nfile = Input.create(null_filepath)
         if target_abc_name == "dna":
@@ -37,18 +59,18 @@ class Worker:
         self._debug = debug
         self._debug_table = []
         self._seqids = []
-        self._name = name
 
     def set_offset(self, alt_offset, null_offset):
         self._afile.fseek(alt_offset)
         self._nfile.fseek(null_offset)
 
     def search(self, profids, targets, window):
-        for profid in tqdm(
-            [ProfileID(*i.split("\t")) for i in profids],
-            mininterval=10,
-            desc=self._name,
-        ):
+        # for profid in tqdm(
+        #     [ProfileID(*i.split("\t")) for i in profids],
+        #     mininterval=10,
+        #     desc=self._name,
+        # ):
+        for profid in iter([ProfileID(*i.split("\t")) for i in profids]):
             alt = self._afile.read()
             null = self._nfile.read()
             prof = ProteinProfile.create_from_binary(profid, null, alt)
@@ -82,6 +104,8 @@ class Worker:
                 if self._debug:
                     self._debug_table += search_results.debug_table()
                 self._seqids.append(seqid)
+
+            self._counter.increment.remote()
 
         self._afile.close()
         self._nfile.close()
@@ -191,6 +215,7 @@ def bscan(
     Binary scan.
     """
 
+    num_cpus: int = 0
     if ncpus == "auto":
         num_cpus = os.cpu_count()
     else:
@@ -242,14 +267,25 @@ def bscan(
 
     workers = []
     i = 0
+    counter = Counter.remote()
     for aoffset, noffset, profids in zip(alt_offsets, null_offsets, profids_list):
         debug = odebug is not os.devnull
-        name = f"Worker{i}"
-        w = Worker.remote(alt_filepath, null_filepath, tgt_abc_id, debug, name)
+        w = Worker.remote(counter, alt_filepath, null_filepath, tgt_abc_id, debug)
         w.set_offset.remote(aoffset, noffset)
         w.search.remote(profids, targets, window)
         workers.append(w)
         i += 1
+
+    total = sum(len(profids) for profids in profids_list)
+    sleep_time = round(
+        max(0.3, 10 - 10 * exp(1 / 10.0) / exp(min(num_cpus / 10.0, 100)))
+    )
+    with tqdm(total=total, desc="Scan") as pbar:
+        while total > 0:
+            time.sleep(sleep_time)
+            v = ray.get(counter.get_and_reset.remote())
+            total -= v
+            pbar.update(v)
 
     for w in workers:
         output_items = ray.get(w.output_items.remote())
