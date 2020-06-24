@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import humanfriendly
 import click
 import ray
 from fasta_reader import FASTAWriter, open_fasta
@@ -101,6 +102,17 @@ class Worker:
         return self._seqids
 
 
+def validate_memory(ctx, param, value):
+    ctx = None
+    param = None
+    if value == "auto":
+        return "auto"
+    try:
+        return str(humanfriendly.parse_size(value))
+    except humanfriendly.InvalidSize as e:
+        raise click.BadParameter(e.args[0])
+
+
 @click.command()
 @click.argument(
     "profile",
@@ -151,6 +163,13 @@ class Worker:
     default="auto",
     type=str,
 )
+@click.option(
+    "--memory",
+    help="The amount of memory that is available for use by workers. You can use units of memory (e.g., 4GB or 100M). Defaults to auto.",
+    default="auto",
+    callback=validate_memory,
+    type=str,
+)
 def bscan(
     profile,
     target,
@@ -162,6 +181,7 @@ def bscan(
     odebug,
     e_value: bool,
     ncpus: str,
+    memory: str,
 ):
     """
     Binary scan.
@@ -177,11 +197,16 @@ def bscan(
 
     num_cpus = min(num_cpus, len(alt_offsets))
 
+    kwargs = {}
+    if memory != "auto":
+        kwargs["memory"] = int(memory)
+
     ray.init(
         include_webui=False,
         include_java=False,
         ignore_reinit_error=True,
         num_cpus=num_cpus,
+        **kwargs,
     )
 
     owriter = OutputWriter(output)
