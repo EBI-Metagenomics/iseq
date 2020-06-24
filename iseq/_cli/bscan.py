@@ -204,6 +204,7 @@ def bscan(
     kwargs = {}
     if memory != "auto":
         kwargs["memory"] = int(memory)
+        kwargs["object_store_memory"] = kwargs["memory"] // 2
 
     ray.init(
         include_webui=False,
