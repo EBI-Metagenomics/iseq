@@ -8,9 +8,10 @@ __all__ = ["OutputWriter"]
 
 
 class OutputWriter:
-    def __init__(self, file: Union[str, Path, IO[str]]):
+    def __init__(self, file: Union[str, Path, IO[str]], item_prefix="item"):
         self._gff = GFFWriter(file)
         self._item_idx = 1
+        self._item_prefix = item_prefix
 
     def write_item(
         self,
@@ -24,7 +25,7 @@ class OutputWriter:
         if att is None:
             att = dict()
 
-        item_id = f"item{self._item_idx}"
+        item_id = f"{self._item_prefix}{self._item_idx}"
         atts = f"ID={item_id};Profile_name={profid.name}"
         atts += f";Profile_acc={profid.acc}"
         atts += f";Window={window_length}"

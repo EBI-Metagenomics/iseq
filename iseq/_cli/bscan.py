@@ -154,21 +154,24 @@ def validate_memory(ctx, param, value):
 )
 @click.option(
     "--e-value/--no-e-value",
-    help="Enable E-value computation. Defaults to True.",
+    help="Enable E-value computation. Enabled by default.",
     default=True,
 )
 @click.option(
     "--ncpus",
-    help="Number of CPUs the user wishes to assign to each worker. Defaults to auto.",
+    help="Number of CPUs the user wishes to assign to each worker. Defaults to `auto`.",
     default="auto",
     type=str,
 )
 @click.option(
     "--memory",
-    help="The amount of memory that is available for use by workers. You can use units of memory (e.g., 4GB or 100M). Defaults to auto.",
+    help="The amount of memory that is available for use by workers. You can use units of memory (e.g., 4GB or 100M). Defaults to `auto`.",
     default="auto",
     callback=validate_memory,
     type=str,
+)
+@click.option(
+    "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
 )
 def bscan(
     profile,
@@ -182,6 +185,7 @@ def bscan(
     e_value: bool,
     ncpus: str,
     memory: str,
+    hit_prefix: str,
 ):
     """
     Binary scan.
@@ -209,7 +213,7 @@ def bscan(
         **kwargs,
     )
 
-    owriter = OutputWriter(output)
+    owriter = OutputWriter(output, item_prefix=hit_prefix)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
     dwriter = DebugWriter(odebug)
