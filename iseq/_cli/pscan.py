@@ -107,11 +107,13 @@ def pscan(
         targets = list(fasta)
 
     total = num_models(profile)
-    for plain_model in tqdm(open_hmmer(profile), total=total, disable=quiet):
+    for plain_model in tqdm(
+        open_hmmer(profile), desc="Models", total=total, disable=quiet
+    ):
         model = HMMERModel(plain_model)
         prof = create_profile(model, gcode.base_alphabet, window, epsilon)
 
-        for tgt in targets:
+        for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()

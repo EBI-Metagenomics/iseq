@@ -140,6 +140,10 @@ class GFF:
             df[name] = df[name].astype(dtype)
         return df
 
+    def to_dataframe(self):
+        df = self._to_dataframe()
+        return _explode_attributes(df)
+
     def _from_dataframe(self, df):
         self._items = []
 
