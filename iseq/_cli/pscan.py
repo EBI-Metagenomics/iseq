@@ -13,7 +13,7 @@ from tqdm import tqdm
 from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.hmmer_model import HMMERModel
 from iseq.hmmsearch import HMMSearch
-from iseq.protein import create_profile
+from iseq.protein import create_profile, create_profile2
 from iseq.tblout import TBLData
 
 from .debug_writer import DebugWriter
@@ -67,6 +67,12 @@ from .output_writer import OutputWriter
     help="Enable E-value computation. Defaults to True.",
     default=True,
 )
+@click.option(
+    "--model",
+    type=click.Choice([1, 2]),
+    help="Model 1 or 2. Defaults 1 for now",
+    default=1,
+)
 def pscan(
     profile,
     target,
@@ -78,6 +84,7 @@ def pscan(
     window: int,
     odebug,
     e_value: bool,
+    model: int,
 ):
     """
     Search nucleotide sequence(s) against a protein profiles database.
@@ -110,8 +117,12 @@ def pscan(
     for plain_model in tqdm(
         open_hmmer(profile), desc="Models", total=total, disable=quiet
     ):
-        model = HMMERModel(plain_model)
-        prof = create_profile(model, gcode.base_alphabet, window, epsilon)
+        hmodel = HMMERModel(plain_model)
+        if model == 1:
+            prof = create_profile(hmodel, gcode.base_alphabet, window, epsilon)
+        else:
+            prof = create_profile2(hmodel, gcode.base_alphabet, window, epsilon)
+            assert model == 2
 
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())

@@ -40,7 +40,7 @@ from .typing import (
     ProteinStep,
 )
 
-__all__ = ["ProteinProfile", "create_profile"]
+__all__ = ["ProteinProfile", "create_profile", "create_profile2"]
 
 
 class ProteinProfile(Profile[BaseAlphabet, FrameState]):
@@ -52,6 +52,7 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         null_aminot: AminoTable,
         core_nodes: List[ProteinNode],
         core_trans: List[Transitions],
+        entry_distr: EntryDistr,
     ) -> ProteinProfile:
 
         base_alphabet = factory.genetic_code.base_alphabet
@@ -70,7 +71,7 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         )
 
         alt_model = ProteinAltModel.create(
-            special_node, core_nodes, core_trans, EntryDistr.UNIFORM,
+            special_node, core_nodes, core_trans, entry_distr,
         )
         # alt_model.set_fragment_length(self._special_transitions)
         return cls(profid, base_alphabet, null_model, alt_model, False)
@@ -184,7 +185,48 @@ def create_profile(
         trans.append(t)
 
     profid = ProfileID(hmm.model_id.name, hmm.model_id.acc)
-    prof = ProteinProfile.create(profid, factory, null_aminot, nodes, trans)
+    prof = ProteinProfile.create(
+        profid, factory, null_aminot, nodes, trans, EntryDistr.UNIFORM
+    )
+    prof.window_length = window_length
+    return prof
+
+
+def create_profile2(
+    hmm: HMMERModel,
+    base_abc: BaseAlphabet,
+    window_length: int = 0,
+    epsilon: float = 0.1,
+) -> ProteinProfile:
+
+    amino_abc = hmm.alphabet
+
+    null_lprobs = hmm.null_lprobs
+    null_log_odds = [0.0] * len(null_lprobs)
+
+    null_aminot = AminoTable.create(amino_abc, null_lprobs)
+    factory = ProteinStateFactory(GeneticCode(base_abc, amino_abc), epsilon)
+
+    nodes: List[ProteinNode] = []
+    for m in range(1, hmm.model_length + 1):
+        lodds = [v0 - v1 for v0, v1 in zip(hmm.match_lprobs(m), null_lprobs)]
+        M = factory.create(f"M{m}".encode(), AminoTable.create(amino_abc, lodds))
+
+        I = factory.create(
+            f"I{m}".encode(), AminoTable.create(amino_abc, null_log_odds)
+        )
+
+        D = MuteState.create(f"D{m}".encode(), base_abc)
+
+        nodes.append(ProteinNode(M, I, D))
+
+    trans = hmm.transitions
+
+    profid = ProfileID(hmm.model_id.name, hmm.model_id.acc)
+    entry_distr = EntryDistr.OCCUPANCY
+    prof = ProteinProfile.create(
+        profid, factory, null_aminot, nodes, trans, entry_distr
+    )
     prof.window_length = window_length
     return prof
 
