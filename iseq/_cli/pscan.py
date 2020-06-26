@@ -69,9 +69,12 @@ from .output_writer import OutputWriter
 )
 @click.option(
     "--model",
-    type=click.Choice([1, 2]),
+    type=click.Choice(["1", "2"]),
     help="Model 1 or 2. Defaults 1 for now",
-    default=1,
+    default="1",
+)
+@click.option(
+    "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
 )
 def pscan(
     profile,
@@ -84,7 +87,8 @@ def pscan(
     window: int,
     odebug,
     e_value: bool,
-    model: int,
+    model: str,
+    hit_prefix: str,
 ):
     """
     Search nucleotide sequence(s) against a protein profiles database.
@@ -95,7 +99,7 @@ def pscan(
     associations as we are not filtering out by statistical significance.
     """
 
-    owriter = OutputWriter(output)
+    owriter = OutputWriter(output, item_prefix=hit_prefix)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
     dwriter = DebugWriter(odebug)
@@ -118,11 +122,11 @@ def pscan(
         open_hmmer(profile), desc="Models", total=total, disable=quiet
     ):
         hmodel = HMMERModel(plain_model)
-        if model == 1:
+        if model == "1":
             prof = create_profile(hmodel, gcode.base_alphabet, window, epsilon)
         else:
             prof = create_profile2(hmodel, gcode.base_alphabet, window, epsilon)
-            assert model == 2
+            assert model == "2"
 
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
