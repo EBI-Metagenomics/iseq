@@ -43,6 +43,8 @@ import pathlib
 from collections import OrderedDict
 from typing import IO, List, NamedTuple, Optional, Union
 
+from tqdm import tqdm
+
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
 
 GFFItem = NamedTuple(
@@ -75,7 +77,7 @@ _columns = OrderedDict(
 )
 
 
-def read(file: Union[str, pathlib.Path, IO[str]]) -> GFF:
+def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
     from pandas import read_csv
 
     if isinstance(file, IO):
@@ -96,8 +98,9 @@ def read(file: Union[str, pathlib.Path, IO[str]]) -> GFF:
 
     df = read_csv(file, sep="\t", names=names, dtype=_columns)
     gff = GFF(header)
-    for _, row in df.iterrows():
-        gff.append(GFFItem(**{k: row[k] for k in _columns.keys()}))
+    total = df.shape[0]
+    for _, row in tqdm(df.iterrows(), total=total, desc="Parsing", disable=not verbose):
+        gff.append(GFFItem(*tuple(row.tolist())))
 
     file.seek(start)
 
@@ -142,7 +145,10 @@ class GFF:
 
     def to_dataframe(self):
         df = self._to_dataframe()
-        return _explode_attributes(df)
+        df = _explode_attributes(df)
+        if "att_E-value" in df.columns:
+            df["att_E-value"] = df["att_E-value"].astype(float)
+        return df
 
     def _from_dataframe(self, df):
         self._items = []
