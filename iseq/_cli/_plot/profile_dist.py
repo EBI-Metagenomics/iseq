@@ -11,39 +11,35 @@ from iseq.gff import read as read_gff
     help="Save figure to OUTPUT.",
     default=None,
 )
+@click.option("--width", help="Figure width.", default=None, type=float)
+@click.option("--height", help="Figure height.", default=None, type=float)
 @click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
 )
-def e_value_dist(gff_file, output, quiet: bool):
+def profile_dist(gff_file, output, width, height, quiet: bool):
     """
-    Plot E-values distribution.
+    Plot profiles distribution.
     """
     import seaborn as sns
     from matplotlib import pyplot as plt
-    from numpy import log10, finfo
 
     gff = read_gff(gff_file, verbose=not quiet)
     df = gff.to_dataframe()
 
-    if "att_E-value" not in df.columns:
-        click.echo("No E-value found.")
-        return
-
-    df = df[~df["att_E-value"].isna()]
-
-    if len(df) == 0:
-        click.echo("Only NaN E-values.")
-        return
-
-    min_possible = 2 ** finfo(float).minexp
-    df.loc[df["att_E-value"] == 0.0, "att_E-value"] = min_possible
-    df["-log10(E-value)"] = -log10(df["att_E-value"])
-
     sns.set(color_codes=True)
+    figsize = list(plt.rcParams.get("figure.figsize"))
+    if width is not None:
+        figsize[0] = float(width)
+    if height is not None:
+        figsize[1] = float(height)
 
-    ax = df["-log10(E-value)"].plot(kind="hist", logx=False, logy=True)
-    ax.set_title("Distribution of E-values")
-    ax.set_xlabel("E-value (-log10(x))")
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_title("Distribution of Profiles")
+    df["Profile"] = df["att_Profile_name"]
+    prof_size = df.groupby("Profile").size()
+    prof_size.plot.bar(axes=ax)
+    ax.set_ylabel("Number of subsequences")
+    fig.tight_layout()
 
     if not quiet:
         click.echo("Plotting... ", nl=False)
