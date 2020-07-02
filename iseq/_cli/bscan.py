@@ -127,8 +127,8 @@ class Worker:
 
 
 def validate_memory(ctx, param, value):
-    ctx = None
-    param = None
+    del ctx
+    del param
     if value == "auto":
         return "auto"
     try:

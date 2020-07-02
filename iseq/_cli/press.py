@@ -1,5 +1,3 @@
-import os
-
 import click
 from hmmer_reader import open_hmmer, num_models
 from nmm import DNAAlphabet, Model, Output

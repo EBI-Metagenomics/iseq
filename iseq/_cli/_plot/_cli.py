@@ -1,6 +1,7 @@
 import click
 
 from .e_value_dist import e_value_dist
+from .length_ratio import length_ratio
 from .profile_dist import profile_dist
 
 
@@ -12,4 +13,5 @@ def plot():
 
 
 plot.add_command(e_value_dist)
+plot.add_command(length_ratio)
 plot.add_command(profile_dist)
