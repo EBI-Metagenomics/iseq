@@ -10,6 +10,7 @@ from fasta_reader import FASTAWriter, open_fasta
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Input, RNAAlphabet
 from tqdm import tqdm
 
+from iseq.alphabet import alphabet_name
 from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
 from iseq.protein import ProteinProfile
@@ -89,7 +90,9 @@ class Worker:
                     self._output_items.append(
                         (
                             seqid,
+                            alphabet_name(self._gcode.base_alphabet),
                             prof.profid,
+                            alphabet_name(prof.alphabet),
                             start,
                             stop,
                             prof.window_length,

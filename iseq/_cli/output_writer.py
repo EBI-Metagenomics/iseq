@@ -16,7 +16,9 @@ class OutputWriter:
     def write_item(
         self,
         seqid: str,
+        seq_alphabet: str,
         profid: ProfileID,
+        prof_alphabet: str,
         start: int,
         end: int,
         window_length: int,
@@ -26,13 +28,16 @@ class OutputWriter:
             att = dict()
 
         item_id = f"{self._item_prefix}{self._item_idx}"
-        atts = f"ID={item_id};Profile_name={profid.name}"
+        atts = f"ID={item_id}"
+        atts += f";Target_alph={seq_alphabet}"
+        atts += f";Profile_name={profid.name}"
+        atts += f";Profile_alph={prof_alphabet}"
         atts += f";Profile_acc={profid.acc}"
         atts += f";Window={window_length}"
         for k in sorted(att.keys()):
             atts += f";{k}={att[k]}"
 
-        item = GFFItem(seqid, "nmm", ".", start + 1, end, 0.0, "+", ".", atts)
+        item = GFFItem(seqid, "iseq", ".", start + 1, end, 0.0, "+", ".", atts)
         self._gff.write_item(item)
         self._item_idx += 1
         return item_id

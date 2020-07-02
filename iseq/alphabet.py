@@ -2,16 +2,34 @@ from typing import Optional, Union
 
 from fasta_reader import FASTAParser
 from hmmer_reader import HMMERParser
-from nmm import CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import BaseAlphabet, CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
 
 Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
 
 __all__ = [
     "Alphabets",
+    "alphabet_name",
     "infer_alphabet",
     "infer_fasta_alphabet",
     "infer_hmmer_alphabet",
 ]
+
+
+def alphabet_name(alphabet: Alphabets) -> str:
+    if isinstance(alphabet, CanonicalAminoAlphabet):
+        return "amino"
+    if isinstance(alphabet, DNAAlphabet):
+        return "dna"
+    if isinstance(alphabet, RNAAlphabet):
+        return "rna"
+
+    # TODO: it is temporary
+    if isinstance(alphabet, BaseAlphabet):
+        if set(alphabet.symbols) == set(b"ACGT"):
+            return "dna"
+        if set(alphabet.symbols) == set(b"ACGU"):
+            return "rna"
+    raise ValueError("Unknown alphabet.")
 
 
 def infer_alphabet(sequence: bytes) -> Optional[Alphabets]:

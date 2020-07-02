@@ -4,6 +4,7 @@ import click
 from fasta_reader import open_fasta
 from hmmer_reader import open_hmmer
 
+from iseq.alphabet import alphabet_name
 from iseq.hmmer3 import create_profile
 from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr
@@ -92,7 +93,15 @@ def hscan(
             for interval in [i.interval for i in ifragments]:
                 start = interval.start
                 stop = interval.stop
-                owriter.write_item(seqid, prof.profid, start, stop, prof.window_length)
+                owriter.write_item(
+                    seqid,
+                    alphabet_name(seq.alphabet),
+                    prof.profid,
+                    alphabet_name(prof.alphabet),
+                    start,
+                    stop,
+                    prof.window_length,
+                )
 
             if odebug is not os.devnull:
                 for i in search_results.debug_table():

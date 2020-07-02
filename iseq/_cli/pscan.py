@@ -10,7 +10,7 @@ from hmmer_reader import num_models, open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet, GeneticCode
 from tqdm import tqdm
 
-from iseq.alphabet import infer_fasta_alphabet, infer_hmmer_alphabet
+from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.hmmer_model import HMMERModel
 from iseq.hmmsearch import HMMSearch
 from iseq.protein import create_profile, create_profile2
@@ -139,7 +139,9 @@ def pscan(
                 stop = ifrag.interval.stop
                 item_id = owriter.write_item(
                     seqid,
+                    alphabet_name(seq.alphabet),
                     prof.profid,
+                    alphabet_name(prof.alphabet),
                     start,
                     stop,
                     prof.window_length,

@@ -174,17 +174,17 @@ def test_cli_hscan_window200(tmp_path):
 
 _output_window_auto = """\
 ##gff-version 3
-2OG-FeII_Oxy_3-seed0	nmm	.	252	288	0.0	+	.	ID=item1;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed1	nmm	.	91	162	0.0	+	.	ID=item2;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed2	nmm	.	228	272	0.0	+	.	ID=item3;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed3	nmm	.	240	277	0.0	+	.	ID=item4;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed4	nmm	.	591	716	0.0	+	.	ID=item5;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed5	nmm	.	423	441	0.0	+	.	ID=item6;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed6	nmm	.	312	336	0.0	+	.	ID=item7;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed7	nmm	.	383	448	0.0	+	.	ID=item8;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed7	nmm	.	945	989	0.0	+	.	ID=item9;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed8	nmm	.	495	523	0.0	+	.	ID=item10;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
-2OG-FeII_Oxy_3-seed9	nmm	.	60	132	0.0	+	.	ID=item11;Profile_name=2OG-FeII_Oxy_3;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed0	iseq	.	252	288	0.0	+	.	ID=item1;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed1	iseq	.	91	162	0.0	+	.	ID=item2;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed2	iseq	.	228	272	0.0	+	.	ID=item3;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed3	iseq	.	240	277	0.0	+	.	ID=item4;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed4	iseq	.	591	716	0.0	+	.	ID=item5;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed5	iseq	.	423	441	0.0	+	.	ID=item6;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed6	iseq	.	312	336	0.0	+	.	ID=item7;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed7	iseq	.	383	448	0.0	+	.	ID=item8;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed7	iseq	.	945	989	0.0	+	.	ID=item9;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed8	iseq	.	495	523	0.0	+	.	ID=item10;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
+2OG-FeII_Oxy_3-seed9	iseq	.	60	132	0.0	+	.	ID=item11;Target_alph=dna;Profile_name=2OG-FeII_Oxy_3;Profile_alph=dna;Profile_acc=-;Window=630
 """
 
 

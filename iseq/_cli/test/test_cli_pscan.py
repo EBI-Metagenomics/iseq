@@ -162,7 +162,9 @@ def test_cli_pscan_window48(tmp_path, large_rna):
     assert cmp(amino, "amino.fasta", shallow=False), diff(amino, "amino.fasta")
 
 
-def test_cli_pscan_large_dataset_window():
+def test_cli_pscan_large_dataset_window(tmp_path):
+    os.chdir(tmp_path)
+
     profile = example_filepath("PF00113.hmm")
     target = example_filepath("A0ALD9_dna_huge.fasta")
     output = example_filepath("PF00113_A0ALD9_dna_huge_output1776.gff")
