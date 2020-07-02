@@ -8,6 +8,7 @@ from iseq.gff import read as read_gff
 @click.argument(
     "hmmer_file", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
 )
+@click.argument("prof_leng_mult", type=int)
 @click.option(
     "--output",
     type=click.Path(exists=False, dir_okay=False, writable=True, resolve_path=True),
@@ -19,7 +20,9 @@ from iseq.gff import read as read_gff
 @click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
 )
-def length_ratio(gff_file, hmmer_file, output, width, height, quiet: bool):
+def length_ratio(
+    gff_file, hmmer_file, prof_leng_mult, output, width, height, quiet: bool
+):
     """
     Plot length-ratio distribution.
     """
@@ -33,14 +36,10 @@ def length_ratio(gff_file, hmmer_file, output, width, height, quiet: bool):
     meta = fetch_metadata(hmmer_file)
     meta = meta.set_index(["NAME", "ACC"])
     idx = list(zip(df["att_Profile_name"].tolist(), df["att_Profile_acc"].tolist()))
-    df["Profile_length"] = meta.loc[idx, "LENG"].values
-    breakpoint()
+    df["Profile_length"] = meta.loc[idx, "LENG"].values * prof_leng_mult
 
-    # profile_length = pd.Series(profile_length["length"].values, index=profile_length["name"].values)
-    # gff_hits["Length"] = gff_hits["end"] - gff_hits["start"] + 1
-    # for idx in gff_hits.index:
-    #     gff_hits.loc[idx, "Profile_length"] = profile_length[gff_hits.loc[idx, "Profile_name"]]
-    # gff_hits["Length_ratio"] = gff_hits["Length"] / (3 * gff_hits["Profile_length"])
+    df["Length"] = df["end"] - df["start"] + 1
+    df["Length_ratio"] = df["Length"] / df["Profile_length"]
 
     sns.set(color_codes=True)
     figsize = list(plt.rcParams.get("figure.figsize"))
@@ -49,24 +48,19 @@ def length_ratio(gff_file, hmmer_file, output, width, height, quiet: bool):
     if height is not None:
         figsize[1] = float(height)
 
-    pass
+    fig, ax = plt.subplots(figsize=figsize)
+    sns.distplot(df["Length_ratio"], ax=ax)
+    ax.set_title(f"Subsequence length / Profile length")
+    fig.tight_layout()
 
-    # fig, ax = plt.subplots(figsize=figsize)
-    # ax.set_title("Distribution of Profiles")
-    # df["Profile"] = df["att_Profile_name"]
-    # prof_size = df.groupby("Profile").size()
-    # prof_size.plot.bar(axes=ax)
-    # ax.set_ylabel("Number of subsequences")
-    # fig.tight_layout()
+    if not quiet:
+        click.echo("Plotting... ", nl=False)
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output)
 
-    # if not quiet:
-    #     click.echo("Plotting... ", nl=False)
-    # if output is None:
-    #     plt.show()
-    # else:
-    #     plt.savefig(output)
-
-    # if not quiet:
-    #     click.echo("done.", nl=True)
-    #     if output is not None:
-    #         click.echo(f"Saved to {output}.")
+    if not quiet:
+        click.echo("done.", nl=True)
+        if output is not None:
+            click.echo(f"Saved to {output}.")
