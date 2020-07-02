@@ -1,10 +1,10 @@
 import os
+import time
 from math import exp
 from pathlib import Path
 
-import time
-import humanfriendly
 import click
+import humanfriendly
 import ray
 from fasta_reader import FASTAWriter, open_fasta
 from nmm import CanonicalAminoAlphabet, DNAAlphabet, GeneticCode, Input, RNAAlphabet

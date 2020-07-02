@@ -1,5 +1,5 @@
 import click
-from hmmer_reader import open_hmmer, num_models
+from hmmer_reader import num_models, open_hmmer
 from nmm import DNAAlphabet, Model, Output
 
 from iseq.hmmer_model import HMMERModel
