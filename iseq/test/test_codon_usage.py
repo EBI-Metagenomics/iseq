@@ -1,6 +1,7 @@
 from nmm import CanonicalAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
-from iseq.codon_usage import CodonUsage
+
 from iseq.codon_table import CodonTable
+from iseq.codon_usage import CodonUsage
 from iseq.gencode import GeneticCode
 
 EPS = 1e-9

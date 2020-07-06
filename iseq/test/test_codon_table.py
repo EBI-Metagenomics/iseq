@@ -1,4 +1,5 @@
 from nmm import CanonicalAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
+
 from iseq.codon_table import CodonTable
 from iseq.gencode import GeneticCode
 

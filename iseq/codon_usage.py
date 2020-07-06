@@ -1,4 +1,5 @@
 from typing import Dict
+
 import importlib_resources as pkg_resources
 from nmm import Codon, RNAAlphabet
 

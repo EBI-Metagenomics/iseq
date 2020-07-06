@@ -1,5 +1,5 @@
-from typing import Dict, List, Optional, Union
 import warnings
+from typing import Dict, List, Optional, Union
 
 from nmm import AminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
 
