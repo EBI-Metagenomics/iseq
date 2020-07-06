@@ -29,7 +29,7 @@ jobs:
       run: |
         flake8 iseq
         black --check iseq
-        isort --recursive --check-only iseq
+        isort --check-only iseq
     - name: Test
       run: |
         pip install -e .
