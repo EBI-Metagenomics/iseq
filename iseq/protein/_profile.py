@@ -14,18 +14,10 @@ from imm import (
     lprob_normalize,
     lprob_zero,
 )
-from nmm import (
-    AminoTable,
-    BaseAlphabet,
-    BaseTable,
-    CodonProb,
-    CodonTable,
-    FrameState,
-    GeneticCode,
-    codon_iter,
-)
+from nmm import AminoTable, BaseAlphabet, BaseTable, CodonProb, FrameState, codon_iter
 
 from iseq import wrap
+from iseq.codon_table import CodonTable
 from iseq.hmmer_model import HMMERModel
 from iseq.model import EntryDistr, Transitions
 from iseq.profile import Profile, ProfileID
@@ -165,7 +157,7 @@ def create_profile(
 
     lprobs = lprob_normalize(hmm.insert_lprobs(0))
     null_aminot = AminoTable.create(amino_abc, lprobs)
-    factory = ProteinStateFactory(GeneticCode(base_abc, amino_abc), epsilon)
+    factory = ProteinStateFactory(CodonTable(base_abc, amino_abc), epsilon)
 
     nodes: List[ProteinNode] = []
     for m in range(1, hmm.model_length + 1):
@@ -205,7 +197,7 @@ def create_profile2(
     null_log_odds = [0.0] * len(null_lprobs)
 
     null_aminot = AminoTable.create(amino_abc, null_lprobs)
-    factory = ProteinStateFactory(GeneticCode(base_abc, amino_abc), epsilon)
+    factory = ProteinStateFactory(CodonTable(base_abc, amino_abc), epsilon)
 
     nodes: List[ProteinNode] = []
     for m in range(1, hmm.model_length + 1):
@@ -233,7 +225,7 @@ def create_profile2(
 
 class ProteinStateFactory:
     def __init__(
-        self, gcode: GeneticCode, epsilon: float,
+        self, gcode: CodonTable, epsilon: float,
     ):
         self._gcode = gcode
         self._epsilon = epsilon
@@ -241,11 +233,11 @@ class ProteinStateFactory:
     def create(self, name: bytes, aminot: AminoTable) -> FrameState:
         codonp = _create_codon_prob(aminot, self._gcode)
         baset = _create_base_table(codonp)
-        codont = CodonTable.create(codonp)
+        codont = nmm.CodonTable.create(codonp)
         return FrameState.create(name, baset, codont, self._epsilon)
 
     @property
-    def genetic_code(self) -> GeneticCode:
+    def genetic_code(self) -> CodonTable:
         return self._gcode
 
     @property
@@ -268,7 +260,7 @@ def _create_base_table(codonp: CodonProb):
     return BaseTable.create(base_abc, [base_lprob[base] for base in base_abc.symbols])
 
 
-def _create_codon_prob(aminot: AminoTable, gencode: GeneticCode) -> CodonProb:
+def _create_codon_prob(aminot: AminoTable, gencode: CodonTable) -> CodonProb:
     codonp = CodonProb.create(gencode.base_alphabet)
 
     codon_lprobs = []

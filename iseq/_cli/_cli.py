@@ -2,6 +2,7 @@ import click
 
 from .._version import __version__
 from ._plot import plot
+from .amino_decode import amino_decode
 from .bscan import bscan
 from .gff_filter import gff_filter
 from .hscan import hscan
@@ -17,6 +18,7 @@ def cli():
     """
 
 
+cli.add_command(amino_decode)
 cli.add_command(bscan)
 cli.add_command(gff_filter)
 cli.add_command(hscan)

@@ -2,8 +2,9 @@ from math import log
 from typing import List, Tuple
 
 from imm import MuteState, NormalState, Sequence, SequenceABC, lprob_zero
-from nmm import BaseAlphabet, Codon, CodonState, GeneticCode
+from nmm import BaseAlphabet, Codon, CodonState
 
+from .codon_table import CodonTable
 from .fragment import Fragment
 from .typing import AminoFragment, AminoPath, AminoStep
 
@@ -11,7 +12,7 @@ __all__ = ["CodonFragment"]
 
 
 class CodonFragment(Fragment[BaseAlphabet, CodonState]):
-    def decode(self, genetic_code: GeneticCode) -> AminoFragment:
+    def decode(self, genetic_code: CodonTable) -> AminoFragment:
         aminos: List[bytes] = []
         steps: List[AminoStep] = []
 
@@ -46,7 +47,7 @@ class CodonFragment(Fragment[BaseAlphabet, CodonState]):
 
 
 def create_step(
-    gcode: GeneticCode, seq: SequenceABC[BaseAlphabet], state_name: bytes
+    gcode: CodonTable, seq: SequenceABC[BaseAlphabet], state_name: bytes
 ) -> Tuple[bytes, AminoStep]:
     base_abc = seq.alphabet
     amino = gcode.amino_acid(Codon.create(bytes(seq), base_abc))
