@@ -1,32 +1,46 @@
 # NCBI genetic code table version 4.6
-from typing import Dict, List, NamedTuple, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 
-__all__ = ["GeneticCode", "get_genetic_code"]
+__all__ = ["GeneticCode"]
 
-GeneticCode = NamedTuple("GeneticCode", [("name", str), ("alt_name", str), ("id", int)])
-
-genetic_codes: List[GeneticCode] = []
+genetic_codes: List[Tuple[str, str, int]] = []
 names: Dict[str, int] = {}
 alt_names: Dict[str, int] = {}
 ids: Dict[int, int] = {}
 
 
-def get_genetic_code(
-    name: Optional[str] = None, alt_name: Optional[str] = None, id: Optional[int] = None
-) -> GeneticCode:
-    n = sum([name is None, alt_name is None, id is None])
+@dataclass
+class GeneticCode:
+    name: str
+    alt_name: str
+    id: int
 
-    if n != 2:
-        raise ValueError("You must use one, and only one, parameter.")
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        alt_name: Optional[str] = None,
+        id: Optional[int] = None,
+    ):
+        n = sum([name is None, alt_name is None, id is None])
 
-    if name is not None:
-        return genetic_codes[names[name]]
+        if n != 2:
+            raise ValueError("You must use one, and only one, parameter.")
 
-    if alt_name is not None:
-        return genetic_codes[alt_names[alt_name]]
+        if name is not None:
+            if name in names:
+                self.name, self.alt_name, self.id = genetic_codes[names[name]]
+                return
+            raise ValueError(f"Unknown name {name}.")
 
-    assert id is not None
-    return genetic_codes[ids[id]]
+        if alt_name is not None:
+            if alt_name in alt_names:
+                self.name, self.alt_name, self.id = genetic_codes[alt_names[alt_name]]
+                return
+            raise ValueError(f"Unknown alternative name {alt_name}.")
+
+        assert id is not None
+        self.name, self.alt_name, self.id = genetic_codes[ids[id]]
 
 
 def register_ncbi_genetic_code(name: str, alt_name: str, id: int):
@@ -34,7 +48,7 @@ def register_ncbi_genetic_code(name: str, alt_name: str, id: int):
     if alt_name != "":
         alt_names[alt_name] = len(genetic_codes)
     ids[id] = len(genetic_codes)
-    genetic_codes.append(GeneticCode(name, alt_name, id))
+    genetic_codes.append((name, alt_name, id))
 
 
 register_ncbi_genetic_code(

@@ -1,34 +1,34 @@
 import pytest
 
-from iseq.gencode import GeneticCode, get_genetic_code
+from iseq.gencode import GeneticCode
 
 
 def test_genetic_code():
-    with pytest.raises(KeyError):
-        get_genetic_code("Nao sei")
+    with pytest.raises(ValueError):
+        GeneticCode("Nao sei")
 
     with pytest.raises(ValueError):
-        get_genetic_code("Nao sei", "Sei la")
+        GeneticCode("Nao sei", "Sei la")
 
-    gcode = get_genetic_code("Invertebrate Mitochondrial")
+    gcode = GeneticCode("Invertebrate Mitochondrial")
     assert gcode.name == "Invertebrate Mitochondrial"
     assert gcode.alt_name == "SGC4"
     assert gcode.id == 5
 
-    gcode = get_genetic_code(alt_name="SGC4")
+    gcode = GeneticCode(alt_name="SGC4")
     assert gcode.name == "Invertebrate Mitochondrial"
     assert gcode.alt_name == "SGC4"
     assert gcode.id == 5
 
-    gcode = get_genetic_code(id=5)
+    gcode = GeneticCode(id=5)
     assert gcode.name == "Invertebrate Mitochondrial"
     assert gcode.alt_name == "SGC4"
     assert gcode.id == 5
 
-    with pytest.raises(KeyError):
-        get_genetic_code(alt_name="")
+    with pytest.raises(ValueError):
+        GeneticCode(alt_name="")
 
-    gcode = get_genetic_code(name="Cephalodiscidae Mitochondrial")
+    gcode = GeneticCode(name="Cephalodiscidae Mitochondrial")
     assert gcode.name == "Cephalodiscidae Mitochondrial"
     assert gcode.alt_name == ""
     assert gcode.id == 33
