@@ -50,7 +50,7 @@ def length_ratio(
 
     fig, ax = plt.subplots(figsize=figsize)
     sns.distplot(df["Length_ratio"], ax=ax)
-    ax.set_title(f"Subsequence length / Profile length")
+    ax.set_title("Subsequence length / Profile length")
     fig.tight_layout()
 
     if not quiet:
