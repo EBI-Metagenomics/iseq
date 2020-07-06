@@ -10,8 +10,9 @@ __all__ = ["CodonUsage"]
 
 class CodonUsage:
     def __init__(self, codon_table: CodonTable, taxonomy_id: str):
-        import iseq
         from pandas import read_pickle
+
+        import iseq
 
         buffer = pkg_resources.open_binary(iseq, "codon_usage_20200706.pkl.xz")
 

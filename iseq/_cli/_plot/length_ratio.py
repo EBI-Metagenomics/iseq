@@ -27,8 +27,8 @@ def length_ratio(
     Plot length-ratio distribution.
     """
     import seaborn as sns
-    from matplotlib import pyplot as plt
     from hmmer_reader import fetch_metadata
+    from matplotlib import pyplot as plt
 
     gff = read_gff(gff_file, verbose=not quiet)
     df = gff.to_dataframe()

@@ -97,6 +97,7 @@ def fetch_file(
     filename: str, cache_subdir: str, url_base: str, filemap: Mapping[str, str]
 ) -> Path:
     import requests
+
     from .environment import ISEQ_CACHE_HOME
 
     filepath = ISEQ_CACHE_HOME / cache_subdir / filename

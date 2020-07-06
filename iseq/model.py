@@ -504,6 +504,6 @@ def _log1_p(log_p: float):
     """
     Computes log(1 - p) given log(p).
     """
-    from math import log1p, exp
+    from math import exp, log1p
 
     return log1p(-exp(log_p))

@@ -20,7 +20,7 @@ def e_value_dist(gff_file, output, quiet: bool):
     """
     import seaborn as sns
     from matplotlib import pyplot as plt
-    from numpy import log10, finfo
+    from numpy import finfo, log10
 
     gff = read_gff(gff_file, verbose=not quiet)
     df = gff.to_dataframe()

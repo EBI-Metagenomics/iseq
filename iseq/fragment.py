@@ -1,6 +1,8 @@
 from typing import TypeVar
 
-from imm import Alphabet, Fragment as FragmentBase, Path, SequenceABC, State, Step
+from imm import Alphabet
+from imm import Fragment as FragmentBase
+from imm import Path, SequenceABC, State, Step
 
 __all__ = ["Fragment"]
 
