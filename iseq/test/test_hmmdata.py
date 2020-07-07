@@ -2,7 +2,7 @@ from math import log
 
 from hmmer_reader import open_hmmer
 from imm.testing import assert_allclose
-from nmm import IUPACAminoAlphabet, DNAAlphabet
+from nmm import DNAAlphabet, IUPACAminoAlphabet
 
 from iseq.example import example_filepath
 from iseq.hmmer_model import HMMERModel

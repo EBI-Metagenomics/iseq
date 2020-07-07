@@ -1,13 +1,7 @@
 from typing import TypeVar, Union
 
 from imm import MuteState, NormalState, Path, Results, State, Step
-from nmm import (
-    AminoAlphabet,
-    IUPACAminoAlphabet,
-    CodonState,
-    DNAAlphabet,
-    RNAAlphabet,
-)
+from nmm import AminoAlphabet, CodonState, DNAAlphabet, IUPACAminoAlphabet, RNAAlphabet
 
 from .fragment import Fragment
 

@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from fasta_reader import FASTAParser
 from hmmer_reader import HMMERParser
-from nmm import BaseAlphabet, IUPACAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import BaseAlphabet, DNAAlphabet, IUPACAminoAlphabet, RNAAlphabet
 
 Alphabets = Union[DNAAlphabet, RNAAlphabet, IUPACAminoAlphabet]
 

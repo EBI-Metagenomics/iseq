@@ -1,4 +1,4 @@
-from nmm import IUPACAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
+from nmm import Codon, DNAAlphabet, IUPACAminoAlphabet, RNAAlphabet
 
 from iseq.codon_table import CodonTable
 from iseq.gencode import GeneticCode

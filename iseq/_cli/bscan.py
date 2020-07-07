@@ -7,7 +7,7 @@ import click
 import humanfriendly
 import ray
 from fasta_reader import FASTAWriter, open_fasta
-from nmm import IUPACAminoAlphabet, DNAAlphabet, Input, RNAAlphabet
+from nmm import DNAAlphabet, Input, IUPACAminoAlphabet, RNAAlphabet
 from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name
