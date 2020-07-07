@@ -1,7 +1,7 @@
 from hmmer_reader import open_hmmer
 from imm import Sequence
 from imm.testing import assert_allclose
-from nmm import CanonicalAminoAlphabet, RNAAlphabet
+from nmm import IUPACAminoAlphabet, RNAAlphabet
 
 from iseq.codon_table import CodonTable
 from iseq.example import example_filepath
@@ -146,7 +146,7 @@ def test_protein_profile_codons():
         hmmer = create_profile(HMMERModel(plain_model), RNAAlphabet(), epsilon=0.1)
 
     rna_abc = hmmer.alphabet
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
     gcode = CodonTable(rna_abc, amino_abc)
 
     rna_seq = b"AAGA AAA AAA CCU GGU AAA GAA GAU AAU AAC AAA G"

@@ -2,9 +2,9 @@ from typing import Optional, Union
 
 from fasta_reader import FASTAParser
 from hmmer_reader import HMMERParser
-from nmm import BaseAlphabet, CanonicalAminoAlphabet, DNAAlphabet, RNAAlphabet
+from nmm import BaseAlphabet, IUPACAminoAlphabet, DNAAlphabet, RNAAlphabet
 
-Alphabets = Union[DNAAlphabet, RNAAlphabet, CanonicalAminoAlphabet]
+Alphabets = Union[DNAAlphabet, RNAAlphabet, IUPACAminoAlphabet]
 
 __all__ = [
     "Alphabets",
@@ -16,7 +16,7 @@ __all__ = [
 
 
 def alphabet_name(alphabet: Alphabets) -> str:
-    if isinstance(alphabet, CanonicalAminoAlphabet):
+    if isinstance(alphabet, IUPACAminoAlphabet):
         return "amino"
     if isinstance(alphabet, DNAAlphabet):
         return "dna"
@@ -43,7 +43,7 @@ def infer_alphabet(sequence: bytes) -> Optional[Alphabets]:
     """
     dna = DNAAlphabet()
     rna = RNAAlphabet()
-    amino = CanonicalAminoAlphabet()
+    amino = IUPACAminoAlphabet()
 
     abc = set(sequence)
 
@@ -82,7 +82,7 @@ def infer_hmmer_alphabet(parser: HMMERParser) -> Optional[Alphabets]:
     for prof in parser:
         alph = dict(prof.metadata)["ALPH"].lower()
         if alph == "amino":
-            return CanonicalAminoAlphabet()
+            return IUPACAminoAlphabet()
         if alph == "dna":
             return DNAAlphabet()
         if alph == "rna":

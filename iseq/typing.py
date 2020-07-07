@@ -3,7 +3,7 @@ from typing import TypeVar, Union
 from imm import MuteState, NormalState, Path, Results, State, Step
 from nmm import (
     AminoAlphabet,
-    CanonicalAminoAlphabet,
+    IUPACAminoAlphabet,
     CodonState,
     DNAAlphabet,
     RNAAlphabet,
@@ -25,7 +25,7 @@ MutableStep = Step[Union[TState, MuteState]]
 MutablePath = Path[Step[Union[TState, MuteState]]]
 MutableResults = Results[Union[TState, MuteState]]
 
-HMMERAlphabet = Union[RNAAlphabet, DNAAlphabet, CanonicalAminoAlphabet]
+HMMERAlphabet = Union[RNAAlphabet, DNAAlphabet, IUPACAminoAlphabet]
 
 
 __all__ = [

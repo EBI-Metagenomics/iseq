@@ -7,7 +7,7 @@ import click
 import humanfriendly
 import ray
 from fasta_reader import FASTAWriter, open_fasta
-from nmm import CanonicalAminoAlphabet, DNAAlphabet, Input, RNAAlphabet
+from nmm import IUPACAminoAlphabet, DNAAlphabet, Input, RNAAlphabet
 from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name
@@ -54,7 +54,7 @@ class Worker:
             target_abc = RNAAlphabet()
         else:
             raise RuntimeError()
-        self._gcode = CodonTable(target_abc, CanonicalAminoAlphabet())
+        self._gcode = CodonTable(target_abc, IUPACAminoAlphabet())
         self._output_items = []
         self._codon_seqs = []
         self._amino_seqs = []

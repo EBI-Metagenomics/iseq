@@ -1,4 +1,4 @@
-from nmm import CanonicalAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
+from nmm import IUPACAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
 
 from iseq.codon_table import CodonTable
 from iseq.codon_usage import CodonUsage
@@ -9,7 +9,7 @@ EPS = 1e-9
 
 def test_codon_usage_dna_100():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc)
     usage = CodonUsage(table, "100")
@@ -46,7 +46,7 @@ def test_codon_usage_dna_100():
 
 def test_codon_usage_rna_100():
     base_abc = RNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc)
     usage = CodonUsage(table, "100")
@@ -83,7 +83,7 @@ def test_codon_usage_rna_100():
 
 def test_codon_usage_dna_100_gencode2():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc, GeneticCode("Vertebrate Mitochondrial"))
     usage = CodonUsage(table, "100")
@@ -126,7 +126,7 @@ def test_codon_usage_dna_100_gencode2():
 
 def test_codon_usage_dna_100_gencode16():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc, GeneticCode(id=16))
     usage = CodonUsage(table, "100")
@@ -169,7 +169,7 @@ def test_codon_usage_dna_100_gencode16():
 
 def test_codon_usage_dna_homo_sapiens_gencode1():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc, GeneticCode(id=1))
     usage = CodonUsage(table, "9606")
@@ -213,7 +213,7 @@ def test_codon_usage_dna_homo_sapiens_gencode1():
 
 def test_codon_usage_dna_homo_sapiens_gencode15():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc, GeneticCode(id=15))
     usage = CodonUsage(table, "9606")

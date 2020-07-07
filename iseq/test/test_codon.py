@@ -3,7 +3,7 @@
 # from hmmer_reader import open_hmmer
 # from iseq.codon import create_profile
 # from nmm import GeneticCode
-# from nmm.alphabet import CanonicalAminoAlphabet, RNAAlphabet
+# from nmm.alphabet import IUPACAminoAlphabet, RNAAlphabet
 # from nmm.sequence import Sequence
 
 

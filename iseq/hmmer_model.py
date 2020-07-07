@@ -3,7 +3,7 @@ from typing import List, Mapping, NamedTuple
 
 import hmmer_reader
 from imm import lprob_zero
-from nmm import CanonicalAminoAlphabet
+from nmm import IUPACAminoAlphabet
 
 from .alphabet import infer_alphabet
 from .model import Transitions
@@ -32,7 +32,7 @@ class HMMERModel:
             raise ValueError("Could not infer alphabet from HMMER model.")
         self._alphabet = alphabet
 
-        if isinstance(self._alphabet, CanonicalAminoAlphabet):
+        if isinstance(self._alphabet, IUPACAminoAlphabet):
             self._null_lprobs = _null_amino_lprobs(self._original_symbols)
         else:
             k = alphabet.length

@@ -7,7 +7,7 @@ from typing import IO
 import click
 from fasta_reader import FASTAWriter, open_fasta
 from hmmer_reader import num_models, open_hmmer
-from nmm import AminoAlphabet, BaseAlphabet, CanonicalAminoAlphabet
+from nmm import AminoAlphabet, BaseAlphabet, IUPACAminoAlphabet
 from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
@@ -113,7 +113,7 @@ def pscan(
         profile_abc, AminoAlphabet
     )
 
-    gcode = CodonTable(target_abc, CanonicalAminoAlphabet())
+    gcode = CodonTable(target_abc, IUPACAminoAlphabet())
 
     with open_fasta(target) as fasta:
         targets = list(fasta)

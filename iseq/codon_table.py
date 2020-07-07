@@ -53,7 +53,7 @@ class CodonTable:
                 self._codons[aa] = []
 
             codon = Codon.create(triplet, base_abc)
-            if triplet in table.start_codons:
+            if t in table.start_codons:
                 self._start_codons.append(codon)
             self._codons[aa].append(codon)
 

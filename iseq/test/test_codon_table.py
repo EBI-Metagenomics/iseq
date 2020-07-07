@@ -1,4 +1,4 @@
-from nmm import CanonicalAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
+from nmm import IUPACAminoAlphabet, Codon, DNAAlphabet, RNAAlphabet
 
 from iseq.codon_table import CodonTable
 from iseq.gencode import GeneticCode
@@ -6,7 +6,7 @@ from iseq.gencode import GeneticCode
 
 def test_codon_table_dna():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc)
 
@@ -32,7 +32,7 @@ def test_codon_table_dna():
 
 def test_codon_table_dna_id33():
     base_abc = DNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     gencode = GeneticCode(id=33)
     table = CodonTable(base_abc, amino_abc, gencode)
@@ -48,9 +48,21 @@ def test_codon_table_dna_id33():
     assert Codon.create(b"TGG", base_abc) in table.codons(b"W")
     assert Codon.create(b"TGA", base_abc) in table.codons(b"W")
 
+    assert len(table.codons(b"T")) == 4
+    assert Codon.create(b"ACT", base_abc) in table.codons(b"T")
+    assert Codon.create(b"ACC", base_abc) in table.codons(b"T")
+    assert Codon.create(b"ACA", base_abc) in table.codons(b"T")
+    assert Codon.create(b"ACG", base_abc) in table.codons(b"T")
+
     assert table.amino_acid(Codon.create(b"ATG", base_abc)) == b"M"
     assert len(table.amino_acids) == 20
     assert b"R" in table.amino_acids
+
+    assert len(table.start_codons) == 4
+    assert Codon.create(b"TTG", base_abc) in table.start_codons
+    assert Codon.create(b"CTG", base_abc) in table.start_codons
+    assert Codon.create(b"ATG", base_abc) in table.start_codons
+    assert Codon.create(b"GTG", base_abc) in table.start_codons
 
     assert len(table.stop_codons) == 1
     assert Codon.create(b"TAG", base_abc) in table.stop_codons
@@ -58,7 +70,7 @@ def test_codon_table_dna_id33():
 
 def test_codon_table_rna():
     base_abc = RNAAlphabet()
-    amino_abc = CanonicalAminoAlphabet()
+    amino_abc = IUPACAminoAlphabet()
 
     table = CodonTable(base_abc, amino_abc)
 
@@ -72,6 +84,11 @@ def test_codon_table_rna():
     assert table.amino_acid(Codon.create(b"AUG", base_abc)) == b"M"
     assert len(table.amino_acids) == 20
     assert b"R" in table.amino_acids
+
+    assert len(table.start_codons) == 3
+    assert Codon.create(b"UUG", base_abc) in table.start_codons
+    assert Codon.create(b"CUG", base_abc) in table.start_codons
+    assert Codon.create(b"AUG", base_abc) in table.start_codons
 
     assert len(table.stop_codons) == 3
     assert Codon.create(b"UAA", base_abc) in table.stop_codons
