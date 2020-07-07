@@ -22,7 +22,6 @@ def test_cli_pscan_GALNBKIG_pfam100(tmp_path):
     assert r.exit_code == 0, r.output
     assert cmp(oamino, "oamino.fasta", shallow=False), diff(oamino, "oamino.fasta")
     assert cmp(ocodon, "ocodon.fasta", shallow=False), diff(ocodon, "ocodon.fasta")
-    breakpoint()
     assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
 
 

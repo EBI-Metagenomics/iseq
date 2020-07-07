@@ -29,6 +29,8 @@ def test_codon_table_dna():
     assert Codon.create(b"TAG", base_abc) in table.stop_codons
     assert Codon.create(b"TGA", base_abc) in table.stop_codons
 
+    assert len(set(table.codons())) == 64
+
 
 def test_codon_table_dna_id33():
     base_abc = DNAAlphabet()
@@ -67,6 +69,8 @@ def test_codon_table_dna_id33():
     assert len(table.stop_codons) == 1
     assert Codon.create(b"TAG", base_abc) in table.stop_codons
 
+    assert len(set(table.codons())) == 64
+
 
 def test_codon_table_rna():
     base_abc = RNAAlphabet()
@@ -94,3 +98,5 @@ def test_codon_table_rna():
     assert Codon.create(b"UAA", base_abc) in table.stop_codons
     assert Codon.create(b"UAG", base_abc) in table.stop_codons
     assert Codon.create(b"UGA", base_abc) in table.stop_codons
+
+    assert len(set(table.codons())) == 64

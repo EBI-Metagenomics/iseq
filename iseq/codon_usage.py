@@ -47,3 +47,7 @@ class CodonUsage:
     @property
     def stop_prob(self) -> float:
         return sum(self.codon_prob(c) for c in self._codon_table.stop_codons)
+
+    @property
+    def codon_table(self) -> CodonTable:
+        return self._codon_table

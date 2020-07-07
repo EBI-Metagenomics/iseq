@@ -39,6 +39,8 @@ def test_codon_usage_dna_100():
     assert abs(usage.stop_prob - 0.0036101083032490976) < EPS
     assert abs(usage.amino_acid_prob(b"W") - 0.009927797833935019) < EPS
 
+    assert abs(usage.start_prob - 0.058664259927797835) < EPS
+
     p = sum(usage.amino_acid_prob(aa) for aa in table.amino_acids)
     p += usage.stop_prob
     assert abs(1 - p) < EPS
@@ -75,6 +77,8 @@ def test_codon_usage_rna_100():
 
     assert abs(usage.stop_prob - 0.0036101083032490976) < EPS
     assert abs(usage.amino_acid_prob(b"W") - 0.009927797833935019) < EPS
+
+    assert abs(usage.start_prob - 0.058664259927797835) < EPS
 
     p = sum(usage.amino_acid_prob(aa) for aa in table.amino_acids)
     p += usage.stop_prob
@@ -119,6 +123,8 @@ def test_codon_usage_dna_100_gencode2():
     assert abs(usage.stop_prob - 0.0036101083032490976) < EPS
     assert abs(usage.amino_acid_prob(b"W") - 0.012635379061371842) < EPS
 
+    assert abs(usage.start_prob - 0.07671480144404333) < EPS
+
     p = sum(usage.amino_acid_prob(aa) for aa in table.amino_acids)
     p += usage.stop_prob
     assert abs(1 - p) < EPS
@@ -161,6 +167,8 @@ def test_codon_usage_dna_100_gencode16():
 
     assert abs(usage.stop_prob - 0.002707581227436823) < EPS
     assert abs(usage.amino_acid_prob(b"W") - 0.009927797833935019) < EPS
+
+    assert abs(usage.start_prob - 0.017148014440433214) < EPS
 
     p = sum(usage.amino_acid_prob(aa) for aa in table.amino_acids)
     p += usage.stop_prob
@@ -206,6 +214,8 @@ def test_codon_usage_dna_homo_sapiens_gencode1():
     assert abs(usage.stop_prob - 0.003335523553324774) < EPS
     assert abs(usage.amino_acid_prob(b"W") - 0.013171691851737305) < EPS
 
+    assert abs(usage.start_prob - 0.07460160793527573) < EPS
+
     p = sum(usage.amino_acid_prob(aa) for aa in table.amino_acids)
     p += usage.stop_prob
     assert abs(1 - p) < EPS
@@ -249,6 +259,8 @@ def test_codon_usage_dna_homo_sapiens_gencode15():
 
     assert abs(usage.stop_prob - 0.0025458786655505545) < EPS
     assert abs(usage.amino_acid_prob(b"W") - 0.013171691851737305) < EPS
+
+    assert abs(usage.start_prob - 0.022035123101626947) < EPS
 
     p = sum(usage.amino_acid_prob(aa) for aa in table.amino_acids)
     p += usage.stop_prob
