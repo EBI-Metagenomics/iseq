@@ -1,12 +1,12 @@
-from tqdm import tqdm
-from iseq.gencode import GeneticCode
-from iseq.codon_table import CodonTable
 import nmm
-from Bio.Alphabet import DNAAlphabet, RNAAlphabet
+from Bio import SeqIO
+from Bio.Alphabet import IUPAC, DNAAlphabet, RNAAlphabet
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
+from tqdm import tqdm
+
+from iseq.codon_table import CodonTable
+from iseq.gencode import GeneticCode
 
 
 def is_alphabet_ambiguous(seq):
