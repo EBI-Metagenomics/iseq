@@ -5,6 +5,8 @@ from pathlib import Path
 from iseq.domtblout import DomTBLData
 from iseq.file import fetch_file, make_executable, tmp_cwd
 
+from .hmmpress import HMMPress
+
 __all__ = ["HMMScan"]
 
 
@@ -31,12 +33,16 @@ class HMMScan:
 
         make_executable(prog_path)
         self._prog_path = prog_path
+        self._hmmpress = HMMPress()
 
     def scan(self, profile: Path, target: Path) -> DomTBLData:
         import subprocess
 
         profile = profile.absolute()
         target = target.absolute()
+
+        if not self._hmmpress.pressed(profile):
+            self._hmmpress.press(profile)
 
         with tmp_cwd():
             cmd = [

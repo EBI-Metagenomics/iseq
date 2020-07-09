@@ -98,6 +98,12 @@ _filenames = {
     "problematic1.fasta": "8053144931f5d2fbce5cdf0eef4283ada5e2f715bd7bb75075dad31f6114316e",
     "problematic1.hmm": "0fe62f7306510f1f9226e0e26148567a0e1ac4732da7cc89e74d6e208adf955b",
     "tblout.txt": "b1d95803d13017e98e8431c3a926920979470b936706177c5cfbd788585833ff",
+    "AE014075.1_subset_nucl.fasta": "2b206f8969ae4c1922b2418c7d75d30dd2b7732b69b68903c6b2b2febdedf61d",
+    "AE014075.1_subset_oamino.fasta": "4bbcb10502e7c8082da1c7685a8f040660b41c65587f9c11346b0abe2d321164",
+    "AE014075.1_subset_ocodon.fasta": "d02850246cc2ff07cc583a4e7e5e33f0f8b691080d9c0b85cffecf167b4addc0",
+    "AE014075.1_subset_output.gff": "5b518f1c263a8026404fe5ecd4efb04c8e1faa73344994445d237d69de93cac2",
+    "Pfam-A_24.hmm": "b4ab9774dbf3b08393375800fcbe695ee69db92476c56d41c580bcb08d01bee5",
+    "Pfam-A_24.hmm.br": "b107d117aaf733104ceca80c144565ec4e37e4159bac1d10bd9528c24c251bb0",
 }
 
 
