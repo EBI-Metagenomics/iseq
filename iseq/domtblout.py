@@ -80,7 +80,6 @@ class DomTBLData:
                 line[21],
                 " ".join(line[22:]),
             )
-        self.close()
 
     def __enter__(self):
         return self

@@ -1,9 +1,8 @@
 import os
 import re
-import sys
 from collections import OrderedDict
 from pathlib import Path
-from typing import IO
+from typing import IO, Dict, Set, Tuple
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
@@ -13,10 +12,11 @@ from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.codon_table import CodonTable
+from iseq.domtblout import DomTBLData, DomTBLRow
+from iseq.gff import read as read_gff
 from iseq.hmmer_model import HMMERModel
-from iseq.hmmsearch import HMMSearch
-from iseq.protein import create_profile, create_profile2
-from iseq.tblout import TBLData
+from iseq.hmmscan import HMMScan
+from iseq.protein import create_profile2
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -65,20 +65,15 @@ from .output_writer import OutputWriter
     default=os.devnull,
 )
 @click.option(
-    "--e-value/--no-e-value",
-    help="Enable E-value computation. Defaults to True.",
-    default=True,
-)
-@click.option(
-    "--model",
-    type=click.Choice(["1", "2"]),
-    help="Model 1 or 2. Defaults 1 for now",
-    default="1",
+    "--max-e-value",
+    type=float,
+    default=1e-10,
+    help="Filter out items for which E-value > --max-e-evalue.",
 )
 @click.option(
     "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
 )
-def pscan(
+def pscan2(
     profile,
     target,
     epsilon: float,
@@ -88,8 +83,7 @@ def pscan(
     quiet,
     window: int,
     odebug,
-    e_value: bool,
-    model: str,
+    max_e_value: float,
     hit_prefix: str,
 ):
     """
@@ -102,12 +96,12 @@ def pscan(
     """
 
     owriter = OutputWriter(output, item_prefix=hit_prefix)
-    cwriter = FASTAWriter(ocodon, sys.maxsize)
-    awriter = FASTAWriter(oamino, sys.maxsize)
+    cwriter = FASTAWriter(ocodon)
+    awriter = FASTAWriter(oamino)
     dwriter = DebugWriter(odebug)
 
     with open(profile, "r") as file:
-        profile_abc = _infer_profile_alphabet(file)
+        profile_abc = infer_profile_alphabet(file)
     target_abc = infer_target_alphabet(target)
 
     assert isinstance(target_abc, BaseAlphabet) and isinstance(
@@ -124,11 +118,7 @@ def pscan(
         open_hmmer(profile), desc="Models", total=total, disable=quiet
     ):
         hmodel = HMMERModel(plain_model)
-        if model == "1":
-            prof = create_profile(hmodel, gcode.base_alphabet, window, epsilon)
-        else:
-            prof = create_profile2(hmodel, gcode.base_alphabet, window, epsilon)
-            assert model == "2"
+        prof = create_profile2(hmodel, gcode.base_alphabet, window, epsilon)
 
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
@@ -163,13 +153,22 @@ def pscan(
     awriter.close()
     odebug.close_intelligently()
 
-    if e_value:
-        hmmsearch = HMMSearch()
-        tbldata = hmmsearch.search(Path(profile), Path(oamino))
-        update_gff_file(output, tbldata)
+    hmmscan = HMMScan()
+    domtbldata = hmmscan.scan(Path(profile), Path(oamino))
+    score_table = ScoreTable(domtbldata)
+    update_gff_file(output, score_table, max_e_value)
+    target_set = target_set_from_gff_file(output)
+    update_fasta_file(ocodon, target_set)
+    update_fasta_file(oamino, target_set)
+
+    items = list(sorted(list(target_set), key=lambda k: int(k.replace("item", ""))))
+    target_map = {item: f"item{i+1}" for i, item in enumerate(items)}
+    translate_gff_file(output, target_map)
+    translate_fasta_file(ocodon, target_map)
+    translate_fasta_file(oamino, target_map)
 
 
-def _infer_profile_alphabet(profile: IO[str]):
+def infer_profile_alphabet(profile: IO[str]):
     hmmer = open_hmmer(profile)
     hmmer_alphabet = infer_hmmer_alphabet(hmmer)
     profile.seek(0)
@@ -187,7 +186,28 @@ def infer_target_alphabet(target: IO[str]):
     return target_alphabet
 
 
-def update_gff_file(filepath, tbldata: TBLData):
+class ScoreTable:
+    def __init__(self, domtbldata: DomTBLData):
+        self._tbldata: Dict[Tuple[str, str, str], DomTBLRow] = {}
+        for line in domtbldata:
+            key = (line.query.name, line.target.name, line.target.accession)
+            if key in self._tbldata:
+                prev_score = float(self._tbldata[key].full_sequence.score)
+                if float(line.full_sequence.score) > prev_score:
+                    self._tbldata[key] = line
+            else:
+                self._tbldata[key] = line
+
+    def e_value(self, target_id: str, profile_name: str, profile_acc: str) -> str:
+        key = (target_id, profile_name, profile_acc)
+        return self._tbldata[key].full_sequence.e_value
+
+    def has(self, target_id: str, profile_name: str, profile_acc: str) -> bool:
+        key = (target_id, profile_name, profile_acc)
+        return key in self._tbldata
+
+
+def update_gff_file(filepath, score_table: ScoreTable, max_e_value: float):
     import in_place
 
     with in_place.InPlace(filepath) as file:
@@ -219,16 +239,79 @@ def update_gff_file(filepath, tbldata: TBLData):
 
             attr = OrderedDict(fields_list)
 
-            data = tbldata.find(
-                target_name=attr["ID"],
-                query_name=attr["Profile_name"],
-                query_acc=attr["Profile_acc"],
-            )
-            if data is None:
+            key = (attr["ID"], attr["Profile_name"], attr["Profile_acc"])
+            if not score_table.has(*key):
+                continue
+
+            attr["E-value"] = score_table.e_value(*key)
+            if float(attr["E-value"]) > max_e_value:
+                continue
+
+            file.write(left + ";".join(k + "=" + v for k, v in attr.items()))
+            file.write("\n")
+
+
+def translate_gff_file(filepath, target_map: Dict[str, str]):
+    import in_place
+
+    with in_place.InPlace(filepath) as file:
+        for row in file:
+            row = row.rstrip()
+            if row.startswith("#"):
                 file.write(row)
                 file.write("\n")
                 continue
 
-            attr["E-value"] = data.full_sequence.e_value
+            match = re.match(r"^(.+\t)([^\t]+)$", row)
+            if match is None:
+                file.write(row)
+                file.write("\n")
+                continue
+
+            left = match.group(1)
+            right = match.group(2)
+
+            if right == ".":
+                file.write(row)
+                file.write("\n")
+                continue
+
+            fields_list = []
+            for v in right.split(";"):
+                name, value = v.split("=", 1)
+                fields_list.append((name, value))
+
+            attr = OrderedDict(fields_list)
+
+            attr["ID"] = target_map[attr["ID"]]
             file.write(left + ";".join(k + "=" + v for k, v in attr.items()))
             file.write("\n")
+
+
+def target_set_from_gff_file(filepath) -> Set[str]:
+    gff = read_gff(filepath)
+    df = gff.to_dataframe()
+    return set(df["att_ID"].tolist())
+
+
+def update_fasta_file(filepath, target_set: Set[str]):
+    with open_fasta(filepath) as fasta:
+        targets = list(fasta)
+
+    with FASTAWriter(filepath) as writer:
+        for target in targets:
+            tgt_id = target.defline.split()[0]
+            if tgt_id in target_set:
+                writer.write_item(target.defline, target.sequence)
+
+
+def translate_fasta_file(filepath, target_map: Dict[str, str]):
+    with open_fasta(filepath) as fasta:
+        targets = list(fasta)
+
+    with FASTAWriter(filepath) as writer:
+        for target in targets:
+            old_tgt_id = target.defline.split()[0]
+            tgt_id = target_map[old_tgt_id]
+            defline = tgt_id + " " + target.defline[len(old_tgt_id) + 1 :]
+            writer.write_item(defline, target.sequence)

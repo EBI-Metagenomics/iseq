@@ -102,10 +102,10 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
     for _, row in tqdm(df.iterrows(), total=total, desc="Parsing", disable=not verbose):
         gff.append(GFFItem(*tuple(row.tolist())))
 
-    file.seek(start)
-
     if close_file:
         file.close()
+    else:
+        file.seek(start)
 
     return gff
 

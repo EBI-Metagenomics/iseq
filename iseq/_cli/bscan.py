@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from math import exp
 from pathlib import Path
@@ -244,8 +245,8 @@ def bscan(
     )
 
     owriter = OutputWriter(output, item_prefix=hit_prefix)
-    cwriter = FASTAWriter(ocodon)
-    awriter = FASTAWriter(oamino)
+    cwriter = FASTAWriter(ocodon, sys.maxsize)
+    awriter = FASTAWriter(oamino, sys.maxsize)
     dwriter = DebugWriter(odebug)
 
     alt_filepath = (profile + ".alt").encode()

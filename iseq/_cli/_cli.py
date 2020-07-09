@@ -8,6 +8,7 @@ from .gff_filter import gff_filter
 from .hscan import hscan
 from .press import press
 from .pscan import pscan
+from .pscan2 import pscan2
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
@@ -25,3 +26,4 @@ cli.add_command(hscan)
 cli.add_command(plot)
 cli.add_command(press)
 cli.add_command(pscan)
+cli.add_command(pscan2)
