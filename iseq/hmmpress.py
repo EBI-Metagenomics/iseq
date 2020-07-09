@@ -1,5 +1,4 @@
 import sys
-from io import StringIO
 from pathlib import Path
 
 from iseq.file import fetch_file, make_executable, tmp_cwd
