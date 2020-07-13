@@ -39,42 +39,45 @@ ctg123 . exon            7000  9000  .  +  .  ID=exon00005;Parent=mrna0001
 """
 from __future__ import annotations
 
+import dataclasses
 import pathlib
-from collections import OrderedDict
-from typing import IO, List, NamedTuple, Optional, Union
+from dataclasses import dataclass
+from typing import IO, Any, List, Optional, Type, Union
 
 from tqdm import tqdm
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
 
-GFFItem = NamedTuple(
-    "GFFItem",
-    [
-        ("seqid", str),
-        ("source", str),
-        ("type", str),
-        ("start", int),
-        ("end", int),
-        ("score", Union[float, str]),
-        ("strand", str),
-        ("phase", Union[int, str]),
-        ("attributes", str),
-    ],
-)
 
-_columns = OrderedDict(
-    [
-        ("seqid", str),
-        ("source", str),
-        ("type", str),
-        ("start", int),
-        ("end", int),
-        ("score", str),
-        ("strand", str),
-        ("phase", str),
-        ("attributes", str),
-    ]
-)
+@dataclass
+class GFFItem:
+    seqid: str
+    source: str
+    type: str
+    start: int
+    end: int
+    score: str
+    strand: str
+    phase: str
+    attributes: str
+
+    def attributes_astuple(self):
+        attrs = []
+        for item in self.attributes.split(";"):
+            name, value = item.split("=")
+            attrs.append((name, value))
+        return tuple(attrs)
+
+    def __iter__(self):
+        return iter(dataclasses.astuple(self))
+
+    @classmethod
+    def field_names(cls) -> List[str]:
+        return [f.name for f in dataclasses.fields(cls)]
+
+    @classmethod
+    def field_types(cls) -> List[Type[Any]]:
+        return [f.type for f in dataclasses.fields(cls)]
 
 
 def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
@@ -94,9 +97,10 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
     start = file.tell()
     header = file.readline().rstrip()
 
-    names = list(_columns.keys())
+    names = GFFItem.field_names()
+    types = GFFItem.field_types()
 
-    df = read_csv(file, sep="\t", names=names, dtype=_columns)
+    df = read_csv(file, sep="\t", names=names, dtype=dict(zip(names, types)))
     gff = GFF(header)
     total = df.shape[0]
     for _, row in tqdm(df.iterrows(), total=total, desc="Parsing", disable=not verbose):
@@ -138,9 +142,11 @@ class GFF:
     def _to_dataframe(self):
         from pandas import DataFrame
 
-        df = DataFrame(self._items)
-        for name, dtype in _columns.items():
-            df[name] = df[name].astype(dtype)
+        columns = GFFItem.field_names()
+        types = GFFItem.field_types()
+        df = DataFrame(self._items, columns=columns, dtype=str)
+        for col, typ in zip(columns, types):
+            df[col] = df[col].astype(typ)
         return df
 
     def to_dataframe(self):
@@ -153,8 +159,9 @@ class GFF:
     def _from_dataframe(self, df):
         self._items = []
 
+        keys = GFFItem.field_names()
         for _, row in df.iterrows():
-            self.append(GFFItem(**{k: row[k] for k in _columns.keys()}))
+            self.append(GFFItem(**{k: row[k] for k in keys}))
 
     def deduplicate(self):
         from pandas import concat

@@ -13,6 +13,7 @@ __all__ = [
     "diff",
     "fetch_file",
     "make_executable",
+    "assert_file_hash",
 ]
 
 
@@ -104,14 +105,14 @@ def fetch_file(
 
     if filename + ".br" in filemap:
         zipped = fetch_file(filename + ".br", cache_subdir, url_base, filemap)
-        cleanup_invalid_filepath(filepath, filemap)
+        cleanup_invalid_filepath(filepath, filemap[filepath.name])
         if not filepath.exists():
             brotli_decompress(zipped)
     else:
         if filename not in filemap:
             raise ValueError(f"Unknown filename {filename}.")
 
-        cleanup_invalid_filepath(filepath, filemap)
+        cleanup_invalid_filepath(filepath, filemap[filepath.name])
 
     if not filepath.exists():
         r = requests.get(f"{url_base}/{filename}")
@@ -119,17 +120,21 @@ def fetch_file(
         with open(filepath, "wb") as f:
             f.write(r.content)
 
-        if file_hash(filepath) != filemap[filename]:
-            msg = (
-                f"Hash mismatch:\n"
-                f"  ACTUAL : {file_hash(filepath)}\n"
-                f"  DESIRED: {filemap[filename]}"
-            )
-            raise RuntimeError(msg)
+        assert_file_hash(filepath, filemap[filename])
 
     return filepath
 
 
-def cleanup_invalid_filepath(filepath: Path, filemap: Mapping[str, str]):
-    if filepath.exists() and file_hash(filepath) != filemap[filepath.name]:
+def assert_file_hash(filepath: Path, filehash: str):
+    if file_hash(filepath) != filehash:
+        msg = (
+            f"Hash mismatch:\n"
+            f"  ACTUAL : {file_hash(filepath)}\n"
+            f"  DESIRED: {filehash}"
+        )
+        raise RuntimeError(msg)
+
+
+def cleanup_invalid_filepath(filepath: Path, filehash: str):
+    if filepath.exists() and file_hash(filepath) != filehash:
         filepath.unlink()

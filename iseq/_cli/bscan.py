@@ -84,7 +84,7 @@ class Worker:
                 seq = prof.create_sequence(tgt.sequence.encode())
                 search_results = prof.search(seq)
                 ifragments = search_results.ifragments()
-                seqid = f"{tgt.defline.split()[0]}"
+                seqid = f"{tgt.id}"
 
                 for ifrag in ifragments:
                     start = ifrag.interval.start

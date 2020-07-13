@@ -124,7 +124,7 @@ def pscan2(
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()
-            seqid = f"{tgt.defline.split()[0]}"
+            seqid = f"{tgt.id}"
 
             for ifrag in ifragments:
                 start = ifrag.interval.start
@@ -300,7 +300,7 @@ def update_fasta_file(filepath, target_set: Set[str]):
 
     with FASTAWriter(filepath) as writer:
         for target in targets:
-            tgt_id = target.defline.split()[0]
+            tgt_id = target.id
             if tgt_id in target_set:
                 writer.write_item(target.defline, target.sequence)
 
@@ -311,7 +311,7 @@ def translate_fasta_file(filepath, target_map: Dict[str, str]):
 
     with FASTAWriter(filepath) as writer:
         for target in targets:
-            old_tgt_id = target.defline.split()[0]
+            old_tgt_id = target.id
             tgt_id = target_map[old_tgt_id]
-            defline = tgt_id + " " + target.defline[len(old_tgt_id) + 1 :]
+            defline = tgt_id + " " + target.desc
             writer.write_item(defline, target.sequence)
