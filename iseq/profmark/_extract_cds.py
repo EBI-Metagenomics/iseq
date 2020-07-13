@@ -9,25 +9,18 @@ from tqdm import tqdm
 from iseq.codon_table import CodonTable
 from iseq.gencode import GeneticCode
 from iseq.file import cleanup_invalid_filepath, assert_file_hash
+from ._accession import accession_hash
 
 __all__ = ["extract_cds"]
-
-
-_accessions = {
-    "AE014075.1": {
-        "amino": "d14d16c7455caeb1411101bf54967643adfe7619a12b8816e3c755613f337f38",
-        "nucl": "96308d9d2da397993f596f28559935ac0c1f98ab817fc92627e2217826ba1cef",
-    }
-}
 
 
 def extract_cds(folder: Path, accession: str):
 
     filepath_nucl = folder / f"{accession}_nucl.fasta"
-    cleanup_invalid_filepath(filepath_nucl, _accessions[accession]["nucl"])
+    cleanup_invalid_filepath(filepath_nucl, accession_hash(accession)["nucl"])
 
     filepath_amino = folder / f"{accession}_amino.fasta"
-    cleanup_invalid_filepath(filepath_amino, _accessions[accession]["amino"])
+    cleanup_invalid_filepath(filepath_amino, accession_hash(accession)["amino"])
 
     if filepath_nucl.exists() and filepath_amino.exists():
         return
@@ -95,8 +88,8 @@ def extract_cds(folder: Path, accession: str):
     nucl_output.close()
     amino_output.close()
 
-    assert_file_hash(filepath_nucl, _accessions[accession]["nucl"])
-    assert_file_hash(filepath_amino, _accessions[accession]["amino"])
+    assert_file_hash(filepath_nucl, accession_hash(accession)["nucl"])
+    assert_file_hash(filepath_amino, accession_hash(accession)["amino"])
 
 
 def is_alphabet_ambiguous(seq):
