@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import nmm
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC, DNAAlphabet, RNAAlphabet
@@ -7,8 +8,9 @@ from Bio.SeqRecord import SeqRecord
 from tqdm import tqdm
 
 from iseq.codon_table import CodonTable
+from iseq.file import assert_file_hash, cleanup_invalid_filepath
 from iseq.gencode import GeneticCode
-from iseq.file import cleanup_invalid_filepath, assert_file_hash
+
 from ._accession import accession_hash
 
 __all__ = ["extract_cds"]

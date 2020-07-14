@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from .confusion import ConfusionMatrix
 import itertools
-import hmmer_reader
-from iseq.domtblout import DomTBLData
-from iseq.gff import read as read_gff
-from fasta_reader import open_fasta
 from typing import NamedTuple, Set
 
+import hmmer_reader
+from fasta_reader import open_fasta
+
+from iseq.domtblout import DomTBLData
+from iseq.gff import read as read_gff
+
+from .confusion import ConfusionMatrix
 
 __all__ = ["Sample", "ProfMark"]
 

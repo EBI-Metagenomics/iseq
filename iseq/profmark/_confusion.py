@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Iterable
 
 __all__ = ["ConfusionMatrix", "ROC"]
@@ -21,7 +22,7 @@ class ConfusionMatrix:
     def __init__(
         self, true_samples: Iterable[int], N: int, sorted_samples: Iterable[int]
     ):
-        from numpy import empty, asarray
+        from numpy import asarray, empty
 
         if len(set(sorted_samples) - set(true_samples)) > N:
             raise ValueError("Invalid number of negative samples.")
@@ -40,7 +41,7 @@ class ConfusionMatrix:
         self._set_tp_fp(true_arr, sorted_arr)
 
     def _set_tp_fp(self, true_samples, sorted_samples):
-        from numpy import searchsorted, asarray
+        from numpy import asarray, searchsorted
 
         true_arr = asarray(true_samples, int)
         true_arr.sort()
@@ -100,7 +101,7 @@ class ConfusionMatrix:
 
     @property
     def precision(self):
-        from numpy import nan, empty
+        from numpy import empty, nan
 
         r = empty(self._num_sorted_samples + 1)
         r[0] = nan
@@ -112,7 +113,7 @@ class ConfusionMatrix:
     def npv(self):
         """ Negative predictive value.
         """
-        from numpy import nan, empty
+        from numpy import empty, nan
 
         r = empty(self._num_sorted_samples + 1)
         r[-1] = nan

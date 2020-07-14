@@ -1,29 +1,32 @@
 from pathlib import Path
 
 from Bio import Entrez
-from iseq.file import cleanup_invalid_filepath, assert_file_hash
-from ._accession import accession_hash
 
+from iseq.file import assert_file_hash, cleanup_invalid_filepath
+
+from ._accession import accession_hash
 
 __all__ = ["download_genbank"]
 
 
-def download_genbank(folder: Path, accession: str):
+def download_genbank(accession: str, rettype: str):
+    """
+    Parameters
+    ----------
+    accession
+        Accession number.
+    rettype
+        Accepted values are ``"gb"`` and ``"fasta"``.
+    """
 
-    filepath = folder / f"{accession}.gbk"
-    cleanup_invalid_filepath(filepath, accession_hash(accession)["genbank"])
+    filepath = Path(f"{accession}.{rettype}")
+    cleanup_invalid_filepath(filepath, accession_hash(accession)[rettype])
     if not filepath.exists():
-        download_efetch(filepath, accession, "gb")
-    assert_file_hash(filepath, accession_hash(accession)["genbank"])
-
-    filepath = folder / f"{accession}.fasta"
-    cleanup_invalid_filepath(filepath, accession_hash(accession)["fasta"])
-    if not filepath.exists():
-        download_efetch(filepath, accession, "fasta")
-    assert_file_hash(filepath, accession_hash(accession)["fasta"])
+        _download_efetch(filepath, accession, rettype)
+    assert_file_hash(filepath, accession_hash(accession)[rettype])
 
 
-def download_efetch(filepath: Path, accession: str, rettype: str):
+def _download_efetch(filepath: Path, accession: str, rettype: str):
     Entrez.email = "horta@ebi.ac.uk"
     efetch = Entrez.efetch
 
