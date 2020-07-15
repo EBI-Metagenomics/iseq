@@ -1,4 +1,4 @@
-from . import gff, hmmer3, protein
+from . import gff, hmmer3, profmark, protein
 from ._cli import cli
 from ._testit import test
 from ._version import __version__
@@ -6,8 +6,9 @@ from ._version import __version__
 __all__ = [
     "__version__",
     "cli",
-    "protein",
     "gff",
     "hmmer3",
+    "profmark",
+    "protein",
     "test",
 ]

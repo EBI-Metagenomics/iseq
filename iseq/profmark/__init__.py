@@ -1,4 +1,3 @@
-from ._download import download_genbank
-from ._extract_cds import extract_cds
+from . import genbank
 
-__all__ = ["extract_cds", "download_genbank"]
+__all__ = ["genbank"]
