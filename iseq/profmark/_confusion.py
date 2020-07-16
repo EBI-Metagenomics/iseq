@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pickle
+from pathlib import Path
 from typing import Iterable
 
 __all__ = ["ConfusionMatrix", "ROC"]
@@ -62,6 +64,15 @@ class ConfusionMatrix:
             else:
                 self._TP[i + 1] += 1
             i += 1
+
+    def write_pickle(self, filepath: Path):
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
+
+    @staticmethod
+    def read_pickle(filepath: Path):
+        with open(filepath, "rb") as file:
+            return pickle.load(file)
 
     @property
     def TP(self):

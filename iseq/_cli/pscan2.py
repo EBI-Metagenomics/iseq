@@ -161,8 +161,11 @@ def pscan2(
     update_fasta_file(ocodon, target_set)
     update_fasta_file(oamino, target_set)
 
-    items = list(sorted(list(target_set), key=lambda k: int(k.replace("item", ""))))
-    target_map = {item: f"item{i+1}" for i, item in enumerate(items)}
+    def rep(k: str):
+        return int(k.replace(hit_prefix, ""))
+
+    items = list(sorted(list(target_set), key=rep))
+    target_map = {item: f"{hit_prefix}{i+1}" for i, item in enumerate(items)}
     translate_gff_file(output, target_map)
     translate_fasta_file(ocodon, target_map)
     translate_fasta_file(oamino, target_map)

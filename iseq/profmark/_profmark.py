@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import itertools
+import pickle
+from pathlib import Path
 from typing import NamedTuple, Set
 
 import hmmer_reader
@@ -9,41 +11,57 @@ from fasta_reader import open_fasta
 from iseq.domtblout import DomTBLData
 from iseq.gff import read as read_gff
 
-from .confusion import ConfusionMatrix
+from ._confusion import ConfusionMatrix
 
-__all__ = ["Sample", "ProfMark"]
+__all__ = ["ProfMark"]
 
 Sample = NamedTuple("Sample", [("prof_acc", str), ("target_id", str)])
 
 
 class ProfMark:
-    def __init__(self, hmmer_file, target_file, domtblout_file, output_file):
+    def __init__(
+        self,
+        hmmer_file: Path,
+        target_file: Path,
+        domtblout_file: Path,
+        output_file: Path,
+    ):
         from numpy import zeros
 
         sample_space: Set[Sample] = generate_sample_space(hmmer_file, target_file)
         true_samples = get_domtblout_samples(domtblout_file)
-        samples = get_output_samples(output_file)
+        sample_hits = get_output_samples(output_file)
 
         sample_space_id = {s: i for i, s in enumerate(sorted(sample_space))}
-        true_samples = [sample_space_id[k] for k in true_samples]
+        true_sample_ids = [sample_space_id[k] for k in true_samples]
 
-        P = len(true_samples)
-        N = len(sample_space) - P
+        P = len(true_sample_ids)
+        N = len(sample_space_id) - P
         sorted_samples = zeros(N + P, int)
-        for i, sample in enumerate(samples):
+        for i, sample in enumerate(sample_hits):
             sorted_samples[i] = sample_space_id[sample]
 
-        for i, sample in enumerate(sample_space - samples):
-            sorted_samples[i + len(samples)] = sample_space_id[sample]
+        for i, sample in enumerate(sample_space - sample_hits):
+            sorted_samples[i + len(sample_hits)] = sample_space_id[sample]
 
-        self._num_output_samples = len(sorted_samples)
-        self._confusion_matrix = ConfusionMatrix(true_samples, P, N, sorted_samples)
+        self._nhits = len(sample_hits)
+        self._confusion_matrix = ConfusionMatrix(true_sample_ids, N, sorted_samples)
 
-    def num_output_samples(self) -> int:
-        return self._num_output_samples
+    @property
+    def nhits(self) -> int:
+        return self._nhits
 
     def confusion_matrix(self) -> ConfusionMatrix:
         return self._confusion_matrix
+
+    def write_pickle(self, filepath: Path):
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
+
+    @staticmethod
+    def read_pickle(filepath: Path):
+        with open(filepath, "rb") as file:
+            return pickle.load(file)
 
 
 def generate_sample_space(hmmer_file, target_file) -> Set[Sample]:
