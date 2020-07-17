@@ -104,6 +104,10 @@ _filenames = {
     "AE014075.1_subset_output.gff": "5b518f1c263a8026404fe5ecd4efb04c8e1faa73344994445d237d69de93cac2",
     "Pfam-A_24.hmm": "b4ab9774dbf3b08393375800fcbe695ee69db92476c56d41c580bcb08d01bee5",
     "Pfam-A_24.hmm.br": "b107d117aaf733104ceca80c144565ec4e37e4159bac1d10bd9528c24c251bb0",
+    "AE014075.1_domtblout.txt": "010a9172e4438ef2bbfb01943ea9650d9ff1673dac0d5f3b425f5c106bee069a",
+    "AE014075.1_cds_amino.fasta": "727c0f71b43d864d01c25169fbffe2a2596962038cb02734c38a09b151858076",
+    "AE014075.1_cds_nucl.fasta": "2b206f8969ae4c1922b2418c7d75d30dd2b7732b69b68903c6b2b2febdedf61d",
+    "AE014075.1_output.gff": "55bfb99a0bf31d9490def8fe7662d1f72820864edc849fc108c911b1d201afae",
 }
 
 
