@@ -16,7 +16,7 @@ def test_cli_pscan2_pfam24(tmp_path):
     oamino = example_filepath("AE014075.1_subset_oamino.fasta")
     ocodon = example_filepath("AE014075.1_subset_ocodon.fasta")
     output = example_filepath("AE014075.1_subset_output.gff")
-    r = invoke(cli, ["pscan2", str(profile), str(fasta), "--quiet"])
+    r = invoke(cli, ["pscan2", str(profile), str(fasta), "--max-e-value", "1e-10", "--quiet"])
     assert r.exit_code == 0, r.output
     assert cmp(oamino, "oamino.fasta", shallow=False), diff(oamino, "oamino.fasta")
     assert cmp(ocodon, "ocodon.fasta", shallow=False), diff(ocodon, "ocodon.fasta")
