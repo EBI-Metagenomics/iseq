@@ -1,5 +1,6 @@
 import filecmp
 import os
+from io import StringIO
 
 from numpy.testing import assert_equal
 
@@ -24,3 +25,10 @@ def test_gff_deduplicate(tmp_path):
 
     dedup_file = example_filepath("deduplicate.gff")
     assert_equal(filecmp.cmp(dedup_file, "output.gff", shallow=False), True)
+
+
+def test_gff_read_empty():
+    file = StringIO("##gff-version 3")
+    gff = read_gff(file)
+    df = gff.to_dataframe()
+    assert_equal(len(df), 0)
