@@ -166,6 +166,7 @@ class ConfusionMatrix:
         """
         return 2 * self.TP / (2 * self.TP + self.FP + self.FN)
 
+    @property
     def roc(self) -> ROC:
         from numpy import argsort
 
@@ -207,3 +208,17 @@ class ROC:
             left = self.fpr[i]
         area += (1 - left) * self.tpr[-1]
         return area
+
+    def _draw(self):
+        import matplotlib.pyplot as plt
+
+        f, ax = plt.subplots()
+        ax.plot(self.fpr, self.tpr, label="auc=" + str(self.auc))
+
+        return f
+
+    def plot(self):
+        self._draw().show()
+
+    def savefig(self, filepath, **kwargs):
+        self._draw().savefig(filepath, **kwargs)

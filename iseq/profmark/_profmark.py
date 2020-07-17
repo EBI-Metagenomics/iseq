@@ -51,6 +51,7 @@ class ProfMark:
     def nhits(self) -> int:
         return self._nhits
 
+    @property
     def confusion_matrix(self) -> ConfusionMatrix:
         return self._confusion_matrix
 
