@@ -55,8 +55,6 @@ def extract_cds(gb_filepath: Path, amino_filepath: Path, nucl_filepath: Path):
     assert nucl_name in ["dna", "rna"]
 
     starts = set()
-    # TODO: remove the subset
-    jj = 0
     for feature in tqdm(rec.features, desc="Features"):
         if feature.type != "CDS":
             continue
@@ -76,11 +74,6 @@ def extract_cds(gb_filepath: Path, amino_filepath: Path, nucl_filepath: Path):
             continue
 
         assert accession == nucl_rec.id
-
-        # TODO: remove the subset
-        if jj == 10:
-            break
-        jj += 1
 
         amino_rec: SeqRecord = SeqRecord(
             Seq(feature.qualifiers["translation"][0], IUPAC.protein),
@@ -116,9 +109,8 @@ def extract_cds(gb_filepath: Path, amino_filepath: Path, nucl_filepath: Path):
     nucl_output.close()
     amino_output.close()
 
-    # TODO: uncomment it
-    # assert_file_hash(nucl_filepath, accession_hash(accession)["nucl"])
-    # assert_file_hash(amino_filepath, accession_hash(accession)["amino"])
+    assert_file_hash(nucl_filepath, accession_hash(accession)["nucl"])
+    assert_file_hash(amino_filepath, accession_hash(accession)["amino"])
 
 
 def download_efetch(filepath: Path, accession: str, rettype: str):

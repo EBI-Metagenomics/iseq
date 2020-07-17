@@ -67,7 +67,7 @@ from .output_writer import OutputWriter
 @click.option(
     "--max-e-value",
     type=float,
-    default=10.,
+    default=10.0,
     help="Filter out items for which E-value > --max-e-evalue.",
 )
 @click.option(

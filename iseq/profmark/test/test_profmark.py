@@ -1,4 +1,5 @@
 from imm.testing import assert_allclose
+
 from iseq.example import example_filepath
 from iseq.profmark import ProfMark
 
@@ -34,6 +35,6 @@ def test_profmark():
         1.0,
     ]
     breakpoint()
-    assert_allclose(pm.confusion_matrix.tpr[:len(tpr)], tpr)
+    assert_allclose(pm.confusion_matrix.tpr[: len(tpr)], tpr)
     fpr = [0.0, 0.0, 0.004424778761061954, 0.11504424778761058, 0.995575221238938, 1.0]
     assert_allclose(pm.confusion_matrix.fpr[[0, 5, 10, 40, -2, -1]], fpr)
