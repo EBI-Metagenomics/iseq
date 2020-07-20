@@ -42,7 +42,8 @@ def extract_cds(gb_filepath: Path, amino_filepath: Path, nucl_filepath: Path):
     rec: SeqRecord = next(SeqIO.parse(gb_filepath, "genbank"))
 
     nucl_name = rec.annotations["molecule_type"].lower()
-    assert nucl_name in ["dna", "rna"]
+    nucl_name = nucl_name.replace("genomic dna", "dna")
+    assert nucl_name in ["dna", "rna", "genomic dna"]
 
     starts = set()
     for feature in tqdm(rec.features, desc="Features"):
