@@ -210,7 +210,7 @@ class ROC:
         return area
 
     def _draw(self):
-        import matplotlib.pyplot as plt
+        from matplotlib import pyplot as plt
 
         f, ax = plt.subplots()
         ax.plot(self.fpr, self.tpr, label="auc=" + str(self.auc))
