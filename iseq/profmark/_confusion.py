@@ -173,8 +173,8 @@ class ConfusionMatrix:
         if self._num_sorted_samples < 1:
             raise ValueError("Not enough sorted samples.")
 
-        tpr = self.tpr[1:]
-        fpr = self.fpr[1:]
+        tpr = self.tpr
+        fpr = self.fpr
 
         idx = argsort(fpr)
         fpr = fpr[idx]
@@ -209,16 +209,18 @@ class ROC:
         area += (1 - left) * self.tpr[-1]
         return area
 
-    def _draw(self):
+    def plot(self, ax=None):
         from matplotlib import pyplot as plt
+        import seaborn as sns
 
-        f, ax = plt.subplots()
-        ax.plot(self.fpr, self.tpr, label="auc=" + str(self.auc))
+        sns.set(color_codes=True)
 
-        return f
+        if ax is None:
+            ax = plt.subplots()[1]
+        ax.plot([0, 1], [0, 1], linestyle='--')
+        ax.plot(self.fpr, self.tpr, label=f"ROC curve (area={self.auc:6.4f})")
+        ax.set_xlabel("false positive rate")
+        ax.set_ylabel("true positive rate")
+        ax.legend(loc="lower right")
 
-    def plot(self):
-        self._draw().show()
-
-    def savefig(self, filepath, **kwargs):
-        self._draw().savefig(filepath, **kwargs)
+        return ax

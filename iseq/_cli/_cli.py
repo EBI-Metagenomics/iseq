@@ -2,6 +2,7 @@ import click
 
 from .._version import __version__
 from ._plot import plot
+from ._profmark import profmark
 from .amino_decode import amino_decode
 from .bscan import bscan
 from .gff_filter import gff_filter
@@ -25,5 +26,6 @@ cli.add_command(gff_filter)
 cli.add_command(hscan)
 cli.add_command(plot)
 cli.add_command(press)
+cli.add_command(profmark)
 cli.add_command(pscan)
 cli.add_command(pscan2)
