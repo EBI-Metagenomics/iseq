@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import pickle
 from pathlib import Path
-from typing import NamedTuple, Set, List, Tuple, Dict
+from typing import Dict, List, NamedTuple, Set, Tuple
 
 import hmmer_reader
 from fasta_reader import open_fasta

@@ -210,14 +210,14 @@ class ROC:
         return area
 
     def plot(self, ax=None):
-        from matplotlib import pyplot as plt
         import seaborn as sns
+        from matplotlib import pyplot as plt
 
         sns.set(color_codes=True)
 
         if ax is None:
             ax = plt.subplots()[1]
-        ax.plot([0, 1], [0, 1], linestyle='--')
+        ax.plot([0, 1], [0, 1], linestyle="--")
         ax.plot(self.fpr, self.tpr, label=f"ROC curve (area={self.auc:6.4f})")
         ax.set_xlabel("false positive rate")
         ax.set_ylabel("true positive rate")

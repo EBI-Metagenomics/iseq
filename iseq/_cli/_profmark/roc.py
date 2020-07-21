@@ -1,7 +1,8 @@
+from pathlib import Path
+
 import click
 
 from iseq.profmark import ProfMark
-from pathlib import Path
 
 
 @click.command()
