@@ -25,7 +25,7 @@ from .output_writer import OutputWriter
 @click.command()
 @click.argument(
     "profile",
-    type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=True),
+    type=click.Path(exists=True, dir_okay=False, readable=True, resolve_path=False),
 )
 @click.argument("target", type=click.File("r"))
 @click.option(
