@@ -159,6 +159,8 @@ def pscan2(
     awriter.close()
     odebug.close_intelligently()
 
+    if not quiet:
+        click.echo("Computing e-values... ", nl=False)
     hmmscan = HMMScan()
     domtbldata = hmmscan.scan(Path(profile), Path(oamino), cut_ga)
     score_table = ScoreTable(domtbldata)
@@ -166,15 +168,21 @@ def pscan2(
     target_set = target_set_from_gff_file(output)
     update_fasta_file(ocodon, target_set)
     update_fasta_file(oamino, target_set)
+    if not quiet:
+        click.echo("done.")
 
     def rep(k: str):
         return int(k.replace(hit_prefix, ""))
 
+    if not quiet:
+        click.echo("Translating files... ", nl=False)
     items = list(sorted(list(target_set), key=rep))
     target_map = {item: f"{hit_prefix}{i+1}" for i, item in enumerate(items)}
     translate_gff_file(output, target_map)
     translate_fasta_file(ocodon, target_map)
     translate_fasta_file(oamino, target_map)
+    if not quiet:
+        click.echo("done.")
 
 
 def infer_profile_alphabet(profile: IO[str]):
