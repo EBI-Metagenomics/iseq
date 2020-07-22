@@ -73,6 +73,11 @@ from .output_writer import OutputWriter
 @click.option(
     "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
 )
+@click.option(
+    "--cut-ga/--no-cut-ga",
+    help="Enable use of profile's GA gathering cutoffs to set all thresholding. Defaults to True.",
+    default=True,
+)
 def pscan2(
     profile,
     target,
@@ -85,6 +90,7 @@ def pscan2(
     odebug,
     max_e_value: float,
     hit_prefix: str,
+    cut_ga: bool,
 ):
     """
     Search nucleotide sequence(s) against a protein profiles database.
@@ -154,7 +160,7 @@ def pscan2(
     odebug.close_intelligently()
 
     hmmscan = HMMScan()
-    domtbldata = hmmscan.scan(Path(profile), Path(oamino))
+    domtbldata = hmmscan.scan(Path(profile), Path(oamino), cut_ga)
     score_table = ScoreTable(domtbldata)
     update_gff_file(output, score_table, max_e_value)
     target_set = target_set_from_gff_file(output)

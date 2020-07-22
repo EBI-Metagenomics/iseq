@@ -35,7 +35,7 @@ class HMMScan:
         self._prog_path = prog_path
         self._hmmpress = HMMPress()
 
-    def scan(self, profile: Path, target: Path) -> DomTBLData:
+    def scan(self, profile: Path, target: Path, cut_ga=True) -> DomTBLData:
         import subprocess
 
         profile = profile.absolute()
@@ -45,9 +45,10 @@ class HMMScan:
             self._hmmpress.press(profile)
 
         with tmp_cwd():
-            cmd = [
-                self._prog_path,
-                "--cut_ga",
+            cmd = [self._prog_path]
+            if cut_ga:
+                cmd += ["--cut_ga"]
+            cmd += [
                 "--domtblout",
                 "domtblout",
                 str(profile),
