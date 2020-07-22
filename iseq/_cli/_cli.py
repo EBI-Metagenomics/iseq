@@ -10,6 +10,7 @@ from .hscan import hscan
 from .press import press
 from .pscan import pscan
 from .pscan2 import pscan2
+from .pscan3 import pscan3
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
@@ -29,3 +30,4 @@ cli.add_command(press)
 cli.add_command(profmark)
 cli.add_command(pscan)
 cli.add_command(pscan2)
+cli.add_command(pscan3)
