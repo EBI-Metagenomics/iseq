@@ -1,12 +1,11 @@
 import os
-from filecmp import cmp
 from typing import Dict
 
 import pytest
 from click.testing import CliRunner
 
 from iseq import cli
-from iseq.file import diff
+from iseq.testing import assert_same_file
 
 _amino = """>Homoserine_dh-consensus
 PIISTLKESLTGDRITRIEGILNGTLNYILTEMEEEGASFSEALKEAQELGYAEADPTDD
@@ -164,4 +163,4 @@ def test_cli_amino_decode_transl9(tmp_path, trans_tbl):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert cmp("nucl.fa", "desired.fa", shallow=False), diff("nucl.fa", "desired.fa")
+    assert_same_file("nucl.fa", "desired.fa")
