@@ -1,11 +1,10 @@
 import os
-from filecmp import cmp
 
 from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.file import diff
+from iseq.testing import assert_same_file
 
 
 def test_cli_pscan2_pfam24(tmp_path):
@@ -20,6 +19,6 @@ def test_cli_pscan2_pfam24(tmp_path):
         cli, ["pscan2", str(profile), str(fasta), "--max-e-value", "1e-10", "--quiet"]
     )
     assert r.exit_code == 0, r.output
-    assert cmp(oamino, "oamino.fasta", shallow=False), diff(oamino, "oamino.fasta")
-    assert cmp(ocodon, "ocodon.fasta", shallow=False), diff(ocodon, "ocodon.fasta")
-    assert cmp(output, "output.gff", shallow=False), diff(output, "output.gff")
+    assert_same_file("oamino.fasta", oamino)
+    assert_same_file("ocodon.fasta", ocodon)
+    assert_same_file("output.gff", output)

@@ -1,4 +1,3 @@
-import filecmp
 import os
 from io import StringIO
 
@@ -6,6 +5,7 @@ from numpy.testing import assert_equal
 
 from iseq.example import example_filepath
 from iseq.gff import read as read_gff
+from iseq.testing import assert_same_file
 
 
 def test_gff_read():
@@ -24,7 +24,7 @@ def test_gff_deduplicate(tmp_path):
     gff.write_file("output.gff")
 
     dedup_file = example_filepath("deduplicate.gff")
-    assert_equal(filecmp.cmp(dedup_file, "output.gff", shallow=False), True)
+    assert_same_file("output.gff", dedup_file)
 
 
 def test_gff_read_empty():

@@ -1,11 +1,10 @@
 import os
-from filecmp import cmp
 
 from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.file import diff
+from iseq.testing import assert_same_file
 
 
 def test_cli_bscan_GALNBKIG_pfam10(tmp_path):
@@ -51,15 +50,9 @@ def test_cli_bscan_GALNBKIG_pfam10(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert cmp("bscan_oamino.fasta", "pscan_oamino.fasta", shallow=False), diff(
-        "bscan_oamino.fasta", "pscan_oamino.fasta"
-    )
-    assert cmp("bscan_ocodon.fasta", "pscan_ocodon.fasta", shallow=False), diff(
-        "bscan_ocodon.fasta", "pscan_ocodon.fasta"
-    )
-    assert cmp("bscan_output.gff", "pscan_output.gff", shallow=False), diff(
-        "bscan_output.gff", "pscan_output.gff"
-    )
+    assert_same_file("bscan_oamino.fasta", "pscan_oamino.fasta")
+    assert_same_file("bscan_ocodon.fasta", "pscan_ocodon.fasta")
+    assert_same_file("bscan_output.gff", "pscan_output.gff")
 
 
 def test_cli_bscan_GALNBKIG_pfam10_ncpus2(tmp_path):
@@ -107,12 +100,6 @@ def test_cli_bscan_GALNBKIG_pfam10_ncpus2(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert cmp("bscan_oamino.fasta", "pscan_oamino.fasta", shallow=False), diff(
-        "bscan_oamino.fasta", "pscan_oamino.fasta"
-    )
-    assert cmp("bscan_ocodon.fasta", "pscan_ocodon.fasta", shallow=False), diff(
-        "bscan_ocodon.fasta", "pscan_ocodon.fasta"
-    )
-    assert cmp("bscan_output.gff", "pscan_output.gff", shallow=False), diff(
-        "bscan_output.gff", "pscan_output.gff"
-    )
+    assert_same_file("bscan_oamino.fasta", "pscan_oamino.fasta")
+    assert_same_file("bscan_ocodon.fasta", "pscan_ocodon.fasta")
+    assert_same_file("bscan_output.gff", "pscan_output.gff")

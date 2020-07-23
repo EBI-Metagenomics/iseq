@@ -1,5 +1,4 @@
 import os
-from filecmp import cmp
 from io import StringIO
 
 import pandas as pd
@@ -8,7 +7,7 @@ from imm.testing import assert_allclose
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.file import diff
+from iseq.testing import assert_same_file
 
 
 def test_cli_hscan(tmp_path):
@@ -213,9 +212,7 @@ def test_cli_hscan_window_auto(tmp_path):
     with open("desired.gff", "w") as file:
         file.write(_output_window_auto)
 
-    assert cmp("output.gff", "desired.gff", shallow=False), diff(
-        "output.gff", "desired.gff"
-    )
+    assert_same_file("output.gff", "desired.gff")
 
 
 def test_cli_hscan_dna_vs_rna(tmp_path):
@@ -254,6 +251,4 @@ def test_cli_hscan_dna_vs_rna(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert cmp("output_dna.gff", "output_rna.gff", shallow=False), diff(
-        "output_dna.gff", "output_rna.gff"
-    )
+    assert_same_file("output_dna.gff", "output_rna.gff")
