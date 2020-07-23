@@ -1,3 +1,4 @@
+import tempfile
 import os
 import sys
 import time
@@ -13,9 +14,9 @@ from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name
 from iseq.codon_table import CodonTable
-from iseq.hmmsearch import HMMSearch
 from iseq.profile import ProfileID
 from iseq.protein import ProteinProfile
+from hmmer import HMMER
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -314,9 +315,10 @@ def bscan(
     odebug.close_intelligently()
 
     if e_value:
-        hmmsearch = HMMSearch()
-        tbldata = hmmsearch.search(Path(profile), Path(oamino))
-        update_gff_file(output, tbldata)
+        hmmer = HMMER(profile)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = hmmer.search(oamino, "/dev/null", Path(tmpdir) / "tblout.txt")
+            update_gff_file(output, result.tbl)
 
     ray.shutdown()
 

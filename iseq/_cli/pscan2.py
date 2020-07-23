@@ -1,4 +1,5 @@
 import os
+import tempfile
 import re
 from collections import OrderedDict
 from pathlib import Path
@@ -12,11 +13,11 @@ from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.codon_table import CodonTable
-from iseq.domtblout import DomTBLData, DomTBLRow
 from iseq.gff import read as read_gff
 from iseq.hmmer_model import HMMERModel
-from iseq.hmmscan import HMMScan
 from iseq.protein import create_profile2
+from hmmer import HMMER
+from hmmer.typing import DomTBLData, DomTBLRow
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -161,9 +162,12 @@ def pscan2(
 
     if not quiet:
         click.echo("Computing e-values... ", nl=False)
-    hmmscan = HMMScan()
-    domtbldata = hmmscan.scan(Path(profile), Path(oamino), cut_ga)
-    score_table = ScoreTable(domtbldata)
+    hmmer = HMMER(profile)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        domtblout = Path(tmpdir) / "domtb.txt"
+        result = hmmer.scan(oamino, "/dev/null", domtblout=domtblout, cut_ga=cut_ga)
+        score_table = ScoreTable(result.domtbl)
+
     update_gff_file(output, score_table, max_e_value)
     target_set = target_set_from_gff_file(output)
     update_fasta_file(ocodon, target_set)

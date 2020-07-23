@@ -1,12 +1,15 @@
 import os
 import re
 import sys
+import tempfile
 from collections import OrderedDict
 from pathlib import Path
 from typing import IO
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
+from hmmer import HMMER
+from hmmer.typing import TBLData
 from hmmer_reader import num_models, open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, IUPACAminoAlphabet
 from tqdm import tqdm
@@ -14,9 +17,7 @@ from tqdm import tqdm
 from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
 from iseq.codon_table import CodonTable
 from iseq.hmmer_model import HMMERModel
-from iseq.hmmsearch import HMMSearch
 from iseq.protein import create_profile, create_profile2
-from iseq.tblout import TBLData
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -164,9 +165,10 @@ def pscan(
     odebug.close_intelligently()
 
     if e_value:
-        hmmsearch = HMMSearch()
-        tbldata = hmmsearch.search(Path(profile), Path(oamino))
-        update_gff_file(output, tbldata)
+        hmmer = HMMER(profile)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = hmmer.search(oamino, "/dev/null", Path(tmpdir) / "tblout.txt")
+            update_gff_file(output, result.tbl)
 
 
 def _infer_profile_alphabet(profile: IO[str]):
@@ -189,6 +191,11 @@ def infer_target_alphabet(target: IO[str]):
 
 def update_gff_file(filepath, tbldata: TBLData):
     import in_place
+
+    tbl = {}
+    for row in iter(tbldata):
+        key = (row.target.name, row.query.name, row.query.accession)
+        tbl[key] = row
 
     with in_place.InPlace(filepath) as file:
         for row in file:
@@ -219,16 +226,12 @@ def update_gff_file(filepath, tbldata: TBLData):
 
             attr = OrderedDict(fields_list)
 
-            data = tbldata.find(
-                target_name=attr["ID"],
-                query_name=attr["Profile_name"],
-                query_acc=attr["Profile_acc"],
-            )
-            if data is None:
+            key = (attr["ID"], attr["Profile_name"], attr["Profile_acc"])
+            if key not in tbl:
                 file.write(row)
                 file.write("\n")
                 continue
 
-            attr["E-value"] = data.full_sequence.e_value
+            attr["E-value"] = tbl[key].full_sequence.e_value
             file.write(left + ";".join(k + "=" + v for k, v in attr.items()))
             file.write("\n")

@@ -108,6 +108,8 @@ _filenames = {
     "AE014075.1_cds_amino.fasta": "727c0f71b43d864d01c25169fbffe2a2596962038cb02734c38a09b151858076",
     "AE014075.1_cds_nucl.fasta": "2b206f8969ae4c1922b2418c7d75d30dd2b7732b69b68903c6b2b2febdedf61d",
     "AE014075.1_output.gff": "55bfb99a0bf31d9490def8fe7662d1f72820864edc849fc108c911b1d201afae",
+    "minifam.hmm": "fe305d9c09e123f987f49b9056e34c374e085d8831f815cc73d8ea4cdec84960",
+    "minifam.hmm.br": "6ce377a2a6d9cc19124d2d52e951bcb9500215cbcb584847356d733f0cf4a7db",
 }
 
 
