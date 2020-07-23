@@ -113,7 +113,7 @@ def pscan3(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    hmmscore = HMMScore()
+    hmmscore = HMMScore(Path(profile))
     total = num_models(profile)
     for plain_model in tqdm(
         open_hmmer(profile), desc="Models", total=total, disable=quiet
@@ -133,8 +133,10 @@ def pscan3(
                 codon_frag = ifrag.fragment.decode()
                 amino_frag = codon_frag.decode(gcode)
                 e_value, score, bias = hmmscore.score(
-                    Path(profile), prof.profid.acc, str(amino_frag.sequence)
+                    prof.profid.acc, str(amino_frag.sequence)
                 )
+                if score == "NAN":
+                    continue
                 item_id = owriter.write_item(
                     seqid,
                     alphabet_name(seq.alphabet),

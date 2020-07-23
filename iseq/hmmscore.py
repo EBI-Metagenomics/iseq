@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import tempfile
 from io import StringIO
@@ -18,7 +19,7 @@ _filemap = {
 
 
 class HMMScore:
-    def __init__(self):
+    def __init__(self, profile: Path):
 
         if sys.platform not in ["linux", "darwin"]:
             raise RuntimeError(f"Unsupported platform: {sys.platform}.")
@@ -40,18 +41,37 @@ class HMMScore:
         self._hmmsearch_path = hmmsearch_path
         self._hmmfetch_path = hmmfetch_path
 
-    def score(self, profile: Path, accession: str, seq: str):
-        import subprocess
+        self._profile = profile.absolute()
+        if not self._is_indexed():
+            self._index_it()
 
-        profile = profile.absolute()
+    def _index_it(self):
+        cmd = [self._hmmfetch_path, "--index", self._profile]
+        subprocess.check_call(cmd)
+
+    def _is_indexed(self) -> bool:
+        prof = self._profile
+        if prof.with_suffix(prof.suffix + ".ssi").exists():
+            return True
+        return prof.with_suffix(prof.suffix + ".h3m.ssi").exists()
+
+    def score(self, accession: str, seq: str, heuristics=True, cut_ga=False):
+
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir) / "target.fasta"
             with open(target, "w") as file:
                 file.write(">Unknown\n")
                 file.write(seq)
-            cmd = f"{self._hmmfetch_path} {profile} {accession} | "
+
+            cmd = f"{self._hmmfetch_path} {self._profile} {accession} | "
             cmd += f"{self._hmmsearch_path} -o /dev/null "
-            cmd += f"--tblout /dev/stdout --max - {target}"
+            max_flag = ""
+            if not heuristics:
+                max_flag = "--max"
+            cut_ga_flag = ""
+            if cut_ga:
+                cut_ga_flag = "--cut_ga"
+            cmd += f"--tblout /dev/stdout {max_flag} {cut_ga_flag} - {target}"
 
             output = subprocess.check_output(cmd, shell=True)
             tbldata = TBLData(StringIO(output.decode()))

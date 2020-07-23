@@ -37,7 +37,7 @@ class OutputWriter:
         for k in sorted(att.keys()):
             atts += f";{k}={att[k]}"
 
-        item = GFFItem(seqid, "iseq", ".", start + 1, end, 0.0, "+", ".", atts)
+        item = GFFItem(seqid, "iseq", ".", start + 1, end, "0.0", "+", ".", atts)
         self._gff.write_item(item)
         self._item_idx += 1
         return item_id
