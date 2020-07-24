@@ -332,5 +332,8 @@ def translate_fasta_file(filepath, target_map: Dict[str, str]):
         for target in targets:
             old_tgt_id = target.id
             tgt_id = target_map[old_tgt_id]
-            defline = tgt_id + " " + target.desc
+            if target.has_desc:
+                defline = tgt_id + " " + target.desc
+            else:
+                defline = tgt_id
             writer.write_item(defline, target.sequence)
