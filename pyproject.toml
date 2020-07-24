@@ -10,3 +10,10 @@ known_third_party = ["appdirs", "brotli", "click", "fasta_reader",
                      "pytest", "ray", "requests", "setuptools", "tqdm",
                      "in_place", "humanfriendly", "seaborn", "matplotlib",
                      "Bio", "biopython", "importlib_resource", "hmmer"]
+
+[tool.pylint.message_control]
+disable = """
+  redefined-builtin,
+  R0915,
+  line-too-long,
+"""
