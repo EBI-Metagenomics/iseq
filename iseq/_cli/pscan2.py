@@ -161,6 +161,8 @@ def pscan2(
     if not quiet:
         click.echo("Computing e-values... ", nl=False)
     hmmer = HMMER(profile)
+    if not hmmer.is_pressed:
+        hmmer.press()
     result = hmmer.scan(oamino, "/dev/null", domtblout=True, cut_ga=cut_ga)
     score_table = ScoreTable(result.domtbl)
 
