@@ -1,15 +1,13 @@
 import os
 import re
 import sys
-import tempfile
 from collections import OrderedDict
-from pathlib import Path
-from typing import IO
+from typing import IO, List
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
 from hmmer import HMMER
-from hmmer.typing import TBLData
+from hmmer.typing import TBLRow
 from hmmer_reader import num_models, open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, IUPACAminoAlphabet
 from tqdm import tqdm
@@ -166,9 +164,8 @@ def pscan(
 
     if e_value:
         hmmer = HMMER(profile)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            result = hmmer.search(oamino, "/dev/null", Path(tmpdir) / "tblout.txt")
-            update_gff_file(output, result.tbl)
+        result = hmmer.search(oamino, "/dev/null", tblout=True)
+        update_gff_file(output, result.tbl)
 
 
 def _infer_profile_alphabet(profile: IO[str]):
@@ -189,7 +186,7 @@ def infer_target_alphabet(target: IO[str]):
     return target_alphabet
 
 
-def update_gff_file(filepath, tbldata: TBLData):
+def update_gff_file(filepath, tbldata: List[TBLRow]):
     import in_place
 
     tbl = {}

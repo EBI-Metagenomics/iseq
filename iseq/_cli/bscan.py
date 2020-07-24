@@ -1,14 +1,13 @@
-import tempfile
 import os
 import sys
 import time
 from math import exp
-from pathlib import Path
 
 import click
 import humanfriendly
 import ray
 from fasta_reader import FASTAWriter, open_fasta
+from hmmer import HMMER
 from nmm import DNAAlphabet, Input, IUPACAminoAlphabet, RNAAlphabet
 from tqdm import tqdm
 
@@ -16,7 +15,6 @@ from iseq.alphabet import alphabet_name
 from iseq.codon_table import CodonTable
 from iseq.profile import ProfileID
 from iseq.protein import ProteinProfile
-from hmmer import HMMER
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -316,9 +314,8 @@ def bscan(
 
     if e_value:
         hmmer = HMMER(profile)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            result = hmmer.search(oamino, "/dev/null", Path(tmpdir) / "tblout.txt")
-            update_gff_file(output, result.tbl)
+        result = hmmer.search(oamino, "/dev/null", tblout=True)
+        update_gff_file(output, result.tbl)
 
     ray.shutdown()
 

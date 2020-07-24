@@ -9,4 +9,4 @@ known_third_party = ["appdirs", "brotli", "click", "fasta_reader",
                      "hmmer_reader", "imm", "nmm", "numpy", "pandas",
                      "pytest", "ray", "requests", "setuptools", "tqdm",
                      "in_place", "humanfriendly", "seaborn", "matplotlib",
-                     "Bio", "biopython", "importlib_resource"]
+                     "Bio", "biopython", "importlib_resource", "hmmer"]

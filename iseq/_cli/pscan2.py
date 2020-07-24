@@ -1,12 +1,12 @@
 import os
-import tempfile
 import re
 from collections import OrderedDict
-from pathlib import Path
-from typing import IO, Dict, Set, Tuple
+from typing import IO, Dict, List, Set, Tuple
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
+from hmmer import HMMER
+from hmmer.typing import DomTBLRow
 from hmmer_reader import num_models, open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, IUPACAminoAlphabet
 from tqdm import tqdm
@@ -16,8 +16,6 @@ from iseq.codon_table import CodonTable
 from iseq.gff import read as read_gff
 from iseq.hmmer_model import HMMERModel
 from iseq.protein import create_profile2
-from hmmer import HMMER
-from hmmer.typing import DomTBLData, DomTBLRow
 
 from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
@@ -163,10 +161,8 @@ def pscan2(
     if not quiet:
         click.echo("Computing e-values... ", nl=False)
     hmmer = HMMER(profile)
-    with tempfile.TemporaryDirectory() as tmpdir:
-        domtblout = Path(tmpdir) / "domtb.txt"
-        result = hmmer.scan(oamino, "/dev/null", domtblout=domtblout, cut_ga=cut_ga)
-        score_table = ScoreTable(result.domtbl)
+    result = hmmer.scan(oamino, "/dev/null", domtblout=True, cut_ga=cut_ga)
+    score_table = ScoreTable(result.domtbl)
 
     update_gff_file(output, score_table, max_e_value)
     target_set = target_set_from_gff_file(output)
@@ -208,7 +204,7 @@ def infer_target_alphabet(target: IO[str]):
 
 
 class ScoreTable:
-    def __init__(self, domtbldata: DomTBLData):
+    def __init__(self, domtbldata: List[DomTBLRow]):
         self._tbldata: Dict[Tuple[str, str, str], DomTBLRow] = {}
         for line in domtbldata:
             key = (line.query.name, line.target.name, line.target.accession)

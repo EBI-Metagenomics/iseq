@@ -1,11 +1,13 @@
 import os
 import re
 from collections import OrderedDict
+from io import StringIO
 from pathlib import Path
 from typing import IO, Dict, Set, Tuple
 
 import click
 from fasta_reader import FASTAWriter, open_fasta
+from hmmer import HMMER
 from hmmer_reader import num_models, open_hmmer
 from nmm import AminoAlphabet, BaseAlphabet, IUPACAminoAlphabet
 from tqdm import tqdm
@@ -15,7 +17,6 @@ from iseq.codon_table import CodonTable
 from iseq.domtblout import DomTBLData, DomTBLRow
 from iseq.gff import read as read_gff
 from iseq.hmmer_model import HMMERModel
-from iseq.hmmscore import HMMScore
 from iseq.protein import create_profile2
 
 from .debug_writer import DebugWriter
@@ -113,7 +114,10 @@ def pscan3(
     with open_fasta(target) as fasta:
         targets = list(fasta)
 
-    hmmscore = HMMScore(Path(profile))
+    hmmer = HMMER(Path(profile))
+    if not hmmer.is_indexed:
+        hmmer.index()
+
     total = num_models(profile)
     for plain_model in tqdm(
         open_hmmer(profile), desc="Models", total=total, disable=quiet
@@ -132,8 +136,8 @@ def pscan3(
                 stop = ifrag.interval.stop
                 codon_frag = ifrag.fragment.decode()
                 amino_frag = codon_frag.decode(gcode)
-                e_value, score, bias = hmmscore.score(
-                    prof.profid.acc, str(amino_frag.sequence)
+                e_value, score, bias = target_score(
+                    hmmer, prof.profid.acc, str(amino_frag.sequence)
                 )
                 if score == "NAN":
                     continue
@@ -331,3 +335,27 @@ def translate_fasta_file(filepath, target_map: Dict[str, str]):
             tgt_id = target_map[old_tgt_id]
             defline = tgt_id + " " + target.desc
             writer.write_item(defline, target.sequence)
+
+
+def target_score(hmmer: HMMER, acc: str, seq: str, heuristic=True, cut_ga=False):
+    result = hmmer.search(
+        StringIO(">Unknown\n" + seq),
+        "/dev/null",
+        tblout=True,
+        heuristic=heuristic,
+        cut_ga=cut_ga,
+        hmmkey=acc,
+    )
+
+    rows = result.tbl
+    if len(rows) == 0:
+        e_value = "NAN"
+        score = "NAN"
+        bias = "NAN"
+    else:
+        assert len(rows) == 1
+        e_value = rows[0].full_sequence.e_value
+        score = rows[0].full_sequence.score
+        bias = rows[0].full_sequence.bias
+
+    return e_value, score, bias
