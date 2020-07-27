@@ -1,15 +1,15 @@
-import os
 import re
 from collections import OrderedDict
 from io import StringIO
 from pathlib import Path
-from typing import IO, Dict, Set, Tuple
+from typing import Dict, List, Set, TextIO, Tuple
 
 import click
-from fasta_reader import FASTAWriter, open_fasta
+from fasta_reader import FASTAItem, FASTAWriter, open_fasta
 from hmmer import HMMER
 from hmmer_reader import num_models, open_hmmer
-from nmm import AminoAlphabet, BaseAlphabet, IUPACAminoAlphabet
+from imm import Alphabet
+from nmm import IUPACAminoAlphabet
 from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
@@ -17,9 +17,9 @@ from iseq.codon_table import CodonTable
 from iseq.domtblout import DomTBLData, DomTBLRow
 from iseq.gff import read as read_gff
 from iseq.hmmer_model import HMMERModel
-from iseq.protein import create_profile2
+from iseq.profile import ProfileID
+from iseq.protein import ProteinProfile, create_profile2
 
-from .debug_writer import DebugWriter
 from .output_writer import OutputWriter
 
 
@@ -60,31 +60,17 @@ from .output_writer import OutputWriter
     default=0,
 )
 @click.option(
-    "--odebug",
-    type=click.File("w"),
-    help="Save debug info into a tab-separated values file.",
-    default=os.devnull,
-)
-@click.option(
-    "--max-e-value",
-    type=float,
-    default=10.0,
-    help="Filter out items for which E-value > --max-e-evalue.",
-)
-@click.option(
     "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
 )
 def pscan3(
-    profile,
-    target,
+    profile: str,
+    target: TextIO,
     epsilon: float,
-    output,
-    ocodon,
-    oamino,
-    quiet,
+    output: str,
+    ocodon: str,
+    oamino: str,
+    quiet: bool,
     window: int,
-    odebug,
-    max_e_value: float,
     hit_prefix: str,
 ):
     """
@@ -99,94 +85,112 @@ def pscan3(
     owriter = OutputWriter(output, item_prefix=hit_prefix)
     cwriter = FASTAWriter(ocodon)
     awriter = FASTAWriter(oamino)
-    dwriter = DebugWriter(odebug)
 
-    with open(profile, "r") as file:
-        profile_abc = infer_profile_alphabet(file)
     target_abc = infer_target_alphabet(target)
 
-    assert isinstance(target_abc, BaseAlphabet) and isinstance(
-        profile_abc, AminoAlphabet
-    )
-
     gcode = CodonTable(target_abc, IUPACAminoAlphabet())
+    scan = PScan3(Path(profile), owriter, cwriter, awriter, gcode)
+    scan.scan(target, window, epsilon, quiet)
+    scan.close()
 
-    with open_fasta(target) as fasta:
-        targets = list(fasta)
 
-    hmmer = HMMER(Path(profile))
-    if not hmmer.is_indexed:
-        hmmer.index()
-
-    total = num_models(profile)
-    for plain_model in tqdm(
-        open_hmmer(profile), desc="Models", total=total, disable=quiet
+class PScan3:
+    def __init__(
+        self,
+        profile: Path,
+        output: OutputWriter,
+        ocodon: FASTAWriter,
+        oamino: FASTAWriter,
+        codon_table: CodonTable,
     ):
-        hmodel = HMMERModel(plain_model)
-        prof = create_profile2(hmodel, gcode.base_alphabet, window, epsilon)
+        self._profile = profile
+        self._output = output
+        self._ocodon = ocodon
+        self._oamino = oamino
+        self._codon_table = codon_table
 
+        hmmer = HMMER(profile)
+        if not hmmer.is_indexed:
+            hmmer.index()
+
+        self._hmmer = hmmer
+
+    @property
+    def num_models(self) -> int:
+        return num_models(self._profile)
+
+    def scan(self, target: TextIO, window: int, epsilon: float, quiet: bool):
+        with open_fasta(target) as fasta:
+            targets = list(fasta)
+
+        base_alphabet = self._codon_table.base_alphabet
+        with open_hmmer(self._profile) as pfile:
+            total = self.num_models
+            profiles = tqdm(iter(pfile), desc="Models", total=total, disable=quiet)
+            for plain_model in profiles:
+                hmodel = HMMERModel(plain_model)
+                prof = create_profile2(hmodel, base_alphabet, window, epsilon)
+                self._scan_targets(prof, targets, epsilon, quiet)
+
+    def _scan_targets(
+        self,
+        prof: ProteinProfile,
+        targets: List[FASTAItem],
+        epsilon: float,
+        quiet: bool,
+    ):
+        wlen = prof.window_length
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()
-            seqid = f"{tgt.id}"
 
+            tgt_abc = seq.alphabet
+            prof_abc = prof.alphabet
             for ifrag in ifragments:
-                start = ifrag.interval.start
-                stop = ifrag.interval.stop
-                codon_frag = ifrag.fragment.decode()
-                amino_frag = codon_frag.decode(gcode)
-                e_value, score, bias = target_score(
-                    hmmer, prof.profid.acc, str(amino_frag.sequence)
+                self._process_fragment(
+                    ifrag, f"{tgt.id}", tgt_abc, prof.profid, prof_abc, wlen, epsilon
                 )
-                if score == "NAN":
-                    continue
-                item_id = owriter.write_item(
-                    seqid,
-                    alphabet_name(seq.alphabet),
-                    prof.profid,
-                    alphabet_name(prof.alphabet),
-                    start,
-                    stop,
-                    prof.window_length,
-                    {
-                        "Epsilon": epsilon,
-                        "E-value": e_value,
-                        "Score": score,
-                        "Bias": bias,
-                    },
-                )
-                cwriter.write_item(item_id, str(codon_frag.sequence))
-                awriter.write_item(item_id, str(amino_frag.sequence))
 
-            if odebug is not os.devnull:
-                for i in search_results.debug_table():
-                    dwriter.write_row(seqid, i)
+    def _process_fragment(
+        self,
+        frag,
+        target_id: str,
+        target_abc: Alphabet,
+        prof_id: ProfileID,
+        prof_abc: Alphabet,
+        window_length: int,
+        epsilon: float,
+    ):
+        start = frag.interval.start
+        stop = frag.interval.stop
+        codon_frag = frag.fragment.decode()
+        amino_frag = codon_frag.decode(self._codon_table)
+        e_value, score, bias = target_score(
+            self._hmmer, prof_id.acc, str(amino_frag.sequence)
+        )
+        if score == "NAN":
+            return
+        item_id = self._output.write_item(
+            target_id,
+            alphabet_name(target_abc),
+            prof_id,
+            alphabet_name(prof_abc),
+            start,
+            stop,
+            window_length,
+            {"Epsilon": epsilon, "E-value": e_value, "Score": score, "Bias": bias},
+        )
+        self._ocodon.write_item(item_id, str(codon_frag.sequence))
+        self._oamino.write_item(item_id, str(amino_frag.sequence))
 
-    owriter.close()
-    cwriter.close()
-    awriter.close()
-    odebug.close_intelligently()
-
-    target_set = target_set_from_gff_file(output)
-    update_fasta_file(ocodon, target_set)
-    update_fasta_file(oamino, target_set)
-
-    def rep(k: str):
-        return int(k.replace(hit_prefix, ""))
-
-    if not quiet:
-        click.echo("Translating files... ", nl=False)
-    items = list(sorted(list(target_set), key=rep))
-    target_map = {item: f"{hit_prefix}{i+1}" for i, item in enumerate(items)}
-    translate_gff_file(output, target_map)
-    translate_fasta_file(ocodon, target_map)
-    translate_fasta_file(oamino, target_map)
-    if not quiet:
-        click.echo("done.")
+    def close(self):
+        self._output.close()
+        self._ocodon.close()
+        self._oamino.close()
 
 
-def infer_profile_alphabet(profile: IO[str]):
+def infer_profile_alphabet(profile: TextIO):
     hmmer = open_hmmer(profile)
     hmmer_alphabet = infer_hmmer_alphabet(hmmer)
     profile.seek(0)
@@ -195,7 +199,7 @@ def infer_profile_alphabet(profile: IO[str]):
     return hmmer_alphabet
 
 
-def infer_target_alphabet(target: IO[str]):
+def infer_target_alphabet(target: TextIO):
     fasta = open_fasta(target)
     target_alphabet = infer_fasta_alphabet(fasta)
     target.seek(0)
