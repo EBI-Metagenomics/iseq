@@ -1,6 +1,6 @@
 from io import StringIO
 from pathlib import Path
-from typing import Dict, List, NamedTuple, TextIO, Tuple
+from typing import List, NamedTuple, TextIO
 
 import click
 from fasta_reader import FASTAItem, FASTAWriter, open_fasta
@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 from iseq.alphabet import alphabet_name, infer_fasta_alphabet
 from iseq.codon_table import CodonTable
-from iseq.domtblout import DomTBLData, DomTBLRow
 from iseq.hmmer_model import HMMERModel
 from iseq.profile import ProfileID
 from iseq.protein import ProteinProfile, create_profile2
@@ -233,24 +232,3 @@ def infer_target_alphabet(target: TextIO):
     if target_alphabet is None:
         raise click.UsageError("Could not infer alphabet from TARGET.")
     return target_alphabet
-
-
-class ScoreTable:
-    def __init__(self, domtbldata: DomTBLData):
-        self._tbldata: Dict[Tuple[str, str, str], DomTBLRow] = {}
-        for line in domtbldata:
-            key = (line.query.name, line.target.name, line.target.accession)
-            if key in self._tbldata:
-                prev_score = float(self._tbldata[key].full_sequence.score)
-                if float(line.full_sequence.score) > prev_score:
-                    self._tbldata[key] = line
-            else:
-                self._tbldata[key] = line
-
-    def e_value(self, target_id: str, profile_name: str, profile_acc: str) -> str:
-        key = (target_id, profile_name, profile_acc)
-        return self._tbldata[key].full_sequence.e_value
-
-    def has(self, target_id: str, profile_name: str, profile_acc: str) -> bool:
-        key = (target_id, profile_name, profile_acc)
-        return key in self._tbldata
