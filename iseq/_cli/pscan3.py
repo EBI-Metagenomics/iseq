@@ -123,6 +123,7 @@ class PScan3:
         self._codon_table = codon_table
 
         hmmer = HMMER(profile)
+        hmmer.timeout = 60
         if not hmmer.is_indexed:
             hmmer.index()
 
