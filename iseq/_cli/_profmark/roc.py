@@ -20,9 +20,27 @@ from iseq.profmark import ProfMark
     default=None,
 )
 @click.option(
+    "--solution-space",
+    type=click.Choice(["prof-target", "prof", "target"]),
+    help="Solution space.",
+    default="prof-target",
+)
+@click.option(
+    "--solution-space-idx/--no-solution-space-idx",
+    help="Enable index for solution space.",
+    default=True,
+)
+@click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
 )
-def plot_roc(dir: str, accession: str, output: str, quiet: bool):
+def plot_roc(
+    dir: str,
+    accession: str,
+    output: str,
+    solution_space: str,
+    solution_space_idx: bool,
+    quiet: bool,
+):
     """
     Plot profiles distribution.
     """
@@ -53,17 +71,17 @@ def plot_roc(dir: str, accession: str, output: str, quiet: bool):
         click.echo("Plotting... ", nl=False)
 
     pm = ProfMark(hmm_file, target_file, domtbl_file, gff_file)
-
-    P = pm.confusion_matrix.P
-    N = pm.confusion_matrix.N
+    cm = pm.confusion_matrix(solution_space, solution_space_idx)
+    P = cm.P
+    N = cm.N
     title = f"{accession} (P/N: {P}/{N})"
     if output is None:
-        ax = pm.confusion_matrix.roc.plot()
+        ax = cm.roc.plot()
         ax.set_title(title)
         plt.show()
     else:
         f, ax = plt.subplots()
-        pm.confusion_matrix.roc.plot(ax=ax)
+        cm.roc.plot(ax=ax)
         ax.set_title(title)
         f.savefig(output)
 

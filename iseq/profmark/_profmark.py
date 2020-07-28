@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import pickle
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Set, Tuple
+from typing import Dict, Iterable, List, NamedTuple, Set, Tuple
 
 import hmmer_reader
 from fasta_reader import open_fasta
@@ -15,7 +15,9 @@ from ._confusion import ConfusionMatrix
 
 __all__ = ["ProfMark"]
 
+# ProfSample = NamedTuple("ProfSample", [("prof_acc", str), ("idx", int)])
 Sample = NamedTuple("Sample", [("prof_acc", str), ("target_id", str), ("idx", int)])
+# TargetSample = NamedTuple("TargetSample", [("target_id", str), ("idx", int)])
 
 
 class ProfMark:
@@ -26,12 +28,32 @@ class ProfMark:
         domtblout_file: Path,
         output_file: Path,
     ):
-        from numpy import zeros
-
         sample_space: Set[Sample] = generate_sample_space(hmmer_file, target_file)
         true_samples = get_domtblout_samples(domtblout_file)
         ordered_sample_hits = get_ordered_output_samples(output_file)
         sample_space |= true_samples | set(ordered_sample_hits)
+
+        self._sample_space: Set[Sample] = sample_space
+        self._true_samples: Set[Sample] = true_samples
+        self._ordered_sample_hits: List[Sample] = ordered_sample_hits
+
+    def confusion_matrix(
+        self, solut_space="prof-target", solut_space_idx=True
+    ) -> ConfusionMatrix:
+        from numpy import zeros
+
+        if solut_space == "prof-target":
+            sample_space, true_samples, ordered_sample_hits = self._prof_target_space()
+        elif solut_space == "prof":
+            sample_space, true_samples, ordered_sample_hits = self._prof_space()
+        else:
+            assert solut_space == "target"
+            sample_space, true_samples, ordered_sample_hits = self._target_space()
+
+        if not solut_space_idx:
+            sample_space = set(s for s in sample_space if s.idx == 0)
+            true_samples = set(s for s in true_samples if s.idx == 0)
+            ordered_sample_hits = [s for s in ordered_sample_hits if s.idx == 0]
 
         sample_space_id = {s: i for i, s in enumerate(sorted(sample_space))}
         true_sample_ids = [sample_space_id[k] for k in true_samples]
@@ -45,11 +67,50 @@ class ProfMark:
         for i, sample in enumerate(sample_space - set(ordered_sample_hits)):
             sorted_samples[i + len(ordered_sample_hits)] = sample_space_id[sample]
 
-        self._confusion_matrix = ConfusionMatrix(true_sample_ids, N, sorted_samples)
+        return ConfusionMatrix(true_sample_ids, N, sorted_samples)
 
-    @property
-    def confusion_matrix(self) -> ConfusionMatrix:
-        return self._confusion_matrix
+    def _prof_target_space(self):
+        return self._sample_space, self._true_samples, self._ordered_sample_hits
+
+    def _prof_space(self):
+        sample_space = set()
+        for k, n in prof_count(self._sample_space).items():
+            for i in range(n):
+                sample_space.add(Sample(k, "", i))
+
+        true_samples = set()
+        for k, n in prof_count(self._true_samples).items():
+            for i in range(n):
+                true_samples.add(Sample(k, "", i))
+
+        ordered_sample_hits = []
+        count: Dict[str, int] = {}
+        for sample in self._ordered_sample_hits:
+            acc = sample.prof_acc
+            count[acc] = count.get(acc, -1) + 1
+            ordered_sample_hits.append(Sample(acc, "", count[acc]))
+
+        return sample_space, true_samples, ordered_sample_hits
+
+    def _target_space(self):
+        sample_space = set()
+        for k, n in target_count(self._sample_space).items():
+            for i in range(n):
+                sample_space.add(Sample("", k, i))
+
+        true_samples = set()
+        for k, n in target_count(self._true_samples).items():
+            for i in range(n):
+                true_samples.add(Sample("", k, i))
+
+        ordered_sample_hits = []
+        count: Dict[str, int] = {}
+        for sample in self._ordered_sample_hits:
+            tgt = sample.target_id
+            count[tgt] = count.get(tgt, -1) + 1
+            ordered_sample_hits.append(Sample("", tgt, count[tgt]))
+
+        return sample_space, true_samples, ordered_sample_hits
 
     def write_pickle(self, filepath: Path):
         with open(filepath, "wb") as file:
@@ -59,6 +120,22 @@ class ProfMark:
     def read_pickle(filepath: Path):
         with open(filepath, "rb") as file:
             return pickle.load(file)
+
+
+def prof_count(sample_space: Iterable[Sample]) -> Dict[str, int]:
+    prof_count: Dict[str, int] = {}
+    for sample in sample_space:
+        acc = sample.prof_acc
+        prof_count[acc] = prof_count.get(acc, 0) + 1
+    return prof_count
+
+
+def target_count(sample_space: Iterable[Sample]) -> Dict[str, int]:
+    target_count: Dict[str, int] = {}
+    for sample in sample_space:
+        acc = sample.target_id
+        target_count[acc] = target_count.get(acc, 0) + 1
+    return target_count
 
 
 def generate_sample_space(hmmer_file, target_file) -> Set[Sample]:

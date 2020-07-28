@@ -184,7 +184,7 @@ class ConfusionMatrix:
         tpr = self.tpr
         fpr = self.fpr
 
-        idx = argsort(fpr)
+        idx = argsort(fpr, kind="stable")
         fpr = fpr[idx]
         tpr = tpr[idx]
 
