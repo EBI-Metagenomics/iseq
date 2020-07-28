@@ -87,7 +87,7 @@ def extract_cds(gb_filepath: Path, amino_filepath: Path, nucl_filepath: Path):
         end = start + len(nucl_rec.seq) - 1
 
         if start in starts:
-            raise ValueError("Feature with same start position.")
+            continue
         starts.add(start)
 
         nucl_rec.id = f"{accession}:{start}-{end}|{nucl_name}"
