@@ -75,6 +75,14 @@ class ConfusionMatrix:
             return pickle.load(file)
 
     @property
+    def P(self) -> int:
+        return self._P
+
+    @property
+    def N(self) -> int:
+        return self._N
+
+    @property
     def TP(self):
         return self._TP
 

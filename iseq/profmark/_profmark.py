@@ -30,7 +30,7 @@ class ProfMark:
 
         sample_space: Set[Sample] = generate_sample_space(hmmer_file, target_file)
         true_samples = get_domtblout_samples(domtblout_file)
-        ordered_sample_hits = get_output_samples(output_file)
+        ordered_sample_hits = get_ordered_output_samples(output_file)
         sample_space |= true_samples | set(ordered_sample_hits)
 
         sample_space_id = {s: i for i, s in enumerate(sorted(sample_space))}
@@ -45,12 +45,7 @@ class ProfMark:
         for i, sample in enumerate(sample_space - set(ordered_sample_hits)):
             sorted_samples[i + len(ordered_sample_hits)] = sample_space_id[sample]
 
-        self._nhits = len(ordered_sample_hits)
         self._confusion_matrix = ConfusionMatrix(true_sample_ids, N, sorted_samples)
-
-    @property
-    def nhits(self) -> int:
-        return self._nhits
 
     @property
     def confusion_matrix(self) -> ConfusionMatrix:
@@ -94,7 +89,7 @@ def get_domtblout_samples(domtblout_file) -> Set[Sample]:
     return set(samples)
 
 
-def get_output_samples(output_file) -> List[Sample]:
+def get_ordered_output_samples(output_file) -> List[Sample]:
     samples: List[Tuple[Sample, float]] = []
     sample_idx: Dict[Tuple[str, str], int] = {}
     for item in read_gff(output_file).items():

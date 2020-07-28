@@ -22,7 +22,7 @@ from iseq.profmark import ProfMark
 @click.option(
     "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
 )
-def plot_roc(dir, accession, output, quiet: bool):
+def plot_roc(dir: str, accession: str, output: str, quiet: bool):
     """
     Plot profiles distribution.
     """
@@ -30,11 +30,12 @@ def plot_roc(dir, accession, output, quiet: bool):
     from matplotlib import pyplot as plt
 
     folder = Path(dir)
-    hmm_file = next(folder.glob("*.hmm"))
 
     acc_dir = folder / accession
     if not acc_dir.is_dir():
         raise click.UsageError(f"{acc_dir} must be a directory.")
+
+    hmm_file = acc_dir / "dbspace.hmm"
 
     target_file = acc_dir / "cds_amino.fasta"
     if not target_file.is_file():
@@ -53,14 +54,17 @@ def plot_roc(dir, accession, output, quiet: bool):
 
     pm = ProfMark(hmm_file, target_file, domtbl_file, gff_file)
 
+    P = pm.confusion_matrix.P
+    N = pm.confusion_matrix.N
+    title = f"{accession} (P/N: {P}/{N})"
     if output is None:
         ax = pm.confusion_matrix.roc.plot()
-        ax.set_title(accession)
+        ax.set_title(title)
         plt.show()
     else:
         f, ax = plt.subplots()
         pm.confusion_matrix.roc.plot(ax=ax)
-        ax.set_title(accession)
+        ax.set_title(title)
         f.savefig(output)
 
     if not quiet:
