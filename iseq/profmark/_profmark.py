@@ -7,17 +7,15 @@ from typing import Dict, Iterable, List, NamedTuple, Set, Tuple
 
 import hmmer_reader
 from fasta_reader import open_fasta
+from hmmer import read_domtbl
 
-from iseq.domtblout import DomTBLData
 from iseq.gff import read as read_gff
 
 from ._confusion import ConfusionMatrix
 
 __all__ = ["ProfMark"]
 
-# ProfSample = NamedTuple("ProfSample", [("prof_acc", str), ("idx", int)])
 Sample = NamedTuple("Sample", [("prof_acc", str), ("target_id", str), ("idx", int)])
-# TargetSample = NamedTuple("TargetSample", [("target_id", str), ("idx", int)])
 
 
 class ProfMark:
@@ -152,7 +150,7 @@ def generate_sample_space(hmmer_file, target_file) -> Set[Sample]:
 def get_domtblout_samples(domtblout_file) -> Set[Sample]:
     samples = []
     sample_idx: Dict[Tuple[str, str], int] = {}
-    for row in iter(DomTBLData(domtblout_file)):
+    for row in iter(read_domtbl(domtblout_file)):
         profile_acc = row.target.accession
         target_id = row.query.name.split("|")[0]
 
