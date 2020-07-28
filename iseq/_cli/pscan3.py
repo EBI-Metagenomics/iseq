@@ -1,8 +1,6 @@
-import re
-from collections import OrderedDict
 from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Set, TextIO, Tuple
+from typing import Dict, List, NamedTuple, TextIO, Tuple
 
 import click
 from fasta_reader import FASTAItem, FASTAWriter, open_fasta
@@ -12,15 +10,16 @@ from imm import Alphabet
 from nmm import IUPACAminoAlphabet
 from tqdm import tqdm
 
-from iseq.alphabet import alphabet_name, infer_fasta_alphabet, infer_hmmer_alphabet
+from iseq.alphabet import alphabet_name, infer_fasta_alphabet
 from iseq.codon_table import CodonTable
 from iseq.domtblout import DomTBLData, DomTBLRow
-from iseq.gff import read as read_gff
 from iseq.hmmer_model import HMMERModel
 from iseq.profile import ProfileID
 from iseq.protein import ProteinProfile, create_profile2
 
 from .output_writer import OutputWriter
+
+HMMEROptions = NamedTuple("HMMEROptions", [("heuristic", bool), ("cut_ga", bool)])
 
 
 @click.command()
@@ -62,6 +61,16 @@ from .output_writer import OutputWriter
 @click.option(
     "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
 )
+@click.option(
+    "--heuristic/--no-heuristic",
+    help="Enable HMMER heuristics. Defaults to True.",
+    default=True,
+)
+@click.option(
+    "--cut-ga/--no-cut-ga",
+    help="Enable use of profile's GA gathering cutoffs to set all thresholding. Defaults to False.",
+    default=False,
+)
 def pscan3(
     profile: str,
     target: TextIO,
@@ -72,6 +81,8 @@ def pscan3(
     quiet: bool,
     window: int,
     hit_prefix: str,
+    heuristic: bool,
+    cut_ga: bool,
 ):
     """
     Search nucleotide sequence(s) against a protein profiles database.
@@ -89,7 +100,8 @@ def pscan3(
     target_abc = infer_target_alphabet(target)
 
     gcode = CodonTable(target_abc, IUPACAminoAlphabet())
-    scan = PScan3(Path(profile), owriter, cwriter, awriter, gcode)
+    opts = HMMEROptions(heuristic, cut_ga)
+    scan = PScan3(Path(profile), owriter, cwriter, awriter, gcode, opts)
     scan.scan(target, window, epsilon, quiet)
     scan.close()
 
@@ -102,6 +114,7 @@ class PScan3:
         ocodon: FASTAWriter,
         oamino: FASTAWriter,
         codon_table: CodonTable,
+        hmmer_options: HMMEROptions,
     ):
         self._profile = profile
         self._output = output
@@ -114,6 +127,7 @@ class PScan3:
             hmmer.index()
 
         self._hmmer = hmmer
+        self._hmmer_options = hmmer_options
 
     @property
     def num_models(self) -> int:
@@ -166,9 +180,7 @@ class PScan3:
         stop = frag.interval.stop
         codon_frag = frag.fragment.decode()
         amino_frag = codon_frag.decode(self._codon_table)
-        e_value, score, bias = target_score(
-            self._hmmer, prof_id.acc, str(amino_frag.sequence)
-        )
+        e_value, score, bias = self._target_score(prof_id.acc, str(amino_frag.sequence))
         if score == "NAN":
             return
         item_id = self._output.write_item(
@@ -184,19 +196,33 @@ class PScan3:
         self._ocodon.write_item(item_id, str(codon_frag.sequence))
         self._oamino.write_item(item_id, str(amino_frag.sequence))
 
+    def _target_score(self, acc: str, seq: str):
+        result = self._hmmer.search(
+            StringIO(">Unknown\n" + seq),
+            "/dev/null",
+            tblout=True,
+            heuristic=self._hmmer_options.heuristic,
+            cut_ga=self._hmmer_options.cut_ga,
+            hmmkey=acc,
+        )
+
+        rows = result.tbl
+        if len(rows) == 0:
+            e_value = "NAN"
+            score = "NAN"
+            bias = "NAN"
+        else:
+            assert len(rows) == 1
+            e_value = rows[0].full_sequence.e_value
+            score = rows[0].full_sequence.score
+            bias = rows[0].full_sequence.bias
+
+        return e_value, score, bias
+
     def close(self):
         self._output.close()
         self._ocodon.close()
         self._oamino.close()
-
-
-def infer_profile_alphabet(profile: TextIO):
-    hmmer = open_hmmer(profile)
-    hmmer_alphabet = infer_hmmer_alphabet(hmmer)
-    profile.seek(0)
-    if hmmer_alphabet is None:
-        raise click.UsageError("Could not infer alphabet from PROFILE.")
-    return hmmer_alphabet
 
 
 def infer_target_alphabet(target: TextIO):
@@ -227,142 +253,3 @@ class ScoreTable:
     def has(self, target_id: str, profile_name: str, profile_acc: str) -> bool:
         key = (target_id, profile_name, profile_acc)
         return key in self._tbldata
-
-
-def update_gff_file(filepath, score_table: ScoreTable, max_e_value: float):
-    import in_place
-
-    with in_place.InPlace(filepath) as file:
-        for row in file:
-            row = row.rstrip()
-            if row.startswith("#"):
-                file.write(row)
-                file.write("\n")
-                continue
-
-            match = re.match(r"^(.+\t)([^\t]+)$", row)
-            if match is None:
-                file.write(row)
-                file.write("\n")
-                continue
-
-            left = match.group(1)
-            right = match.group(2)
-
-            if right == ".":
-                file.write(row)
-                file.write("\n")
-                continue
-
-            fields_list = []
-            for v in right.split(";"):
-                name, value = v.split("=", 1)
-                fields_list.append((name, value))
-
-            attr = OrderedDict(fields_list)
-
-            key = (attr["ID"], attr["Profile_name"], attr["Profile_acc"])
-            if not score_table.has(*key):
-                continue
-
-            attr["E-value"] = score_table.e_value(*key)
-            if float(attr["E-value"]) > max_e_value:
-                continue
-
-            file.write(left + ";".join(k + "=" + v for k, v in attr.items()))
-            file.write("\n")
-
-
-def translate_gff_file(filepath, target_map: Dict[str, str]):
-    import in_place
-
-    with in_place.InPlace(filepath) as file:
-        for row in file:
-            row = row.rstrip()
-            if row.startswith("#"):
-                file.write(row)
-                file.write("\n")
-                continue
-
-            match = re.match(r"^(.+\t)([^\t]+)$", row)
-            if match is None:
-                file.write(row)
-                file.write("\n")
-                continue
-
-            left = match.group(1)
-            right = match.group(2)
-
-            if right == ".":
-                file.write(row)
-                file.write("\n")
-                continue
-
-            fields_list = []
-            for v in right.split(";"):
-                name, value = v.split("=", 1)
-                fields_list.append((name, value))
-
-            attr = OrderedDict(fields_list)
-
-            attr["ID"] = target_map[attr["ID"]]
-            file.write(left + ";".join(k + "=" + v for k, v in attr.items()))
-            file.write("\n")
-
-
-def target_set_from_gff_file(filepath) -> Set[str]:
-    gff = read_gff(filepath)
-    df = gff.to_dataframe()
-    if len(df) == 0:
-        return set()
-    return set(df["att_ID"].tolist())
-
-
-def update_fasta_file(filepath, target_set: Set[str]):
-    with open_fasta(filepath) as fasta:
-        targets = list(fasta)
-
-    with FASTAWriter(filepath) as writer:
-        for target in targets:
-            tgt_id = target.id
-            if tgt_id in target_set:
-                writer.write_item(target.defline, target.sequence)
-
-
-def translate_fasta_file(filepath, target_map: Dict[str, str]):
-    with open_fasta(filepath) as fasta:
-        targets = list(fasta)
-
-    with FASTAWriter(filepath) as writer:
-        for target in targets:
-            old_tgt_id = target.id
-            tgt_id = target_map[old_tgt_id]
-            if target.has_desc:
-                defline = tgt_id + " " + target.desc
-            else:
-                defline = tgt_id
-            writer.write_item(defline, target.sequence)
-
-
-def target_score(hmmer: HMMER, acc: str, seq: str, heuristic=True, cut_ga=False):
-    result = hmmer.search(
-        StringIO(">Unknown\n" + seq),
-        "/dev/null",
-        tblout=True,
-        heuristic=heuristic,
-        cut_ga=cut_ga,
-        hmmkey=acc,
-    )
-
-    rows = result.tbl
-    if len(rows) == 0:
-        e_value = "NAN"
-        score = "NAN"
-        bias = "NAN"
-    else:
-        assert len(rows) == 1
-        e_value = rows[0].full_sequence.e_value
-        score = rows[0].full_sequence.score
-        bias = rows[0].full_sequence.bias
-
-    return e_value, score, bias
