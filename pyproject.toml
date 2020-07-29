@@ -112,4 +112,5 @@ disable = """
   xrange-builtin,
   xreadlines-attribute,
   zip-builtin-not-iterating,
+  protected-access,
 """

@@ -12,6 +12,7 @@ from hmmer import read_domtbl
 from iseq.gff import read as read_gff
 
 from ._confusion import ConfusionMatrix
+from ._tables import domtbl_as_dataframe
 
 __all__ = ["ProfMark"]
 
@@ -34,6 +35,8 @@ class ProfMark:
         self._sample_space: Set[Sample] = sample_space
         self._true_samples: Set[Sample] = true_samples
         self._ordered_sample_hits: List[Sample] = ordered_sample_hits
+        self._domtblout_file = domtblout_file
+        self._output_file = output_file
 
     def confusion_matrix(
         self, solut_space="prof-target", solut_space_idx=True
@@ -66,6 +69,12 @@ class ProfMark:
             sorted_samples[i + len(ordered_sample_hits)] = sample_space_id[sample]
 
         return ConfusionMatrix(true_sample_ids, N, sorted_samples)
+
+    def true_table(self):
+        return domtbl_as_dataframe(read_domtbl(self._domtblout_file))
+
+    def hit_table(self):
+        return read_gff(self._output_file).to_dataframe()
 
     def _prof_target_space(self):
         return self._sample_space, self._true_samples, self._ordered_sample_hits
