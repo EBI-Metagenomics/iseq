@@ -162,16 +162,19 @@ def remove_stop_codon(nucl_seq: Seq, amino_seq: Seq, trans_table_num: int):
         stop = min(start + 3, len(nucl_str))
         codon = nmm.Codon.create(nucl_str[start:stop].encode(), base_abc)
         if start == 0:
-            if codon in codon_table.start_codons:
-                aminos.append("M")
-                continue
+            # Add M to the first position, no matter
+            # what the nucleotide sequence says.
+            # That is what genbank seems to be doing.
+            if codon not in codon_table.start_codons:
+                print("Warning: the first codon does not code for M. Adding M anyway.")
+            aminos.append("M")
+            continue
         aminos.append(codon_table.decode(codon).decode())
 
     amino_str = "".join(aminos)
     assert amino_str[-1] == "*"
     amino_str = amino_str[:-1]
     assert "*" not in amino_str
-    assert str(amino_seq) == amino_str
     assert str(amino_seq) == amino_str
     assert (len(str(nucl_seq)) % 3) == 0
     return nucl_seq[:-3], amino_seq
