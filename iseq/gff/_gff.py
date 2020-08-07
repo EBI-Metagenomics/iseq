@@ -42,7 +42,7 @@ from __future__ import annotations
 import dataclasses
 import pathlib
 from dataclasses import dataclass
-from typing import IO, Any, List, Optional, Type, Union
+from typing import IO, Any, List, Optional, Tuple, Type, Union
 
 from tqdm import tqdm
 
@@ -68,6 +68,27 @@ class GFFItem:
             attrs.append((name, value))
         return tuple(attrs)
 
+    def get_attribute(self, name: str):
+        return dict(self.attributes_astuple())[name]
+
+    def set_attribute(self, name: str, value: str):
+        attrs = self.attributes_astuple()
+        new_attrs = []
+        found = False
+        for n, v in attrs:
+            if n == name:
+                new_attrs.append((n, value))
+                found = True
+            else:
+                new_attrs.append((n, v))
+        if not found:
+            raise ValueError(f"Attribute {name} not found.")
+
+        self._set_attributes(new_attrs)
+
+    def _set_attributes(self, attrs: List[Tuple[str, str]]):
+        self.attributes = ";".join(f"{n}={v}" for n, v in attrs)
+
     def __iter__(self):
         return iter(dataclasses.astuple(self))
 
@@ -78,6 +99,11 @@ class GFFItem:
     @classmethod
     def field_types(cls) -> List[Type[Any]]:
         return [f.type for f in dataclasses.fields(cls)]
+
+    def copy(self) -> GFFItem:
+        from copy import copy
+
+        return copy(self)
 
 
 def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
@@ -163,6 +189,10 @@ class GFF:
         for _, row in df.iterrows():
             self.append(GFFItem(**{k: row[k] for k in keys}))
 
+    @property
+    def header(self) -> str:
+        return self._header
+
     def deduplicate(self):
         from pandas import concat
 
@@ -230,6 +260,15 @@ class GFFWriter:
         Close the associated stream.
         """
         self._file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        del exception_type
+        del exception_value
+        del traceback
+        self.close()
 
 
 def explode_attributes(item: GFFItem):

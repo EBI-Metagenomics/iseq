@@ -73,8 +73,58 @@ class ProfMark:
     def true_table(self):
         return domtbl_as_dataframe(read_domtbl(self._domtblout_file))
 
-    def hit_table(self):
-        return read_gff(self._output_file).to_dataframe()
+    def hit_table(self, solut_space="prof-target"):
+        from pandas import DataFrame
+
+        df = read_gff(self._output_file).to_dataframe()
+        df["id"] = df["att_ID"]
+        df["profile-acc"] = df["att_Profile_acc"]
+        df["profile-name"] = df["att_Profile_name"]
+        df["e-value"] = df["att_E-value"]
+        df["length"] = df["end"] - df["start"] + 1
+        df["true-positive"] = "no"
+        true_samples = self._get_true_samples(solut_space)
+
+        true_positive = []
+        for _, row in df.iterrows():
+            sample = Sample(row["profile-acc"], row["seqid"].split("|")[0], 0)
+            if sample in true_samples:
+                true_positive.append("yes")
+            else:
+                true_positive.append("no")
+        df["true-positive"] = true_positive
+
+        rows = []
+        for _, row in df.iterrows():
+            v = row.seqid.split("|")[0].split(":")[1]
+            ref_start = int(v.split("-")[0])
+            abs_start = ref_start + row.start - 1
+            abs_end = ref_start + row.end - 1
+            row["abs_start"] = abs_start
+            row["abs_end"] = abs_end
+            rows.append(row)
+        df = DataFrame(rows).reset_index(drop=False)
+        df = df.sort_values(by=["abs_start", "abs_end"]).reset_index(drop=True)
+
+        return df
+
+    def _get_true_samples(self, solut_space="prof-target"):
+        if solut_space == "prof-target":
+            return self._true_samples
+
+        elif solut_space == "prof":
+            true_samples = set()
+            for k, n in prof_count(self._true_samples).items():
+                for i in range(n):
+                    true_samples.add(Sample(k, "", i))
+            return true_samples
+
+        assert solut_space == "target"
+        true_samples = set()
+        for k, n in target_count(self._true_samples).items():
+            for i in range(n):
+                true_samples.add(Sample("", k, i))
+        return true_samples
 
     def _prof_target_space(self):
         return self._sample_space, self._true_samples, self._ordered_sample_hits
@@ -85,10 +135,7 @@ class ProfMark:
             for i in range(n):
                 sample_space.add(Sample(k, "", i))
 
-        true_samples = set()
-        for k, n in prof_count(self._true_samples).items():
-            for i in range(n):
-                true_samples.add(Sample(k, "", i))
+        true_samples = self._get_true_samples("prof")
 
         ordered_sample_hits = []
         count: Dict[str, int] = {}
@@ -105,10 +152,7 @@ class ProfMark:
             for i in range(n):
                 sample_space.add(Sample("", k, i))
 
-        true_samples = set()
-        for k, n in target_count(self._true_samples).items():
-            for i in range(n):
-                true_samples.add(Sample("", k, i))
+        true_samples = self._get_true_samples("target")
 
         ordered_sample_hits = []
         count: Dict[str, int] = {}
