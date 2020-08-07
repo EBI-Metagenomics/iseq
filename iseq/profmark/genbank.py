@@ -5,7 +5,7 @@ from Bio import Entrez, GenBank, SeqIO
 from Bio.Alphabet import IUPAC, DNAAlphabet, RNAAlphabet
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from iseq.codon_table import CodonTable
 from iseq.gencode import GeneticCode
@@ -45,7 +45,7 @@ def extract_cds(gb_filepath: Path, amino_filepath: Path, nucl_filepath: Path):
     assert nucl_name in ["dna", "rna"]
 
     starts = set()
-    for feature in tqdm(rec.features, desc="Features"):
+    for feature in tqdm(rec.features, desc="Features", leave=None):
         if feature.type != "CDS":
             continue
 
@@ -168,10 +168,14 @@ def remove_stop_codon(nucl_seq: Seq, amino_seq: Seq, trans_table_num: int):
                 continue
         aminos.append(codon_table.decode(codon).decode())
 
-    amino_str = "".join(aminos)
-    assert amino_str[-1] == "*"
-    amino_str = amino_str[:-1]
-    assert "*" not in amino_str
-    assert str(amino_seq) == amino_str
+    derived_amino_seq = "".join(aminos)
+    if derived_amino_seq[-1] == "*":
+        derived_amino_seq = derived_amino_seq[:-1]
+        nucl_seq = nucl_seq[:-3]
+    assert "*" not in derived_amino_seq
+
+    assert str(amino_seq) == derived_amino_seq
     assert (len(str(nucl_seq)) % 3) == 0
-    return nucl_seq[:-3], amino_seq
+    assert len(str(nucl_seq)) / 3 == len(derived_amino_seq)
+
+    return nucl_seq, amino_seq

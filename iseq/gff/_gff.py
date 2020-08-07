@@ -44,7 +44,7 @@ import pathlib
 from dataclasses import dataclass
 from typing import IO, Any, List, Optional, Tuple, Type, Union
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
 
