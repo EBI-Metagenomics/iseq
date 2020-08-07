@@ -129,7 +129,8 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
     df = read_csv(file, sep="\t", names=names, dtype=dict(zip(names, types)))
     gff = GFF(header)
     total = df.shape[0]
-    for _, row in tqdm(df.iterrows(), total=total, desc="Parsing", disable=not verbose):
+    dis = not verbose
+    for _, row in tqdm(df.iterrows(), total=total, desc="GFF", disable=dis, leave=None):
         gff.append(GFFItem(*tuple(row.tolist())))
 
     if close_file:
