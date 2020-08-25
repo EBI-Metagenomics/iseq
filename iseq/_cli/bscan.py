@@ -236,7 +236,7 @@ def bscan(
         kwargs["object_store_memory"] = kwargs["memory"] // 2
 
     ray.init(
-        include_webui=False,
+        include_dashboard=False,
         include_java=False,
         ignore_reinit_error=True,
         num_cpus=num_cpus,
