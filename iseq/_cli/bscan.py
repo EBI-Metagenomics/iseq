@@ -221,7 +221,8 @@ def bscan(
 
     num_cpus: int = 0
     if ncpus == "auto":
-        num_cpus = os.cpu_count()
+        count = os.cpu_count()
+        num_cpus = count if count is not None else 1
     else:
         num_cpus = int(ncpus)
 
