@@ -126,7 +126,8 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
     names = GFFItem.field_names()
     types = GFFItem.field_types()
 
-    df = read_csv(file, sep="\t", names=names, dtype=dict(zip(names, types)))
+    dtype = dict(zip(names, types))
+    df = read_csv(file, sep="\t", names=names, dtype=dtype, engine="c")
     gff = GFF(header)
     tot = df.shape[0]
     dis = not verbose
