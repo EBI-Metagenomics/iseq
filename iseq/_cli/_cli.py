@@ -1,6 +1,5 @@
 import click
 
-from .._version import __version__
 from ._plot import plot
 from .amino_decode import amino_decode
 from .bscan import bscan
@@ -13,7 +12,7 @@ from .pscan3 import pscan3
 
 
 @click.group(name="iseq", context_settings=dict(help_option_names=["-h", "--help"]))
-@click.version_option(__version__)
+@click.version_option()
 def cli():
     """
     Find nucleotide sequences against protein profiles.

@@ -1,7 +1,13 @@
+from importlib import import_module as _import_module
+
 from . import gff, hmmer3, protein, testing
 from ._cli import cli
 from ._testit import test
-from ._version import __version__
+
+try:
+    __version__ = getattr(_import_module("iseq._version"), "version", "x.x.x")
+except ModuleNotFoundError:
+    __version__ = "x.x.x"
 
 __all__ = [
     "__version__",
