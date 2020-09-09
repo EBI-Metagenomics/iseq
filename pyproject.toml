@@ -1,6 +1,14 @@
 [build-system]
-requires = ["setuptools >= 47.1.1", "wheel >= 0.34.2"]
+requires = [
+    "pytest-runner>=5.2"
+    "setuptools >= 47.1.1",
+    "setuptools_scm[toml]>=4.1.2",
+    "wheel >= 0.34.2",
+]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "iseq_prof/_version.py"
 
 [tool.isort]
 profile = "black"
