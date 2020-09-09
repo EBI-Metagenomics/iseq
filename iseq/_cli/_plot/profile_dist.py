@@ -14,7 +14,10 @@ from iseq.gff import read as read_gff
 @click.option("--width", help="Figure width.", default=None, type=float)
 @click.option("--height", help="Figure height.", default=None, type=float)
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable verbosity.",
+    default=False,
 )
 def profile_dist(gff_file, output, width, height, quiet: bool):
     """

@@ -433,7 +433,11 @@ class AltModel(Generic[TState]):
 
             def dp_set(a, b, lprob):
                 imm.lib.imm_dp_change_trans(
-                    self._dp.imm_dp, self._hmm.imm_hmm, a.imm_state, b.imm_state, lprob,
+                    self._dp.imm_dp,
+                    self._hmm.imm_hmm,
+                    a.imm_state,
+                    b.imm_state,
+                    lprob,
                 )
 
             dp_set(node.S, node.B, t.NB)

@@ -37,7 +37,9 @@ DebugRow = NamedTuple(
 
 class SearchResults(Generic[A, S]):
     def __init__(
-        self, sequence: SequenceABC[A], create_fragment: create_fragment_type,
+        self,
+        sequence: SequenceABC[A],
+        create_fragment: create_fragment_type,
     ):
         self._sequence = sequence
         self._create_fragment = create_fragment

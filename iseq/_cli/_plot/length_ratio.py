@@ -18,7 +18,10 @@ from iseq.gff import read as read_gff
 @click.option("--width", help="Figure width.", default=None, type=float)
 @click.option("--height", help="Figure height.", default=None, type=float)
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable verbosity.",
+    default=False,
 )
 def length_ratio(
     gff_file, hmmer_file, prof_leng_mult, output, width, height, quiet: bool

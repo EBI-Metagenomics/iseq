@@ -12,7 +12,10 @@ from iseq.gff import read as read_gff
     default=None,
 )
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable verbosity.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable verbosity.",
+    default=False,
 )
 def e_value_dist(gff_file, output, quiet: bool):
     """

@@ -9,7 +9,8 @@ __all__ = ["ISEQ_CACHE_HOME"]
 
 ISEQ_CACHE_HOME = Path(
     os.environ.get(
-        "ISEQ_CACHE_HOME", default=Path(user_cache_dir("iseq", "EBI-Metagenomics")),
+        "ISEQ_CACHE_HOME",
+        default=Path(user_cache_dir("iseq", "EBI-Metagenomics")),
     )
 )
 

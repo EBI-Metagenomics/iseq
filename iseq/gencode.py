@@ -52,15 +52,21 @@ def register_ncbi_genetic_code(name: str, alt_name: str, id: int):
 
 
 register_ncbi_genetic_code(
-    "Standard", "SGC0", 1,
+    "Standard",
+    "SGC0",
+    1,
 )
 
 register_ncbi_genetic_code(
-    "Vertebrate Mitochondrial", "SGC1", 2,
+    "Vertebrate Mitochondrial",
+    "SGC1",
+    2,
 )
 
 register_ncbi_genetic_code(
-    "Yeast Mitochondrial", "SGC2", 3,
+    "Yeast Mitochondrial",
+    "SGC2",
+    3,
 )
 
 register_ncbi_genetic_code(
@@ -71,93 +77,139 @@ register_ncbi_genetic_code(
 )
 
 register_ncbi_genetic_code(
-    "Invertebrate Mitochondrial", "SGC4", 5,
+    "Invertebrate Mitochondrial",
+    "SGC4",
+    5,
 )
 
 register_ncbi_genetic_code(
-    "Ciliate Nuclear; Dasycladacean Nuclear; Hexamita Nuclear", "SGC5", 6,
+    "Ciliate Nuclear; Dasycladacean Nuclear; Hexamita Nuclear",
+    "SGC5",
+    6,
 )
 
 register_ncbi_genetic_code(
-    "Echinoderm Mitochondrial; Flatworm Mitochondrial", "SGC8", 9,
+    "Echinoderm Mitochondrial; Flatworm Mitochondrial",
+    "SGC8",
+    9,
 )
 
 register_ncbi_genetic_code(
-    "Euplotid Nuclear", "SGC9", 10,
+    "Euplotid Nuclear",
+    "SGC9",
+    10,
 )
 
 register_ncbi_genetic_code(
-    "Bacterial, Archaeal and Plant Plastid", "", 11,
+    "Bacterial, Archaeal and Plant Plastid",
+    "",
+    11,
 )
 
 register_ncbi_genetic_code(
-    "Alternative Yeast Nuclear", "", 12,
+    "Alternative Yeast Nuclear",
+    "",
+    12,
 )
 
 register_ncbi_genetic_code(
-    "Ascidian Mitochondrial", "", 13,
+    "Ascidian Mitochondrial",
+    "",
+    13,
 )
 
 register_ncbi_genetic_code(
-    "Alternative Flatworm Mitochondrial", "", 14,
+    "Alternative Flatworm Mitochondrial",
+    "",
+    14,
 )
 
 register_ncbi_genetic_code(
-    "Blepharisma Macronuclear", "", 15,
+    "Blepharisma Macronuclear",
+    "",
+    15,
 )
 
 register_ncbi_genetic_code(
-    "Chlorophycean Mitochondrial", "", 16,
+    "Chlorophycean Mitochondrial",
+    "",
+    16,
 )
 
 register_ncbi_genetic_code(
-    "Trematode Mitochondrial", "", 21,
+    "Trematode Mitochondrial",
+    "",
+    21,
 )
 
 register_ncbi_genetic_code(
-    "Scenedesmus obliquus Mitochondrial", "", 22,
+    "Scenedesmus obliquus Mitochondrial",
+    "",
+    22,
 )
 
 register_ncbi_genetic_code(
-    "Thraustochytrium Mitochondrial", "", 23,
+    "Thraustochytrium Mitochondrial",
+    "",
+    23,
 )
 
 register_ncbi_genetic_code(
-    "Rhabdopleuridae Mitochondrial", "", 24,
+    "Rhabdopleuridae Mitochondrial",
+    "",
+    24,
 )
 
 register_ncbi_genetic_code(
-    "Candidate Division SR1 and Gracilibacteria", "", 25,
+    "Candidate Division SR1 and Gracilibacteria",
+    "",
+    25,
 )
 
 register_ncbi_genetic_code(
-    "Pachysolen tannophilus Nuclear", "", 26,
+    "Pachysolen tannophilus Nuclear",
+    "",
+    26,
 )
 
 register_ncbi_genetic_code(
-    "Karyorelict Nuclear", "", 27,
+    "Karyorelict Nuclear",
+    "",
+    27,
 )
 
 register_ncbi_genetic_code(
-    "Condylostoma Nuclear", "", 28,
+    "Condylostoma Nuclear",
+    "",
+    28,
 )
 
 register_ncbi_genetic_code(
-    "Mesodinium Nuclear", "", 29,
+    "Mesodinium Nuclear",
+    "",
+    29,
 )
 
 register_ncbi_genetic_code(
-    "Peritrich Nuclear", "", 30,
+    "Peritrich Nuclear",
+    "",
+    30,
 )
 
 register_ncbi_genetic_code(
-    "Blastocrithidia Nuclear", "", 31,
+    "Blastocrithidia Nuclear",
+    "",
+    31,
 )
 
 register_ncbi_genetic_code(
-    "Balanophoraceae Plastid", "", 32,
+    "Balanophoraceae Plastid",
+    "",
+    32,
 )
 
 register_ncbi_genetic_code(
-    "Cephalodiscidae Mitochondrial", "", 33,
+    "Cephalodiscidae Mitochondrial",
+    "",
+    33,
 )

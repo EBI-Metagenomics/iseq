@@ -1,7 +1,10 @@
 def pytest_addoption(parser):
     try:
         parser.addoption(
-            "--runslow", action="store_true", default=False, help="run slow tests",
+            "--runslow",
+            action="store_true",
+            default=False,
+            help="run slow tests",
         )
     except ValueError as e:
         if "already added" not in e.args[0]:

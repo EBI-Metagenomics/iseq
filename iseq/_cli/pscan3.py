@@ -49,7 +49,10 @@ HMMEROptions = NamedTuple("HMMEROptions", [("heuristic", bool), ("cut_ga", bool)
     default="oamino.fasta",
 )
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable standard output.",
+    default=False,
 )
 @click.option(
     "--window",
@@ -58,7 +61,10 @@ HMMEROptions = NamedTuple("HMMEROptions", [("heuristic", bool), ("cut_ga", bool)
     default=0,
 )
 @click.option(
-    "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
+    "--hit-prefix",
+    help="Hit prefix. Defaults to `item`.",
+    default="item",
+    type=str,
 )
 @click.option(
     "--heuristic/--no-heuristic",

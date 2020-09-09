@@ -15,10 +15,15 @@ from iseq.protein import create_profile
     "--epsilon", type=float, default=1e-2, help="Indel probability. Defaults to 1e-2."
 )
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable standard output.",
+    default=False,
 )
 def press(
-    profile, epsilon: float, quiet,
+    profile,
+    epsilon: float,
+    quiet,
 ):
     """
     Press.

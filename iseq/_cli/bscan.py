@@ -166,7 +166,10 @@ def validate_memory(ctx, param, value):
     default="oamino.fasta",
 )
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable standard output.",
+    default=False,
 )
 @click.option(
     "--window",
@@ -199,7 +202,10 @@ def validate_memory(ctx, param, value):
     type=str,
 )
 @click.option(
-    "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
+    "--hit-prefix",
+    help="Hit prefix. Defaults to `item`.",
+    default="item",
+    type=str,
 )
 def bscan(
     profile,

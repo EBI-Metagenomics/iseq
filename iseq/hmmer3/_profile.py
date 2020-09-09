@@ -127,7 +127,13 @@ def create_profile(
 
     profid = ProfileID(hmm.model_id.name, hmm.model_id.acc)
     prof = HMMER3Profile(
-        profid, hmm.alphabet, null_log_odds, nodes, trans, entry_distr, hmmer3_compat,
+        profid,
+        hmm.alphabet,
+        null_log_odds,
+        nodes,
+        trans,
+        entry_distr,
+        hmmer3_compat,
     )
     prof.window_length = window_length
     return prof

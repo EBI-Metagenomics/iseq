@@ -49,7 +49,10 @@ from .output_writer import OutputWriter
     default="oamino.fasta",
 )
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable standard output.",
+    default=False,
 )
 @click.option(
     "--window",
@@ -75,7 +78,10 @@ from .output_writer import OutputWriter
     default="1",
 )
 @click.option(
-    "--hit-prefix", help="Hit prefix. Defaults to `item`.", default="item", type=str,
+    "--hit-prefix",
+    help="Hit prefix. Defaults to `item`.",
+    default="item",
+    type=str,
 )
 def pscan(
     profile,

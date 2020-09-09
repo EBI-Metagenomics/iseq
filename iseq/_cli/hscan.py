@@ -23,7 +23,10 @@ from .output_writer import OutputWriter
     default="output.gff",
 )
 @click.option(
-    "--quiet/--no-quiet", "-q/-nq", help="Disable standard output.", default=False,
+    "--quiet/--no-quiet",
+    "-q/-nq",
+    help="Disable standard output.",
+    default=False,
 )
 @click.option(
     "--window",

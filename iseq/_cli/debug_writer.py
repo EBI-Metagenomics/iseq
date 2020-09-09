@@ -12,7 +12,9 @@ class DebugWriter:
         )
 
     def write_row(
-        self, defline: str, debug_row: DebugRow,
+        self,
+        defline: str,
+        debug_row: DebugRow,
     ):
         """
         Write item.

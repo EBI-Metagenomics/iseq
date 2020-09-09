@@ -63,7 +63,10 @@ class ProteinProfile(Profile[BaseAlphabet, FrameState]):
         )
 
         alt_model = ProteinAltModel.create(
-            special_node, core_nodes, core_trans, entry_distr,
+            special_node,
+            core_nodes,
+            core_trans,
+            entry_distr,
         )
         # alt_model.set_fragment_length(self._special_transitions)
         return cls(profid, base_alphabet, null_model, alt_model, False)
@@ -225,7 +228,9 @@ def create_profile2(
 
 class ProteinStateFactory:
     def __init__(
-        self, gcode: CodonTable, epsilon: float,
+        self,
+        gcode: CodonTable,
+        epsilon: float,
     ):
         self._gcode = gcode
         self._epsilon = epsilon
