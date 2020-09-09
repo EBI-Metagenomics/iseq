@@ -8,7 +8,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "iseq_prof/_version.py"
+write_to = "iseq/_version.py"
 
 [tool.isort]
 profile = "black"
