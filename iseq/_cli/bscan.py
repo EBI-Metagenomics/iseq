@@ -5,7 +5,6 @@ from math import exp
 
 import click
 import humanfriendly
-import ray
 from fasta_reader import FASTAWriter, open_fasta
 from hmmer import HMMER
 from nmm import DNAAlphabet, Input, IUPACAminoAlphabet, RNAAlphabet
@@ -21,7 +20,6 @@ from .output_writer import OutputWriter
 from .pscan import infer_target_alphabet, update_gff_file
 
 
-@ray.remote
 class Counter:
     def __init__(self):
         self._count = 0
@@ -35,7 +33,6 @@ class Counter:
         return count
 
 
-@ray.remote
 class Worker:
     def __init__(
         self,
@@ -109,7 +106,7 @@ class Worker:
                     self._debug_table += search_results.debug_table()
                 self._seqids.append(seqid)
 
-            self._counter.increment.remote()
+            self._counter.increment()
 
         self._afile.close()
         self._nfile.close()
@@ -242,14 +239,6 @@ def bscan(
         kwargs["memory"] = int(memory)
         kwargs["object_store_memory"] = kwargs["memory"] // 2
 
-    ray.init(
-        include_dashboard=False,
-        include_java=False,
-        ignore_reinit_error=True,
-        num_cpus=num_cpus,
-        **kwargs,
-    )
-
     owriter = OutputWriter(output, item_prefix=hit_prefix)
     cwriter = FASTAWriter(ocodon, sys.maxsize)
     awriter = FASTAWriter(oamino, sys.maxsize)
@@ -278,12 +267,12 @@ def bscan(
 
     workers = []
     i = 0
-    counter = Counter.remote()
+    counter = Counter()
     for aoffset, noffset, profids in zip(alt_offsets, null_offsets, profids_list):
         debug = odebug is not os.devnull
-        w = Worker.remote(counter, alt_filepath, null_filepath, tgt_abc_id, debug)
-        w.set_offset.remote(aoffset, noffset)
-        w.search.remote(profids, targets, window)
+        w = Worker(counter, alt_filepath, null_filepath, tgt_abc_id, debug)
+        w.set_offset(aoffset, noffset)
+        w.search(profids, targets, window)
         workers.append(w)
         i += 1
 
@@ -294,14 +283,14 @@ def bscan(
     with tqdm(total=total, desc="Scan") as pbar:
         while total > 0:
             time.sleep(sleep_time)
-            v = ray.get(counter.get_and_reset.remote())
+            v = counter.get_and_reset()
             total -= v
             pbar.update(v)
 
     for w in workers:
-        output_items = ray.get(w.output_items.remote())
-        codon_seqs = ray.get(w.codon_seqs.remote())
-        amino_seqs = ray.get(w.amino_seqs.remote())
+        output_items = w.output_items()
+        codon_seqs = w.codon_seqs()
+        amino_seqs = w.amino_seqs()
         for item, cseq, aseq in zip(output_items, codon_seqs, amino_seqs):
             item_id = owriter.write_item(*item)
             cwriter.write_item(item_id, cseq)
@@ -309,8 +298,8 @@ def bscan(
 
     if odebug is not os.devnull:
         for w in workers:
-            seqids = ray.get(w.seqids.remote())
-            debug_table = ray.get(w.debug_table.remote())
+            seqids = w.seqids()
+            debug_table = w.debug_table()
             for seqid, debug_row in zip(seqids, debug_table):
                 dwriter.write_row(seqid, debug_row)
 
@@ -323,8 +312,6 @@ def bscan(
         hmmer = HMMER(profile)
         result = hmmer.search(oamino, "/dev/null", tblout=True)
         update_gff_file(output, result.tbl)
-
-    ray.shutdown()
 
 
 def split(a, n):
