@@ -60,7 +60,6 @@ _filenames = {
     "Pfam-A_iseq_viterbi_scores.txt.br": "7224a2f7778f0e9dd265a2b564b1255f28dbea9f43a3b330503a041f2e3a6c40",
     "amino1.fasta": "5e0ec53f3a49bae4980c62a124a2df315845767d79b3596a594df833ce723c02",
     "database1.hmm": "c079de36d5f6c3d2e59a8c708a4524f2c0bc7409f5d43ab3ac8fda2045bdabdf",
-    "deduplicate.gff": "f5c8b1fcf83b27f563c1ae7d5cd2df0d2639ab4624a50cc51e876283df96090b",
     "domtblout.txt": "b28d1403937428db157bd9d57e4106437cd647d3b7904c5b4484fe56ab4b5218",
     "duplicate.gff": "522f425659a9299914d2143d30c9ecd4778f7902c75092d1c7ed67b07ebb6938",
     "ecori.hmm": "615843744493c57e93f616bc13fc46b81935becb738766008f907065761d3d19",

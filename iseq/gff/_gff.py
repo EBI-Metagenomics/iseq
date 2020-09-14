@@ -146,17 +146,16 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
 
 class GFF:
     def __init__(self, header: str):
-
         self._header = header
         columns = GFFItem.field_names()
         types = GFFItem.field_types()
         self._df = DataFrame(columns=columns)
         for col, typ in zip(columns, types):
             self._df[col] = self._df[col].astype(typ)
-        self._items: List[GFFItem] = []
+        # self._items: List[GFFItem] = []
 
     def append(self, item: GFFItem):
-        self._items.append(item)
+        self._df = self._df.append(dataclasses.asdict(item), ignore_index=True)
 
     def filter(self, max_e_value: Optional[float] = None):
         gff = GFF(self._header)
@@ -175,24 +174,22 @@ class GFF:
 
         return gff
 
-    def _to_dataframe(self):
-        columns = GFFItem.field_names()
-        types = GFFItem.field_types()
-        df = DataFrame(self._items, columns=columns, dtype=str)
-        for col, typ in zip(columns, types):
-            df[col] = df[col].astype(typ)
-        return df
+    # def _to_dataframe(self):
+    #     columns = GFFItem.field_names()
+    #     types = GFFItem.field_types()
+    #     df = DataFrame(self._items, columns=columns, dtype=str)
+    #     for col, typ in zip(columns, types):
+    #         df[col] = df[col].astype(typ)
+    #     return df
 
     def to_dataframe(self):
-        df = self._to_dataframe()
+        df = self._df.copy()
         df = _explode_attributes(df)
         if "att_E-value" in df.columns:
             df["att_E-value"] = df["att_E-value"].astype(float)
         return df
 
     def _from_dataframe(self, df):
-        self._items = []
-
         keys = GFFItem.field_names()
         for _, row in df.iterrows():
             self.append(GFFItem(**{k: row[k] for k in keys}))
@@ -200,20 +197,6 @@ class GFF:
     @property
     def header(self) -> str:
         return self._header
-
-    def deduplicate(self):
-        from pandas import concat
-
-        df = self._to_dataframe()
-        df = _explode_attributes(df)
-
-        df_stack = []
-        for _, df0 in df.groupby(["seqid", "att_Profile"]):
-            df_stack.append(_dedup_sequences(df0))
-        df = concat(df_stack).sort_index()
-
-        df = _implode_attributes(df)
-        self._from_dataframe(df)
 
     def write_file(self, file: Union[str, pathlib.Path, IO[str]]):
         gff_writer = GFFWriter(file, self._header)
@@ -225,10 +208,14 @@ class GFF:
         """
         Get the list of all items.
         """
-        return self._items
+        df = self._df
+        items: List[GFFItem] = []
+        for row in df.itertuples(False):
+            items.append(GFFItem(*row))
+        return items
 
     def __str__(self) -> str:
-        return str(self._to_dataframe())
+        return str(self._df)
 
 
 class GFFWriter:

@@ -1,4 +1,3 @@
-import os
 from io import StringIO
 
 from numpy import dtype
@@ -7,7 +6,6 @@ from numpy.testing import assert_equal
 from iseq.example import example_filepath
 from iseq.gff import GFF, GFFItem
 from iseq.gff import read as read_gff
-from iseq.testing import assert_same_file
 
 
 def test_gff_read():
@@ -73,18 +71,6 @@ def test_gff_read():
         ],
     )
     assert_equal(df["att_E-value"].dtype, dtype("float64"))
-
-
-def test_gff_deduplicate(tmp_path):
-    os.chdir(tmp_path)
-
-    gff = read_gff(example_filepath("duplicate.gff"))
-    gff.deduplicate()
-
-    gff.write_file("output.gff")
-
-    dedup_file = example_filepath("deduplicate.gff")
-    assert_same_file("output.gff", dedup_file)
 
 
 def test_gff_read_empty():
