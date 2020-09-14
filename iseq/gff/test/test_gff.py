@@ -111,3 +111,35 @@ def test_gff_append():
     gff = gff.filter(max_e_value=7e-14)
     assert gff.items()[0] == item1
     assert gff.header == "##gff-version 3"
+
+
+def test_gff_concat():
+    gff = GFF("##gff-version 3")
+    item0 = GFFItem(
+        "AE014075.1:190-252|dna",
+        "iseq",
+        ".",
+        1,
+        63,
+        "0.0",
+        "+",
+        ".",
+        "ID=chunk_1_item1;Target_alph=dna;Profile_name=Leader_Thr;Profile_alph=dna;Profile_acc=PF08254.12;Window=0;Epsilon=0.01;E-value=7e-13",
+    )
+    item1 = GFFItem(
+        "AE014075.1:534-908|dna",
+        "iseq",
+        ".",
+        1,
+        306,
+        "0.0",
+        "+",
+        ".",
+        "ID=chunk_1_item2;Target_alph=dna;Profile_name=Y1_Tnp;Profile_alph=dna;Profile_acc=PF01797.17;Window=0;Epsilon=0.01;E-value=4e-28",
+    )
+    gff.extend([item0, item1])
+    assert gff.items()[0] == item0
+    assert gff.items()[1] == item1
+    gff = gff.filter(max_e_value=7e-14)
+    assert gff.items()[0] == item1
+    assert gff.header == "##gff-version 3"

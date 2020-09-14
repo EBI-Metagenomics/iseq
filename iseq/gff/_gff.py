@@ -42,9 +42,9 @@ from __future__ import annotations
 import dataclasses
 import pathlib
 from dataclasses import dataclass
-from typing import IO, Any, List, Optional, Tuple, Type, Union
+from typing import IO, Any, Iterable, List, Optional, Tuple, Type, Union
 
-from pandas import DataFrame
+import pandas as pd
 from tqdm.auto import tqdm
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
@@ -149,10 +149,13 @@ class GFF:
         self._header = header
         columns = GFFItem.field_names()
         types = GFFItem.field_types()
-        self._df = DataFrame(columns=columns)
+        self._df = pd.DataFrame(columns=columns)
         for col, typ in zip(columns, types):
             self._df[col] = self._df[col].astype(typ)
-        # self._items: List[GFFItem] = []
+
+    def extend(self, items: Iterable[GFFItem]):
+        self._df.from_records
+        self._df = pd.concat((self._df, pd.DataFrame.from_dict(items)))
 
     def append(self, item: GFFItem):
         self._df = self._df.append(dataclasses.asdict(item), ignore_index=True)
@@ -173,14 +176,6 @@ class GFF:
             gff.append(item)
 
         return gff
-
-    # def _to_dataframe(self):
-    #     columns = GFFItem.field_names()
-    #     types = GFFItem.field_types()
-    #     df = DataFrame(self._items, columns=columns, dtype=str)
-    #     for col, typ in zip(columns, types):
-    #         df[col] = df[col].astype(typ)
-    #     return df
 
     def to_dataframe(self):
         df = self._df.copy()
