@@ -42,10 +42,9 @@ from __future__ import annotations
 import dataclasses
 import pathlib
 from dataclasses import dataclass
-from typing import IO, Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import IO, Any, Iterable, Iterator, List, Optional, Tuple, Type, Union
 
 import pandas as pd
-from tqdm.auto import tqdm
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
 
@@ -107,9 +106,7 @@ class GFFItem:
         return copy(self)
 
 
-def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
-    from pandas import read_csv
-
+def read(file: Union[str, pathlib.Path, IO[str]]) -> GFF:
     if isinstance(file, IO):
         close_file = False
     else:
@@ -122,19 +119,8 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
         file = open(file, "r")
 
     start = file.tell()
-    header = file.readline().rstrip()
 
-    names = GFFItem.field_names()
-    types = GFFItem.field_types()
-
-    dtype = dict(zip(names, types))
-    df = read_csv(file, sep="\t", names=names, dtype=dtype, engine="c")
-    gff = GFF(header)
-    tot = df.shape[0]
-    dis = not verbose
-    l = None
-    for row in tqdm(df.itertuples(False), total=tot, desc="GFF", disable=dis, leave=l):
-        gff.append(GFFItem(*row))
+    gff = GFF.read_csv(file)
 
     if close_file:
         file.close()
@@ -152,42 +138,57 @@ class GFF:
         self._df = pd.DataFrame(columns=columns)
         for col, typ in zip(columns, types):
             self._df[col] = self._df[col].astype(typ)
+        self._ravel = False
 
-    def extend(self, items: Iterable[GFFItem]):
-        self._df.from_records
-        self._df = pd.concat((self._df, pd.DataFrame.from_dict(items)))
+    @classmethod
+    def read_csv(cls: Type[GFF], file: IO[str]) -> GFF:
+        header = file.readline().rstrip()
 
-    def append(self, item: GFFItem):
-        self._df = self._df.append(dataclasses.asdict(item), ignore_index=True)
+        names = GFFItem.field_names()
+        types = GFFItem.field_types()
 
-    def filter(self, max_e_value: Optional[float] = None):
-        gff = GFF(self._header)
+        dtype = dict(zip(names, types))
+        df = pd.read_csv(file, sep="\t", names=names, dtype=dtype, engine="c")
 
-        for item in self.items():
-            attrs = explode_attributes(item)
-
-            if max_e_value is not None:
-                if "E-value" not in attrs:
-                    continue
-                e_value = float(attrs["E-value"])
-                if e_value > max_e_value:
-                    continue
-
-            gff.append(item)
+        gff = cls(header)
+        gff._df = df
 
         return gff
 
-    def to_dataframe(self):
-        df = self._df.copy()
-        df = _explode_attributes(df)
-        if "att_E-value" in df.columns:
-            df["att_E-value"] = df["att_E-value"].astype(float)
-        return df
+    @property
+    def dataframe(self) -> pd.DataFrame:
+        return self._df
 
-    def _from_dataframe(self, df):
-        keys = GFFItem.field_names()
-        for _, row in df.iterrows():
-            self.append(GFFItem(**{k: row[k] for k in keys}))
+    def extend(self, items: Iterable[GFFItem]):
+        reset = self._df.shape[0] != 0
+        self._df = pd.concat((self._df, pd.DataFrame.from_dict(items)))
+        if reset:
+            self._df.reset_index(drop=True, inplace=True)
+
+    def append(self, item: GFFItem):
+        if self._ravel:
+            raise RuntimeError("Please, unravel it first.")
+        self._df = self._df.append(dataclasses.asdict(item), ignore_index=True)
+
+    def ravel(self):
+        attrs = []
+        for i, att in enumerate(self._df["attributes"]):
+            data = {}
+            for item in att.split(";"):
+                name, value = item.partition("=")[::2]
+                data[name] = value
+            attrs.append(data)
+        atts_df = pd.DataFrame.from_records(attrs)
+        atts_df.rename(columns={c: f"att_{c}" for c in atts_df.columns}, inplace=True)
+        self._df = pd.concat((self._df, atts_df), axis=1)
+
+        self._ravel = True
+
+    def unravel(self):
+        df = self._df
+        cols = set(df.columns.tolist()) - set(GFFItem.field_names())
+        df.drop(columns=list(cols), inplace=True)
+        self._ravel = False
 
     @property
     def header(self) -> str:
@@ -195,19 +196,17 @@ class GFF:
 
     def write_file(self, file: Union[str, pathlib.Path, IO[str]]):
         gff_writer = GFFWriter(file, self._header)
-        for item in self.items():
+        for item in self.items:
             gff_writer.write_item(item)
         gff_writer.close()
 
-    def items(self) -> List[GFFItem]:
+    @property
+    def items(self) -> Iterator[GFFItem]:
         """
         Get the list of all items.
         """
-        df = self._df
-        items: List[GFFItem] = []
-        for row in df.itertuples(False):
-            items.append(GFFItem(*row))
-        return items
+        for row in self._df.itertuples(False):
+            yield GFFItem(*row)
 
     def __str__(self) -> str:
         return str(self._df)
@@ -259,49 +258,3 @@ class GFFWriter:
         del exception_value
         del traceback
         self.close()
-
-
-def explode_attributes(item: GFFItem):
-    attrs = {}
-    for v in item.attributes.split(";"):
-        name, value = v.split("=")
-        attrs[name] = value
-    return attrs
-
-
-def _explode_attributes(df):
-    for i, att in enumerate(df["attributes"]):
-        for item in att.split(";"):
-            name, value = item.split("=")
-            df.at[i, "att_" + name] = value
-    return df
-
-
-def _implode_attributes(df):
-    for col in df.columns:
-        if col.startswith("att_"):
-            del df[col]
-    return df
-
-
-def _dedup_sequences(df):
-    df = df.sort_values("start")
-    iloc_keep = []
-    i = 0
-    j = 0
-    while i < df.shape[0]:
-        start = df.iloc[i]["start"]
-        max_end = df.iloc[i]["end"]
-        max_end_iloc = i
-        j = i + 1
-        while j < df.shape[0] and df.iloc[j]["start"] == start:
-            end = df.iloc[j]["end"]
-            if end > max_end:
-                max_end = end
-                max_end_iloc = j
-            j += 1
-        iloc_keep.append(max_end_iloc)
-        i = j
-        while i < df.shape[0] and df.iloc[i]["end"] <= max_end:
-            i += 1
-    return df.iloc[iloc_keep]

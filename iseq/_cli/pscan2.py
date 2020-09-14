@@ -315,7 +315,8 @@ def translate_gff_file(filepath, target_map: Dict[str, str]):
 
 def target_set_from_gff_file(filepath) -> Set[str]:
     gff = read_gff(filepath)
-    df = gff.to_dataframe()
+    gff.ravel()
+    df = gff.dataframe
     if len(df) == 0:
         return set()
     return set(df["att_ID"].tolist())

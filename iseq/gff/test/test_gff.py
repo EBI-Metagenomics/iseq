@@ -1,6 +1,6 @@
 from io import StringIO
 
-from numpy import dtype
+import pytest
 from numpy.testing import assert_equal
 
 from iseq.example import example_filepath
@@ -10,10 +10,11 @@ from iseq.gff import read as read_gff
 
 def test_gff_read():
     gff = read_gff(example_filepath("duplicate.gff"))
-    assert_equal(len(gff.items()), 14)
-    assert_equal(gff.items()[3].seqid, "GALNBKIG_00914_ont_01_plus_strand")
-    assert_equal(gff.items()[6].end, 474)
-    df = gff.to_dataframe()
+    assert_equal(len(list(gff.items)), 14)
+    assert_equal(list(gff.items)[3].seqid, "GALNBKIG_00914_ont_01_plus_strand")
+    assert_equal(list(gff.items)[6].end, 474)
+    gff.ravel()
+    df = gff.dataframe
     assert_equal(df.shape, (14, 13))
     assert_equal(
         df.columns.tolist(),
@@ -44,8 +45,12 @@ def test_gff_read():
         ".",
         "ID=chunk_1_item2;Target_alph=dna;Profile_name=Y1_Tnp;Profile_alph=dna;Profile_acc=PF01797.17;Window=0;Epsilon=0.01;E-value=4e-28",
     )
+    with pytest.raises(RuntimeError):
+        gff.append(item)
+    gff.unravel()
     gff.append(item)
-    df = gff.to_dataframe()
+    gff.ravel()
+    df = gff.dataframe
     assert_equal(df.shape, (15, 18))
     assert_equal(
         df.columns.tolist(),
@@ -70,13 +75,12 @@ def test_gff_read():
             "att_E-value",
         ],
     )
-    assert_equal(df["att_E-value"].dtype, dtype("float64"))
 
 
 def test_gff_read_empty():
     file = StringIO("##gff-version 3")
     gff = read_gff(file)
-    df = gff.to_dataframe()
+    df = gff.dataframe
     assert_equal(len(df), 0)
 
 
@@ -106,14 +110,36 @@ def test_gff_append():
     )
     gff.append(item0)
     gff.append(item1)
-    assert gff.items()[0] == item0
-    assert gff.items()[1] == item1
-    gff = gff.filter(max_e_value=7e-14)
-    assert gff.items()[0] == item1
+    assert list(gff.items)[0] == item0
+    assert list(gff.items)[1] == item1
+    gff.ravel()
+    df = gff.dataframe
+    df["att_E-value"] = df["att_E-value"].astype(float)
+    df = df[df["att_E-value"] <= 7e-14]
+    assert df.shape[0] == 1
+    assert df.iloc[0].tolist() == [
+        "AE014075.1:534-908|dna",
+        "iseq",
+        ".",
+        1,
+        306,
+        "0.0",
+        "+",
+        ".",
+        "ID=chunk_1_item2;Target_alph=dna;Profile_name=Y1_Tnp;Profile_alph=dna;Profile_acc=PF01797.17;Window=0;Epsilon=0.01;E-value=4e-28",
+        "chunk_1_item2",
+        "dna",
+        "Y1_Tnp",
+        "dna",
+        "PF01797.17",
+        "0",
+        "0.01",
+        4e-28,
+    ]
     assert gff.header == "##gff-version 3"
 
 
-def test_gff_concat():
+def test_gff_extends():
     gff = GFF("##gff-version 3")
     item0 = GFFItem(
         "AE014075.1:190-252|dna",
@@ -138,8 +164,9 @@ def test_gff_concat():
         "ID=chunk_1_item2;Target_alph=dna;Profile_name=Y1_Tnp;Profile_alph=dna;Profile_acc=PF01797.17;Window=0;Epsilon=0.01;E-value=4e-28",
     )
     gff.extend([item0, item1])
-    assert gff.items()[0] == item0
-    assert gff.items()[1] == item1
-    gff = gff.filter(max_e_value=7e-14)
-    assert gff.items()[0] == item1
+    assert list(gff.items)[0] == item0
+    assert list(gff.items)[1] == item1
     assert gff.header == "##gff-version 3"
+    gff.extend([item0, item1])
+    gff.extend([item0, item1])
+    assert gff.dataframe.index.tolist() == [0, 1, 2, 3, 4, 5]
