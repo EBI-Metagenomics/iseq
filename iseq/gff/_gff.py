@@ -44,6 +44,7 @@ import pathlib
 from dataclasses import dataclass
 from typing import IO, Any, List, Optional, Tuple, Type, Union
 
+from pandas import DataFrame
 from tqdm.auto import tqdm
 
 __all__ = ["read", "GFF", "GFFItem", "GFFWriter"]
@@ -145,7 +146,13 @@ def read(file: Union[str, pathlib.Path, IO[str]], verbose=False) -> GFF:
 
 class GFF:
     def __init__(self, header: str):
+
         self._header = header
+        columns = GFFItem.field_names()
+        types = GFFItem.field_types()
+        self._df = DataFrame(columns=columns)
+        for col, typ in zip(columns, types):
+            self._df[col] = self._df[col].astype(typ)
         self._items: List[GFFItem] = []
 
     def append(self, item: GFFItem):
@@ -169,8 +176,6 @@ class GFF:
         return gff
 
     def _to_dataframe(self):
-        from pandas import DataFrame
-
         columns = GFFItem.field_names()
         types = GFFItem.field_types()
         df = DataFrame(self._items, columns=columns, dtype=str)
