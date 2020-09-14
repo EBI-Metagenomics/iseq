@@ -64,7 +64,7 @@ class GFFItem:
     def attributes_astuple(self):
         attrs = []
         for item in self.attributes.split(";"):
-            name, value = item.split("=")
+            name, value = item.partition("=")[::2]
             attrs.append((name, value))
         return tuple(attrs)
 
@@ -205,8 +205,9 @@ class GFF:
         """
         Get the list of all items.
         """
+        ncols = len(GFFItem.field_names())
         for row in self._df.itertuples(False):
-            yield GFFItem(*row)
+            yield GFFItem(*row[:ncols])
 
     def __str__(self) -> str:
         return str(self._df)
