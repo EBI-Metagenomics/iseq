@@ -42,7 +42,7 @@ from __future__ import annotations
 import dataclasses
 import pathlib
 from dataclasses import dataclass
-from typing import IO, Any, Iterable, Iterator, List, Optional, Tuple, Type, Union
+from typing import IO, Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
@@ -147,8 +147,16 @@ class GFF:
         names = GFFItem.field_names()
         types = GFFItem.field_types()
 
-        dtype = dict(zip(names, types))
-        df = pd.read_csv(file, sep="\t", names=names, dtype=dtype, engine="c")
+        dtype: Dict[str, Union[str, type]] = dict(zip(names, types))
+        dtype["strand"] = "category"
+        dtype["phase"] = "category"
+        df = pd.read_csv(
+            file,
+            sep="\t",
+            names=names,
+            dtype=dtype,
+            engine="c",
+        )
 
         gff = cls(header)
         gff._df = df
