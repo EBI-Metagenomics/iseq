@@ -1,6 +1,7 @@
+import gc
 from io import StringIO
 from pathlib import Path
-from typing import List, NamedTuple, TextIO
+from typing import Iterable, NamedTuple, TextIO
 
 import click
 from fasta_reader import FASTAItem, FASTAWriter, open_fasta
@@ -141,27 +142,28 @@ class PScan3:
 
     def scan(self, target: TextIO, window: int, epsilon: float, quiet: bool):
         with open_fasta(target) as fasta:
-            targets = list(fasta)
+            targets = iter(fasta)
 
-        base_alphabet = self._codon_table.base_alphabet
-        with open_hmmer(self._profile) as pfile:
-            total = self.num_models
-            profiles = tqdm(iter(pfile), desc="Models", total=total, disable=quiet)
-            for plain_model in profiles:
-                hmodel = HMMERModel(plain_model)
-                prof = create_profile2(hmodel, base_alphabet, window, epsilon)
-                self._scan_targets(prof, targets, epsilon, quiet)
+            base_alphabet = self._codon_table.base_alphabet
+            with open_hmmer(self._profile) as pfile:
+                total = self.num_models
+                profiles = tqdm(iter(pfile), desc="Models", total=total, disable=quiet)
+                for plain_model in profiles:
+                    hmodel = HMMERModel(plain_model)
+                    prof = create_profile2(hmodel, base_alphabet, window, epsilon)
+                    self._scan_targets(prof, targets, epsilon, quiet)
 
     def _scan_targets(
         self,
         prof: ProteinProfile,
-        targets: List[FASTAItem],
+        targets: Iterable[FASTAItem],
         epsilon: float,
         quiet: bool,
     ):
         wlen = prof.window_length
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
+            gc.collect()
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()
 
