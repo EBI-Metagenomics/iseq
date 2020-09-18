@@ -134,9 +134,9 @@ class GFF:
     def __init__(self, header: str):
         self._header = header
         columns = GFFItem.field_names()
-        types = GFFItem.field_types()
         self._df = pd.DataFrame(columns=columns)
-        for col, typ in zip(columns, types):
+        dtype = _column_types()
+        for col, typ in dtype.items():
             self._df[col] = self._df[col].astype(typ)
         self._ravel = False
 
@@ -145,11 +145,8 @@ class GFF:
         header = file.readline().rstrip()
 
         names = GFFItem.field_names()
-        types = GFFItem.field_types()
 
-        dtype: Dict[str, Union[str, type]] = dict(zip(names, types))
-        dtype["strand"] = "category"
-        dtype["phase"] = "category"
+        dtype = _column_types()
         df = pd.read_csv(
             file,
             sep="\t",
@@ -267,3 +264,12 @@ class GFFWriter:
         del exception_value
         del traceback
         self.close()
+
+
+def _column_types() -> Dict[str, Union[str, type]]:
+    names = GFFItem.field_names()
+    types = GFFItem.field_types()
+    dtype: Dict[str, Union[str, type]] = dict(zip(names, types))
+    dtype["strand"] = "category"
+    dtype["phase"] = "category"
+    return dtype
