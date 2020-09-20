@@ -1,4 +1,3 @@
-import gc
 from io import StringIO
 from pathlib import Path
 from typing import Iterable, NamedTuple, TextIO
@@ -163,7 +162,6 @@ class PScan3:
         wlen = prof.window_length
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
-            gc.collect()
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()
 
