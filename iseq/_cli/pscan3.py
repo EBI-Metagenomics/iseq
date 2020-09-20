@@ -141,16 +141,16 @@ class PScan3:
 
     def scan(self, target: TextIO, window: int, epsilon: float, quiet: bool):
         with open_fasta(target) as fasta:
-            targets = iter(fasta)
+            targets = list(fasta)
 
-            base_alphabet = self._codon_table.base_alphabet
-            with open_hmmer(self._profile) as pfile:
-                total = self.num_models
-                profiles = tqdm(iter(pfile), desc="Models", total=total, disable=quiet)
-                for plain_model in profiles:
-                    hmodel = HMMERModel(plain_model)
-                    prof = create_profile2(hmodel, base_alphabet, window, epsilon)
-                    self._scan_targets(prof, targets, epsilon, quiet)
+        base_alphabet = self._codon_table.base_alphabet
+        with open_hmmer(self._profile) as pfile:
+            total = self.num_models
+            profiles = tqdm(iter(pfile), desc="Models", total=total, disable=quiet)
+            for plain_model in profiles:
+                hmodel = HMMERModel(plain_model)
+                prof = create_profile2(hmodel, base_alphabet, window, epsilon)
+                self._scan_targets(prof, targets, epsilon, quiet)
 
     def _scan_targets(
         self,
