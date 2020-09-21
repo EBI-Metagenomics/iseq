@@ -160,17 +160,65 @@ class PScan3:
         quiet: bool,
     ):
         wlen = prof.window_length
+        prof_abc = prof.alphabet
+        frags = {}
+        targets_abc = {}
         for tgt in tqdm(targets, desc="Targets", leave=False, disable=quiet):
             seq = prof.create_sequence(tgt.sequence.encode())
             search_results = prof.search(seq)
             ifragments = search_results.ifragments()
 
-            tgt_abc = seq.alphabet
-            prof_abc = prof.alphabet
-            for ifrag in ifragments:
-                self._process_fragment(
-                    ifrag, f"{tgt.id}", tgt_abc, prof.profid, prof_abc, wlen, epsilon
-                )
+            targets_abc[tgt.id] = seq.alphabet
+            for i, ifrag in enumerate(ifragments):
+                frags[(i, f"{tgt.id}")] = ifrag
+
+        scores = self._score_fragments(prof, frags)
+        for (i, tgt_id), frag in frags.items():
+            score = scores.get((i, tgt_id), None)
+            if score is None:
+                continue
+            self._process_fragment(
+                frag,
+                tgt_id,
+                targets_abc[tgt_id],
+                prof.profid,
+                prof_abc,
+                wlen,
+                epsilon,
+                score[0],
+                score[1],
+                score[2],
+            )
+
+    def _score_fragments(self, prof: ProteinProfile, frags):
+        targets = []
+        for (i, tgt_id), frag in frags.items():
+            codon_frag = frag.fragment.decode()
+            amino_frag = codon_frag.decode(self._codon_table)
+            seqid = "_".join([str(i), tgt_id])
+            targets.append(f">{seqid}\n" + str(amino_frag.sequence))
+
+        result = self._hmmer.search(
+            StringIO("\n".join(targets)),
+            "/dev/null",
+            tblout=True,
+            heuristic=self._hmmer_options.heuristic,
+            cut_ga=self._hmmer_options.cut_ga,
+            hmmkey=prof.profid.acc,
+            Z=1,
+        )
+
+        scores = {}
+        for row in result.tbl:
+            e_value = row.full_sequence.e_value
+            score = row.full_sequence.score
+            if score.lower() == "nan":
+                continue
+            bias = row.full_sequence.bias
+            istr, tgt_id = row.target.name.partition("_")[::2]
+            scores[(int(istr), tgt_id)] = (e_value, score, bias)
+
+        return scores
 
     def _process_fragment(
         self,
@@ -181,14 +229,14 @@ class PScan3:
         prof_abc: Alphabet,
         window_length: int,
         epsilon: float,
+        e_value: str,
+        score: str,
+        bias: str,
     ):
         start = frag.interval.start
         stop = frag.interval.stop
         codon_frag = frag.fragment.decode()
         amino_frag = codon_frag.decode(self._codon_table)
-        e_value, score, bias = self._target_score(prof_id.acc, str(amino_frag.sequence))
-        if score == "NAN":
-            return
         item_id = self._output.write_item(
             target_id,
             alphabet_name(target_abc),
@@ -201,29 +249,6 @@ class PScan3:
         )
         self._ocodon.write_item(item_id, str(codon_frag.sequence))
         self._oamino.write_item(item_id, str(amino_frag.sequence))
-
-    def _target_score(self, acc: str, seq: str):
-        result = self._hmmer.search(
-            StringIO(">Unknown\n" + seq),
-            "/dev/null",
-            tblout=True,
-            heuristic=self._hmmer_options.heuristic,
-            cut_ga=self._hmmer_options.cut_ga,
-            hmmkey=acc,
-        )
-
-        rows = result.tbl
-        if len(rows) == 0:
-            e_value = "NAN"
-            score = "NAN"
-            bias = "NAN"
-        else:
-            assert len(rows) == 1
-            e_value = rows[0].full_sequence.e_value
-            score = rows[0].full_sequence.score
-            bias = rows[0].full_sequence.bias
-
-        return e_value, score, bias
 
     def close(self):
         self._output.close()
