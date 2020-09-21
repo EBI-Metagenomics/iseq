@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -100,10 +101,11 @@ TCGACT
 """
 
 
-def test_cli_pscan3(tmp_path):
+def test_cli_pscan3(tmp_path: Path):
     os.chdir(tmp_path)
     invoke = CliRunner().invoke
     profile = example_filepath("minifam.hmm")
+    breakpoint()
     with open("consensus.fasta", "w") as file:
         file.write(_consensus)
 
@@ -121,3 +123,63 @@ def test_cli_pscan3(tmp_path):
     assert_same_file("oamino.fasta", "desired_oamino.fasta")
     assert_same_file("ocodon.fasta", "desired_ocodon.fasta")
     assert_same_file("output.gff", "desired_output.gff")
+
+
+def test_cli_pscan3_pfam24(tmp_path: Path):
+    os.chdir(tmp_path)
+    invoke = CliRunner().invoke
+    profile = example_filepath("Pfam-A_24.hmm")
+    fasta = example_filepath("AE014075.1_subset_nucl.fasta")
+    oamino = example_filepath("oamino_pfam24.fasta")
+    ocodon = example_filepath("ocodon_pfam24.fasta")
+    output = example_filepath("output_pfam24.gff")
+    r = invoke(cli, ["pscan3", str(profile), str(fasta)])
+    assert r.exit_code == 0, r.output
+    assert_same_file("oamino.fasta", oamino)
+    assert_same_file("ocodon.fasta", ocodon)
+    assert_same_file("output.gff", output)
+
+
+def test_cli_pscan3_pfam24_cut_ga(tmp_path: Path):
+    os.chdir(tmp_path)
+    invoke = CliRunner().invoke
+    profile = example_filepath("Pfam-A_24.hmm")
+    fasta = example_filepath("AE014075.1_subset_nucl.fasta")
+    oamino = example_filepath("oamino_pfam24_cut_ga.fasta")
+    ocodon = example_filepath("ocodon_pfam24_cut_ga.fasta")
+    output = example_filepath("output_pfam24_cut_ga.gff")
+    r = invoke(cli, ["pscan3", str(profile), str(fasta), "--cut-ga"])
+    assert r.exit_code == 0, r.output
+    assert_same_file("oamino.fasta", oamino)
+    assert_same_file("ocodon.fasta", ocodon)
+    assert_same_file("output.gff", output)
+
+
+def test_cli_pscan3_pfam24_cut_ga_no_heuristic(tmp_path: Path):
+    os.chdir(tmp_path)
+    invoke = CliRunner().invoke
+    profile = example_filepath("Pfam-A_24.hmm")
+    fasta = example_filepath("AE014075.1_subset_nucl.fasta")
+    oamino = example_filepath("oamino_pfam24_cut_ga.fasta")
+    ocodon = example_filepath("ocodon_pfam24_cut_ga.fasta")
+    output = example_filepath("output_pfam24_cut_ga.gff")
+    r = invoke(cli, ["pscan3", str(profile), str(fasta), "--cut-ga", "--no-heuristic"])
+    assert r.exit_code == 0, r.output
+    assert_same_file("oamino.fasta", oamino)
+    assert_same_file("ocodon.fasta", ocodon)
+    assert_same_file("output.gff", output)
+
+
+def test_cli_pscan3_pfam4(tmp_path: Path):
+    os.chdir(tmp_path)
+    invoke = CliRunner().invoke
+    profile = example_filepath("Pfam-A_4.hmm")
+    fasta = example_filepath("AE014075.1_subset_nucl.fasta")
+    oamino = example_filepath("oamino_pfam4.fasta")
+    ocodon = example_filepath("ocodon_pfam4.fasta")
+    output = example_filepath("output_pfam4.gff")
+    r = invoke(cli, ["pscan3", str(profile), str(fasta)])
+    assert r.exit_code == 0, r.output
+    assert_same_file("oamino.fasta", oamino)
+    assert_same_file("ocodon.fasta", ocodon)
+    assert_same_file("output.gff", output)
