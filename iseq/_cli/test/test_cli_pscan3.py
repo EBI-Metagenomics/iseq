@@ -105,7 +105,6 @@ def test_cli_pscan3(tmp_path: Path):
     os.chdir(tmp_path)
     invoke = CliRunner().invoke
     profile = example_filepath("minifam.hmm")
-    breakpoint()
     with open("consensus.fasta", "w") as file:
         file.write(_consensus)
 
