@@ -4,7 +4,6 @@ import time
 from math import exp
 
 import click
-import humanfriendly
 from fasta_reader import FASTAWriter, open_fasta
 from hmmer import HMMER
 from nmm import DNAAlphabet, Input, IUPACAminoAlphabet, RNAAlphabet
@@ -64,11 +63,6 @@ class Worker:
         self._nfile.fseek(null_offset)
 
     def search(self, profids, targets, window):
-        # for profid in tqdm(
-        #     [ProfileID(*i.split("\t")) for i in profids],
-        #     mininterval=10,
-        #     desc=self._name,
-        # ):
         for profid in iter([ProfileID(*i.split("\t")) for i in profids]):
             alt = self._afile.read()
             null = self._nfile.read()
@@ -127,17 +121,6 @@ class Worker:
         return self._seqids
 
 
-def validate_memory(ctx, param, value):
-    del ctx
-    del param
-    if value == "auto":
-        return "auto"
-    try:
-        return str(humanfriendly.parse_size(value))
-    except humanfriendly.InvalidSize as e:
-        raise click.BadParameter(e.args[0])
-
-
 @click.command()
 @click.argument(
     "profile",
@@ -192,13 +175,6 @@ def validate_memory(ctx, param, value):
     type=str,
 )
 @click.option(
-    "--memory",
-    help="The amount of memory that is available for use by workers. You can use units of memory (e.g., 4GB or 100M). Defaults to `auto`.",
-    default="auto",
-    callback=validate_memory,
-    type=str,
-)
-@click.option(
     "--hit-prefix",
     help="Hit prefix. Defaults to `item`.",
     default="item",
@@ -215,7 +191,6 @@ def bscan(
     odebug,
     e_value: bool,
     ncpus: str,
-    memory: str,
     hit_prefix: str,
 ):
     """
@@ -233,11 +208,6 @@ def bscan(
     null_offsets = [int(line.strip()) for line in open(profile + ".null.idx", "r")]
 
     num_cpus = min(num_cpus, len(alt_offsets))
-
-    kwargs = {}
-    if memory != "auto":
-        kwargs["memory"] = int(memory)
-        kwargs["object_store_memory"] = kwargs["memory"] // 2
 
     owriter = OutputWriter(output, item_prefix=hit_prefix)
     cwriter = FASTAWriter(ocodon, sys.maxsize)

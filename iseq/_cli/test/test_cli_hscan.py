@@ -2,12 +2,12 @@ import os
 from io import StringIO
 
 import pandas as pd
+from assertpy import assert_that, contents_of
 from click.testing import CliRunner
 from imm.testing import assert_allclose
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.testing import assert_same_file
 
 
 def test_cli_hscan(tmp_path):
@@ -212,7 +212,7 @@ def test_cli_hscan_window_auto(tmp_path):
     with open("desired.gff", "w") as file:
         file.write(_output_window_auto)
 
-    assert_same_file("output.gff", "desired.gff")
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of("desired.gff"))
 
 
 def test_cli_hscan_dna_vs_rna(tmp_path):
@@ -251,4 +251,6 @@ def test_cli_hscan_dna_vs_rna(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert_same_file("output_dna.gff", "output_rna.gff")
+    assert_that(contents_of("output_dna.gff")).is_equal_to(
+        contents_of("output_rna.gff")
+    )

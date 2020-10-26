@@ -1,10 +1,10 @@
 import os
 
+from assertpy import assert_that, contents_of
 from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.testing import assert_same_file
 
 
 def test_cli_bscan_GALNBKIG_pfam10(tmp_path):
@@ -50,9 +50,15 @@ def test_cli_bscan_GALNBKIG_pfam10(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert_same_file("bscan_oamino.fasta", "pscan_oamino.fasta")
-    assert_same_file("bscan_ocodon.fasta", "pscan_ocodon.fasta")
-    assert_same_file("bscan_output.gff", "pscan_output.gff")
+    assert_that(contents_of("bscan_oamino.fasta")).is_equal_to(
+        contents_of("pscan_oamino.fasta")
+    )
+    assert_that(contents_of("bscan_ocodon.fasta")).is_equal_to(
+        contents_of("pscan_ocodon.fasta")
+    )
+    assert_that(contents_of("bscan_output.gff")).is_equal_to(
+        contents_of("pscan_output.gff")
+    )
 
 
 def test_cli_bscan_GALNBKIG_pfam10_ncpus2(tmp_path):
@@ -100,6 +106,12 @@ def test_cli_bscan_GALNBKIG_pfam10_ncpus2(tmp_path):
     )
     assert r.exit_code == 0, r.output
 
-    assert_same_file("bscan_oamino.fasta", "pscan_oamino.fasta")
-    assert_same_file("bscan_ocodon.fasta", "pscan_ocodon.fasta")
-    assert_same_file("bscan_output.gff", "pscan_output.gff")
+    assert_that(contents_of("bscan_oamino.fasta")).is_equal_to(
+        contents_of("pscan_oamino.fasta")
+    )
+    assert_that(contents_of("bscan_ocodon.fasta")).is_equal_to(
+        contents_of("pscan_ocodon.fasta")
+    )
+    assert_that(contents_of("bscan_output.gff")).is_equal_to(
+        contents_of("pscan_output.gff")
+    )

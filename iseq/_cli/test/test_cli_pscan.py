@@ -1,11 +1,11 @@
 import os
 
 import pytest
+from assertpy import assert_that, contents_of
 from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.testing import assert_same_file
 
 
 @pytest.mark.slow
@@ -19,9 +19,9 @@ def test_cli_pscan_GALNBKIG_pfam100(tmp_path):
     output = example_filepath("pfam_small_GALNBKIG_00914_output.gff")
     r = invoke(cli, ["pscan", str(profile), str(fasta), "--quiet"])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand(tmp_path):
@@ -35,9 +35,9 @@ def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand(tmp_path):
     output = example_filepath("PF00113_GALNBKIG_00914_ont_01_plus_strand_output.gff")
     r = invoke(cli, ["pscan", str(profile), str(fasta)])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand_window(tmp_path):
@@ -57,9 +57,9 @@ def test_cli_pscan_GALNBKIG_00914_ont_01_plus_strand_window(tmp_path):
     )
     r = invoke(cli, ["pscan", str(profile), str(fasta), "--window", "-1"])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan_nofile_output(tmp_path, GALNBKIG_cut):
@@ -94,9 +94,9 @@ def test_cli_pscan_gff_output(tmp_path, GALNBKIG_cut):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_same_file("output.gff", output)
-    assert_same_file("codon.fasta", codon)
-    assert_same_file("amino.fasta", amino)
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
+    assert_that(contents_of("codon.fasta")).is_equal_to(contents_of(codon))
+    assert_that(contents_of("amino.fasta")).is_equal_to(contents_of(amino))
 
 
 def test_cli_pscan_window0(tmp_path, large_rna):
@@ -125,9 +125,9 @@ def test_cli_pscan_window0(tmp_path, large_rna):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_same_file("output.gff", output)
-    assert_same_file("codon.fasta", codon)
-    assert_same_file("amino.fasta", amino)
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
+    assert_that(contents_of("codon.fasta")).is_equal_to(contents_of(codon))
+    assert_that(contents_of("amino.fasta")).is_equal_to(contents_of(amino))
 
 
 def test_cli_pscan_window48(tmp_path, large_rna):
@@ -156,9 +156,9 @@ def test_cli_pscan_window48(tmp_path, large_rna):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_same_file("output.gff", output)
-    assert_same_file("codon.fasta", codon)
-    assert_same_file("amino.fasta", amino)
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
+    assert_that(contents_of("codon.fasta")).is_equal_to(contents_of(codon))
+    assert_that(contents_of("amino.fasta")).is_equal_to(contents_of(amino))
 
 
 def test_cli_pscan_large_dataset_window(tmp_path):
@@ -188,9 +188,9 @@ def test_cli_pscan_large_dataset_window(tmp_path):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_same_file("output.gff", output)
-    assert_same_file("codon.fasta", codon)
-    assert_same_file("amino.fasta", amino)
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
+    assert_that(contents_of("codon.fasta")).is_equal_to(contents_of(codon))
+    assert_that(contents_of("amino.fasta")).is_equal_to(contents_of(amino))
 
 
 def test_cli_pscan_window0_evalue(tmp_path):
@@ -216,5 +216,5 @@ def test_cli_pscan_window0_evalue(tmp_path):
         ],
     )
     assert r.exit_code == 0, r.output
-    assert_same_file("output.gff", output)
-    assert_same_file("amino.fasta", oamino)
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
+    assert_that(contents_of("amino.fasta")).is_equal_to(contents_of(oamino))

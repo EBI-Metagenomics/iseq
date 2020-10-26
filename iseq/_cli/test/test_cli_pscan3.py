@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 
+from assertpy import assert_that, contents_of
 from click.testing import CliRunner
 
 from iseq import cli
 from iseq.example import example_filepath
-from iseq.testing import assert_same_file
 
 _desired_output = """##gff-version 3
 Homoserine_dh-consensus	iseq	.	1	519	0.0	+	.	ID=item1;Target_alph=dna;Profile_name=Homoserine_dh;Profile_alph=dna;Profile_acc=PF00742.20;Window=0;Bias=0.2;E-value=2.3e-86;Epsilon=0.01;Score=274.3
@@ -119,9 +119,13 @@ def test_cli_pscan3(tmp_path: Path):
 
     r = invoke(cli, ["pscan3", str(profile), "consensus.fasta"])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", "desired_oamino.fasta")
-    assert_same_file("ocodon.fasta", "desired_ocodon.fasta")
-    assert_same_file("output.gff", "desired_output.gff")
+
+    oamino = "desired_oamino.fasta"
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    ocodon = "desired_ocodon.fasta"
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    output = "desired_output.gff"
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan3_pfam24(tmp_path: Path):
@@ -134,9 +138,9 @@ def test_cli_pscan3_pfam24(tmp_path: Path):
     output = example_filepath("output_pfam24.gff")
     r = invoke(cli, ["pscan3", str(profile), str(fasta)])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan3_pfam24_cut_ga(tmp_path: Path):
@@ -149,9 +153,9 @@ def test_cli_pscan3_pfam24_cut_ga(tmp_path: Path):
     output = example_filepath("output_pfam24_cut_ga.gff")
     r = invoke(cli, ["pscan3", str(profile), str(fasta), "--cut-ga"])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan3_pfam24_cut_ga_no_heuristic(tmp_path: Path):
@@ -164,9 +168,9 @@ def test_cli_pscan3_pfam24_cut_ga_no_heuristic(tmp_path: Path):
     output = example_filepath("output_pfam24_cut_ga.gff")
     r = invoke(cli, ["pscan3", str(profile), str(fasta), "--cut-ga", "--no-heuristic"])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
 
 
 def test_cli_pscan3_pfam4(tmp_path: Path):
@@ -179,6 +183,6 @@ def test_cli_pscan3_pfam4(tmp_path: Path):
     output = example_filepath("output_pfam4.gff")
     r = invoke(cli, ["pscan3", str(profile), str(fasta)])
     assert r.exit_code == 0, r.output
-    assert_same_file("oamino.fasta", oamino)
-    assert_same_file("ocodon.fasta", ocodon)
-    assert_same_file("output.gff", output)
+    assert_that(contents_of("oamino.fasta")).is_equal_to(contents_of(oamino))
+    assert_that(contents_of("ocodon.fasta")).is_equal_to(contents_of(ocodon))
+    assert_that(contents_of("output.gff")).is_equal_to(contents_of(output))
