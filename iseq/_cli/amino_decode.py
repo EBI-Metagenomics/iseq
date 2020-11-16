@@ -1,6 +1,6 @@
 import click
 import nmm
-from fasta_reader import FASTAWriter, open_fasta
+from fasta_reader import FASTAWriter, read_fasta
 
 from iseq.codon_table import CodonTable
 from iseq.gencode import GeneticCode
@@ -46,7 +46,7 @@ def amino_decode(fasta, output, seed: int, transl_table: int, alph: str):
     codon_table = CodonTable(base_abc, amino_abc, GeneticCode(id=transl_table))
 
     random = RandomState(seed)
-    for target in open_fasta(fasta):
+    for target in read_fasta(fasta):
         amino_seq = target.sequence
         nucls = []
         for amino in amino_seq:

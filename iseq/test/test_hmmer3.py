@@ -1,6 +1,6 @@
 import os
 
-from fasta_reader import open_fasta
+from fasta_reader import read_fasta
 from hmmer_reader import open_hmmer
 from imm import Sequence
 from imm.testing import assert_allclose
@@ -46,7 +46,7 @@ def test_hmmer3_profile_problematic1():
 
     prof = create_profile(hmmdata, True)
 
-    with open_fasta(example_filepath("problematic1.fasta")) as reader:
+    with read_fasta(example_filepath("problematic1.fasta")) as reader:
         item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
@@ -65,7 +65,7 @@ def test_hmmer3_profile_small_viterbi_score(tmp_path):
 
     prof = create_profile(hmmdata, True)
 
-    with open_fasta(fasta) as reader:
+    with read_fasta(fasta) as reader:
         item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)
@@ -84,7 +84,7 @@ def test_hmmer3_profile_large_viterbi_score(tmp_path):
 
     prof = create_profile(hmmdata, True)
 
-    with open_fasta(fasta) as reader:
+    with read_fasta(fasta) as reader:
         item = reader.read_items()[0]
 
     sequence = Sequence.create(item.sequence.encode(), prof.alphabet)

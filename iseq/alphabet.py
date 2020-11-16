@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from fasta_reader import FASTAParser
+from fasta_reader import FASTAReader
 from hmmer_reader import HMMERParser
 from nmm import BaseAlphabet, DNAAlphabet, IUPACAminoAlphabet, RNAAlphabet
 
@@ -59,7 +59,7 @@ def infer_alphabet(sequence: bytes) -> Optional[Alphabets]:
     return None
 
 
-def infer_fasta_alphabet(parser: FASTAParser) -> Optional[Alphabets]:
+def infer_fasta_alphabet(parser: FASTAReader) -> Optional[Alphabets]:
     """
     Infer alphabet from fasta file.
 

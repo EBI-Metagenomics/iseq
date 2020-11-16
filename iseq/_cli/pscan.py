@@ -5,7 +5,7 @@ from collections import OrderedDict
 from typing import IO, List
 
 import click
-from fasta_reader import FASTAWriter, open_fasta
+from fasta_reader import FASTAWriter, read_fasta
 from hmmer import HMMER
 from hmmer.typing import TBLRow
 from hmmer_reader import num_models, open_hmmer
@@ -121,7 +121,7 @@ def pscan(
 
     gcode = CodonTable(target_abc, IUPACAminoAlphabet())
 
-    with open_fasta(target) as fasta:
+    with read_fasta(target) as fasta:
         targets = list(fasta)
 
     total = num_models(profile)
@@ -184,7 +184,7 @@ def _infer_profile_alphabet(profile: IO[str]):
 
 
 def infer_target_alphabet(target: IO[str]):
-    fasta = open_fasta(target)
+    fasta = read_fasta(target)
     target_alphabet = infer_fasta_alphabet(fasta)
     target.seek(0)
     if target_alphabet is None:

@@ -3,7 +3,7 @@ from math import isfinite
 from pathlib import Path
 
 import pytest
-from fasta_reader import open_fasta
+from fasta_reader import read_fasta
 from hmmer_reader import open_hmmer
 from imm import Sequence
 from imm.testing import assert_allclose
@@ -20,7 +20,7 @@ def test_hmmer3_pfam_viterbi_scores_compat(tmp_path):
     target_filepath = example_filepath("A0ALD9.fasta")
     iseq_scores = loadtxt(example_filepath("Pfam-A_iseq_viterbi_scores.txt"))
 
-    with open_fasta(target_filepath) as fasta:
+    with read_fasta(target_filepath) as fasta:
         target = list(fasta)[0]
 
     actual_scores = []
@@ -67,7 +67,7 @@ def test_hmmer3_viterbi_dna_scores_compat():
         assert_allclose(iseq_scores, hmmer3_scores, rtol=7e-2)
 
         actual_scores = []
-        with open_fasta(example_filepath(fastafile)) as fasta:
+        with read_fasta(example_filepath(fastafile)) as fasta:
             for target in fasta:
                 seq = Sequence.create(target.sequence.encode(), prof.alphabet)
                 search_results = prof.search(seq)
@@ -102,7 +102,7 @@ def test_hmmer3_viterbi_amino_scores_compat():
         assert_allclose(iseq_scores, hmmer3_scores, rtol=1e-2)
 
         actual_scores = []
-        with open_fasta(example_filepath(fastafile)) as fasta:
+        with read_fasta(example_filepath(fastafile)) as fasta:
             for target in fasta:
                 seq = Sequence.create(target.sequence.encode(), prof.alphabet)
                 search_results = prof.search(seq)

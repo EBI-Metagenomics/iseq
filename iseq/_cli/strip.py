@@ -1,6 +1,6 @@
 # It might be useful in the future.
 # import click
-# from fasta_reader import FASTAWriter, open_fasta
+# from fasta_reader import FASTAWriter, read_fasta
 
 # from iseq.gff import read as read_gff
 
@@ -49,7 +49,7 @@
 #                     w.write(line)
 
 #     with FASTAWriter(target_output) as writer:
-#         with open_fasta(target) as fasta:
+#         with read_fasta(target) as fasta:
 #             for tgt in fasta:
 #                 if tgt.defline in ok_items:
 #                     writer.write_item(tgt.defline, tgt.sequence)

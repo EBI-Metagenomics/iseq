@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import IO, Dict, List, Set, Tuple
 
 import click
-from fasta_reader import FASTAWriter, open_fasta
+from fasta_reader import FASTAWriter, read_fasta
 from hmmer import HMMER
 from hmmer.typing import DomTBLRow
 from hmmer_reader import num_models, open_hmmer
@@ -121,7 +121,7 @@ def pscan2(
 
     gcode = CodonTable(target_abc, IUPACAminoAlphabet())
 
-    with open_fasta(target) as fasta:
+    with read_fasta(target) as fasta:
         targets = list(fasta)
 
     total = num_models(profile)
@@ -203,7 +203,7 @@ def infer_profile_alphabet(profile: IO[str]):
 
 
 def infer_target_alphabet(target: IO[str]):
-    fasta = open_fasta(target)
+    fasta = read_fasta(target)
     target_alphabet = infer_fasta_alphabet(fasta)
     target.seek(0)
     if target_alphabet is None:
@@ -323,7 +323,7 @@ def target_set_from_gff_file(filepath) -> Set[str]:
 
 
 def update_fasta_file(filepath, target_set: Set[str]):
-    with open_fasta(filepath) as fasta:
+    with read_fasta(filepath) as fasta:
         targets = list(fasta)
 
     with FASTAWriter(filepath) as writer:
@@ -334,7 +334,7 @@ def update_fasta_file(filepath, target_set: Set[str]):
 
 
 def translate_fasta_file(filepath, target_map: Dict[str, str]):
-    with open_fasta(filepath) as fasta:
+    with read_fasta(filepath) as fasta:
         targets = list(fasta)
 
     with FASTAWriter(filepath) as writer:

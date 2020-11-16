@@ -4,7 +4,7 @@ import time
 from math import exp
 
 import click
-from fasta_reader import FASTAWriter, open_fasta
+from fasta_reader import FASTAWriter, read_fasta
 from hmmer import HMMER
 from nmm import DNAAlphabet, Input, IUPACAminoAlphabet, RNAAlphabet
 from tqdm import tqdm
@@ -232,7 +232,7 @@ def bscan(
     else:
         raise RuntimeError()
 
-    with open_fasta(target) as fasta:
+    with read_fasta(target) as fasta:
         targets = list(fasta)
 
     workers = []

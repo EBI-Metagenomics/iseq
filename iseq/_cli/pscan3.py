@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Iterable, NamedTuple, TextIO
 
 import click
-from fasta_reader import FASTAItem, FASTAWriter, open_fasta
+from fasta_reader import FASTAItem, FASTAWriter, read_fasta
 from hmmer import HMMER
 from hmmer_reader import num_models, open_hmmer
 from imm import Alphabet
@@ -140,7 +140,7 @@ class PScan3:
         return num_models(self._profile)
 
     def scan(self, target: TextIO, window: int, epsilon: float, quiet: bool):
-        with open_fasta(target) as fasta:
+        with read_fasta(target) as fasta:
             targets = list(fasta)
 
         base_alphabet = self._codon_table.base_alphabet
@@ -257,7 +257,7 @@ class PScan3:
 
 
 def infer_target_alphabet(target: TextIO):
-    fasta = open_fasta(target)
+    fasta = read_fasta(target)
     target_alphabet = infer_fasta_alphabet(fasta)
     target.seek(0)
     if target_alphabet is None:

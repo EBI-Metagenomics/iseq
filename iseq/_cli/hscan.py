@@ -1,7 +1,7 @@
 import os
 
 import click
-from fasta_reader import open_fasta
+from fasta_reader import read_fasta
 from hmmer_reader import open_hmmer
 
 from iseq.alphabet import alphabet_name
@@ -82,7 +82,7 @@ def hscan(
     else:
         click.get_text_stream("stdout")
 
-    with open_fasta(target) as fasta:
+    with read_fasta(target) as fasta:
         targets = list(fasta)
 
     for plain_model in open_hmmer(profile):
