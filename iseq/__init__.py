@@ -1,6 +1,6 @@
 from importlib import import_module as _import_module
 
-from . import gff, hmmer3, protein
+from . import gff, hmmer3, interval, protein
 from ._cli import cli
 from ._testit import test
 
@@ -14,6 +14,7 @@ __all__ = [
     "cli",
     "gff",
     "hmmer3",
+    "interval",
     "protein",
     "test",
 ]
